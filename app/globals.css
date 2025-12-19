@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #faf9f7;
+  --foreground: #1a1a1a;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-quicksand), system-ui, sans-serif;
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+/* Elegant background patterns */
+.light-bg {
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(255, 200, 150, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(200, 180, 255, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(180, 220, 200, 0.1) 0%, transparent 60%),
+    linear-gradient(180deg, #fdfcfb 0%, #f5f3f0 100%);
+}
+
+.dark-bg {
+  background: 
+    radial-gradient(ellipse at 10% 10%, rgba(60, 40, 90, 0.3) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 90%, rgba(30, 60, 80, 0.25) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(40, 30, 60, 0.2) 0%, transparent 70%),
+    linear-gradient(180deg, #0d0d0f 0%, #0a0a0c 100%);
+}
+
+/* Cursor blink animation */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-blink-cursor {
+  animation: blink 1s step-end infinite;
+}
+
+/* Subtle grain texture overlay */
+.grain-overlay::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.03;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* Font smoothing */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Selection styling */
+::selection {
+  background: rgba(120, 100, 180, 0.3);
+}
+
+.dark ::selection {
+  background: rgba(160, 140, 220, 0.4);
+}
+
