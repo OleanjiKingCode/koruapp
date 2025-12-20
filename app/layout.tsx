@@ -26,7 +26,7 @@ const lemonTuesday = Caveat({
 
 export const metadata: Metadata = {
   title: "Koru",
-  description: "Koru - A beautiful typography showcase",
+  description: "Koru - Pay for access. Earn for time.",
 }
 
 export default function RootLayout({
