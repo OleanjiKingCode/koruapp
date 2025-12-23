@@ -2,14 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #faf9f7;
-  --foreground: #1a1a1a;
-}
+@layer base {
+  :root {
+    /* Koru custom colors */
+    --koru-purple: #c385ee;
+    --koru-golden: #dab079;
+    --koru-lime: #9deb61;
+    --koru-deep: #1A1446;
+    
+    /* Light mode - clean, airy, professional */
+    --background: 45 30% 98%;
+    --foreground: 240 10% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 10%;
+    --primary: 275 72% 73%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 36 48% 66%;
+    --secondary-foreground: 240 10% 10%;
+    --muted: 45 20% 95%;
+    --muted-foreground: 240 5% 45%;
+    --accent: 92 76% 65%;
+    --accent-foreground: 240 10% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 45 15% 88%;
+    --input: 45 15% 88%;
+    --ring: 275 72% 73%;
+    --radius: 0.75rem;
+  }
 
-.dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  .dark {
+    /* Dark mode - rich, sophisticated, premium feel */
+    --background: 250 25% 6%;
+    --foreground: 45 20% 95%;
+    --card: 250 20% 9%;
+    --card-foreground: 45 20% 95%;
+    --popover: 250 20% 9%;
+    --popover-foreground: 45 20% 95%;
+    --primary: 275 72% 73%;
+    --primary-foreground: 250 25% 6%;
+    --secondary: 36 48% 66%;
+    --secondary-foreground: 250 25% 6%;
+    --muted: 250 20% 14%;
+    --muted-foreground: 45 10% 55%;
+    --accent: 92 76% 65%;
+    --accent-foreground: 250 25% 6%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 250 15% 16%;
+    --input: 250 15% 16%;
+    --ring: 275 72% 73%;
+  }
 }
 
 html {
@@ -17,27 +62,57 @@ html {
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
   font-family: var(--font-quicksand), system-ui, sans-serif;
-  transition: background-color 0.5s ease, color 0.5s ease;
+  transition: background-color 0.3s ease, color 0.3s ease, font-family 0.2s ease;
 }
 
-/* Elegant background patterns */
-.light-bg {
-  background: 
-    radial-gradient(circle at 20% 20%, rgba(255, 200, 150, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(200, 180, 255, 0.12) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, rgba(180, 220, 200, 0.1) 0%, transparent 60%),
-    linear-gradient(180deg, #fdfcfb 0%, #f5f3f0 100%);
+/* Font switching classes for body - exclude elements with explicit font classes */
+body.font-quicksand,
+body.font-quicksand *:not(.font-tenor):not(.font-lemon):not(.font-quicksand) {
+  font-family: var(--font-quicksand), system-ui, sans-serif !important;
 }
 
-.dark-bg {
+body.font-tenor,
+body.font-tenor *:not(.font-quicksand):not(.font-lemon):not(.font-tenor) {
+  font-family: var(--font-tenor), Georgia, serif !important;
+}
+
+body.font-lemon,
+body.font-lemon *:not(.font-quicksand):not(.font-tenor):not(.font-lemon) {
+  font-family: var(--font-lemon), cursive !important;
+}
+
+/* Explicit font classes always take precedence */
+.font-quicksand {
+  font-family: var(--font-quicksand), system-ui, sans-serif !important;
+}
+
+.font-tenor {
+  font-family: var(--font-tenor), Georgia, serif !important;
+}
+
+.font-lemon {
+  font-family: var(--font-lemon), cursive !important;
+}
+
+/* Light mode background */
+.light {
   background: 
-    radial-gradient(ellipse at 10% 10%, rgba(60, 40, 90, 0.3) 0%, transparent 50%),
-    radial-gradient(ellipse at 90% 90%, rgba(30, 60, 80, 0.25) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, rgba(40, 30, 60, 0.2) 0%, transparent 70%),
-    linear-gradient(180deg, #0d0d0f 0%, #0a0a0c 100%);
+    radial-gradient(ellipse at 0% 0%, rgba(195, 133, 238, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 100%, rgba(218, 176, 121, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(157, 235, 97, 0.03) 0%, transparent 60%),
+    linear-gradient(180deg, hsl(45, 30%, 98%) 0%, hsl(45, 25%, 96%) 100%);
+  background-attachment: fixed;
+}
+
+/* Dark mode background - richer and more premium */
+.dark {
+  background: 
+    radial-gradient(ellipse at 0% 0%, rgba(195, 133, 238, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 0%, rgba(218, 176, 121, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(157, 235, 97, 0.05) 0%, transparent 50%),
+    linear-gradient(180deg, hsl(250, 25%, 6%) 0%, hsl(250, 30%, 4%) 100%);
+  background-attachment: fixed;
 }
 
 /* Cursor blink animation */
@@ -58,7 +133,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  opacity: 0.03;
+  opacity: 0.015;
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
 }
@@ -71,10 +146,94 @@ body {
 
 /* Selection styling */
 ::selection {
-  background: rgba(120, 100, 180, 0.3);
+  background: rgba(195, 133, 238, 0.3);
 }
 
 .dark ::selection {
-  background: rgba(160, 140, 220, 0.4);
+  background: rgba(195, 133, 238, 0.4);
 }
 
+/* Gold shimmer animation for buttons */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer-gold {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(218, 176, 121, 0.4) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Purple glow effect */
+.glow-purple {
+  box-shadow: 0 0 40px rgba(195, 133, 238, 0.3),
+              0 0 80px rgba(195, 133, 238, 0.1);
+}
+
+/* Dark mode specific enhancements */
+.dark .card-glow {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3),
+              0 0 40px rgba(195, 133, 238, 0.05);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.2);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.3);
+}
+
+/* Crown colors */
+.crown-gold {
+  color: #FFD700;
+  filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.5));
+}
+
+.crown-silver {
+  color: #C0C0C0;
+  filter: drop-shadow(0 0 4px rgba(192, 192, 192, 0.5));
+}
+
+.crown-bronze {
+  color: #CD7F32;
+  filter: drop-shadow(0 0 4px rgba(205, 127, 50, 0.5));
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
