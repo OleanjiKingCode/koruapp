@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "motion/react";
+import Image from "next/image";
+import Link from "next/link";
+import { motion, AnimatePresence } from "motion/react";
+import { useTheme } from "next-themes";
 import {
   FloatingNav,
   PageHeader,
@@ -10,13 +13,14 @@ import {
   EmptyState,
 } from "@/components/shared";
 import { Footer } from "@/components/shared/footer";
+import { ShareModal } from "@/components/share";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { cn } from "@/lib/utils";
 import { MOCK_USER_DATA, MOCK_CHATS } from "@/lib/data";
-import { MOCK_USER_APPEALS } from "@/lib/data/mock-appeals";
+import { MOCK_USER_APPEALS, MOCK_APPEALS } from "@/lib/data/mock-appeals";
 import {
   CheckIcon,
   ShareIcon,
@@ -25,10 +29,65 @@ import {
   RefundIcon,
   ChatIcon,
   BeaconIcon,
+  TwitterIcon,
+  ChevronRightIcon,
+  LinkIcon,
 } from "@/components/icons";
+
+// Link Icon (for website)
+function GlobeIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+      <path d="M2 12h20" />
+    </svg>
+  );
+}
+
+// X Connect Icon
+function XConnectIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("chats");
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareType, setShareType] = useState<"profile" | "appeal">("profile");
+  const [selectedAppeal, setSelectedAppeal] = useState(MOCK_APPEALS[0]);
+  const [isXConnected, setIsXConnected] = useState(false);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  const handleShareProfile = () => {
+    setShareType("profile");
+    setShareModalOpen(true);
+  };
+
+  const handleShareAppeal = (appealId: string) => {
+    const appeal =
+      MOCK_APPEALS.find((a) => a.id === appealId) || MOCK_APPEALS[0];
+    setSelectedAppeal(appeal);
+    setShareType("appeal");
+    setShareModalOpen(true);
+  };
+
+  const handleConnectX = () => {
+    // Simulate X OAuth flow
+    setIsXConnected(true);
+  };
 
   return (
     <div className="min-h-screen pb-96">
@@ -42,8 +101,20 @@ export default function ProfilePage() {
           className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 overflow-hidden mb-8 shadow-soft"
         >
           {/* Banner */}
-          <div className="h-32 bg-gradient-to-r from-koru-purple via-koru-golden/50 to-koru-lime/30 relative">
+          <div className="h-32 bg-gradient-to-r from-koru-purple via-koru-golden/50 to-koru-lime/30 relative overflow-hidden">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzMiAyIDIgNC0yIDQtMiA0LTItMi0yLTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
+
+            {/* Kaya Sideways - Background Decoration in Banner Only */}
+            <div className="absolute -right-24 -top-16 pointer-events-none select-none">
+              <Image
+                src="/kayaSideWays.png"
+                alt=""
+                width={350}
+                height={350}
+                className="object-contain opacity-20 -scale-x-100"
+                aria-hidden="true"
+              />
+            </div>
           </div>
 
           <div className="px-6 md:px-8 pb-6 -mt-16 relative">
@@ -66,17 +137,65 @@ export default function ProfilePage() {
 
               {/* Info */}
               <div className="flex-1 pt-4 md:pt-0">
-                <div className="flex flex-wrap items-center gap-3 mb-2">
+                <div className="flex flex-wrap items-center gap-3 mb-1">
                   <h1 className="text-2xl md:text-3xl font-tenor text-neutral-900 dark:text-neutral-100">
-                    {MOCK_USER_DATA.shortAddress}
+                    {MOCK_USER_DATA.displayName}
                   </h1>
                   <Badge className="bg-koru-purple/20 text-koru-purple border-0">
                     {MOCK_USER_DATA.points.toLocaleString()} pts
                   </Badge>
                 </div>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400 font-mono mb-3">
-                  {MOCK_USER_DATA.address}
-                </p>
+
+                {/* Username and address */}
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <span className="text-sm text-neutral-600 dark:text-neutral-300 font-quicksand">
+                    @{MOCK_USER_DATA.username}
+                  </span>
+                  <span className="text-neutral-300 dark:text-neutral-600">
+                    •
+                  </span>
+                  <span className="text-sm text-neutral-500 dark:text-neutral-400 font-mono">
+                    {MOCK_USER_DATA.shortAddress}
+                  </span>
+                </div>
+
+                {/* Bio */}
+                {MOCK_USER_DATA.bio && (
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3 max-w-lg">
+                    {MOCK_USER_DATA.bio}
+                  </p>
+                )}
+
+                {/* Links row */}
+                <div className="flex flex-wrap items-center gap-4 mb-3">
+                  {MOCK_USER_DATA.website && (
+                    <a
+                      href={MOCK_USER_DATA.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 text-sm text-koru-purple hover:text-koru-purple/80 transition-colors group"
+                    >
+                      <GlobeIcon className="w-4 h-4" />
+                      <span className="group-hover:underline">
+                        {MOCK_USER_DATA.website.replace("https://", "")}
+                      </span>
+                    </a>
+                  )}
+                  {MOCK_USER_DATA.twitterHandle && (
+                    <a
+                      href={`https://x.com/${MOCK_USER_DATA.twitterHandle}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors group"
+                    >
+                      <XConnectIcon className="w-4 h-4" />
+                      <span className="group-hover:underline">
+                        @{MOCK_USER_DATA.twitterHandle}
+                      </span>
+                    </a>
+                  )}
+                </div>
+
                 {/* Badges */}
                 <div className="flex flex-wrap gap-2">
                   {MOCK_USER_DATA.badges.map((badge) => (
@@ -104,14 +223,20 @@ export default function ProfilePage() {
 
               {/* Actions */}
               <div className="flex gap-2 pt-4 md:pt-0">
-                <Button variant="outline" size="sm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleShareProfile}
+                >
                   <ShareIcon className="w-4 h-4 mr-2" />
                   Share
                 </Button>
-                <Button size="sm">
-                  <EditIcon className="w-4 h-4 mr-2" />
-                  Edit Profile
-                </Button>
+                <Link href="/profile/edit">
+                  <Button size="sm">
+                    <EditIcon className="w-4 h-4 mr-2" />
+                    Edit Profile
+                  </Button>
+                </Link>
               </div>
             </div>
 
@@ -121,6 +246,85 @@ export default function ProfilePage() {
             </p>
           </div>
         </motion.div>
+
+        {/* Connect to X Card */}
+        <AnimatePresence>
+          {!isXConnected && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+              transition={{ delay: 0.1 }}
+              className="mb-8"
+            >
+              <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft overflow-hidden relative">
+                {/* X branding background */}
+                <div className="absolute -right-16 -top-16 w-48 h-48 bg-gradient-to-br from-neutral-100 dark:from-neutral-800 to-transparent rounded-full opacity-50" />
+                <div className="absolute -right-8 -top-8 w-32 h-32 flex items-center justify-center opacity-5">
+                  <XConnectIcon className="w-24 h-24" />
+                </div>
+
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-black flex items-center justify-center shrink-0">
+                      <XConnectIcon className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-quicksand font-bold text-neutral-900 dark:text-neutral-100">
+                        Connect your X account
+                      </h3>
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                        Get verified, share cards, and earn bonus points!
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={handleConnectX}
+                    className="bg-black hover:bg-neutral-800 text-white rounded-xl font-quicksand font-semibold group shrink-0"
+                  >
+                    <XConnectIcon className="w-4 h-4 mr-2" />
+                    Connect to X
+                    <ChevronRightIcon className="w-4 h-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* X Connected Success Banner */}
+        <AnimatePresence>
+          {isXConnected && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8"
+            >
+              <div className="bg-gradient-to-r from-koru-lime/10 to-koru-lime/5 rounded-2xl border border-koru-lime/20 p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-koru-lime/20 flex items-center justify-center">
+                    <CheckIcon className="w-5 h-5 text-koru-lime" />
+                  </div>
+                  <div>
+                    <p className="font-quicksand font-semibold text-neutral-900 dark:text-neutral-100">
+                      X Account Connected
+                    </p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      @cryptoexplorer • Share your profile cards anytime!
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsXConnected(false)}
+                  className="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+                >
+                  Disconnect
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Stats Grid */}
         <motion.div
@@ -253,7 +457,7 @@ export default function ProfilePage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-5 hover:border-koru-golden/30 dark:hover:border-koru-golden/30 transition-all cursor-pointer group hover:shadow-lg"
+                  className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-5 hover:border-koru-golden/30 dark:hover:border-koru-golden/30 transition-all group hover:shadow-lg"
                 >
                   <div className="flex items-start justify-between gap-4">
                     {/* Left */}
@@ -275,13 +479,26 @@ export default function ProfilePage() {
                     </div>
 
                     {/* Right */}
-                    <div className="text-right shrink-0">
-                      <p className="font-quicksand font-semibold text-koru-golden">
-                        {appeal.pledgedAmount}
-                      </p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        {appeal.backers} backers
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right shrink-0">
+                        <p className="font-quicksand font-semibold text-koru-golden">
+                          {appeal.pledgedAmount}
+                        </p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                          {appeal.backers} backers
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShareAppeal(appeal.id);
+                        }}
+                        className="text-neutral-400 hover:text-koru-golden"
+                      >
+                        <ShareIcon className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
 
@@ -303,7 +520,15 @@ export default function ProfilePage() {
       </main>
 
       <Footer />
+
+      {/* Share Modal */}
+      <ShareModal
+        open={shareModalOpen}
+        onOpenChange={setShareModalOpen}
+        type={shareType}
+        userData={MOCK_USER_DATA}
+        appeal={selectedAppeal}
+      />
     </div>
   );
 }
-

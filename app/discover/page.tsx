@@ -394,20 +394,6 @@ export default function DiscoverPage() {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Load More */}
-        {filteredProfiles.length > 0 && !isSearching && viewMode === "grid" && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="flex justify-center mt-12"
-          >
-            <button className="text-koru-purple font-quicksand font-medium hover:underline">
-              Load more
-            </button>
-          </motion.div>
-        )}
       </main>
 
       <Footer />

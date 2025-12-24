@@ -1,11 +1,25 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
+
+// Kaya variations
+const kayaImages = [
+  "/kayaWingsout.png",
+  "/sadKaya.png",
+  "/kayaSideWays.png",
+] as const;
+
+const kayaPositions = [
+  { anchor: "bottom-0 right-0", transform: "translate-x-8 translate-y-8" },
+  { anchor: "bottom-0 left-0", transform: "-translate-x-8 translate-y-8" },
+  { anchor: "bottom-0 left-1/2", transform: "-translate-x-1/2 translate-y-8" },
+] as const;
 
 const footerLinks = {
   product: [
@@ -35,6 +49,15 @@ export function Footer() {
   const [isVisible, setIsVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { theme } = useTheme();
+
+  // Random Kaya selection - picked once per page load
+  const kayaVariant = useMemo(
+    () => ({
+      image: kayaImages[Math.floor(Math.random() * kayaImages.length)],
+      position: kayaPositions[Math.floor(Math.random() * kayaPositions.length)],
+    }),
+    []
+  );
 
   // Memoized visibility check function
   const checkVisibility = useCallback(() => {
@@ -124,13 +147,34 @@ export function Footer() {
           <div className="mx-4 mb-4">
             <div
               className={cn(
-                "rounded-2xl p-6 md:p-8 shadow-2xl",
+                "rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden",
                 isDark
                   ? "bg-neutral-900 border border-neutral-800 shadow-black/40"
                   : "bg-white border border-neutral-200 shadow-black/10"
               )}
             >
-              <div className="max-w-container mx-auto">
+              {/* Kaya - Background Decoration (randomized position & image) */}
+              <div
+                className={cn(
+                  "absolute pointer-events-none select-none",
+                  kayaVariant.position.anchor
+                )}
+              >
+                <Image
+                  src={kayaVariant.image}
+                  alt=""
+                  width={200}
+                  height={200}
+                  className={cn(
+                    "object-contain",
+                    kayaVariant.position.transform,
+                    isDark ? "opacity-[0.08]" : "opacity-[0.06]"
+                  )}
+                  aria-hidden="true"
+                />
+              </div>
+
+              <div className="max-w-container mx-auto relative z-10">
                 {/* Top Section */}
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8 mb-8">
                   {/* Brand */}

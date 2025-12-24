@@ -15,6 +15,10 @@ export interface UserData {
   address: string;
   shortAddress: string;
   username: string;
+  displayName: string;
+  bio: string;
+  website: string;
+  twitterHandle: string;
   points: number;
   level: string;
   badges: string[];

@@ -229,6 +229,21 @@ body.font-lemon *:not(.font-quicksand):not(.font-tenor):not(.font-lemon) {
   filter: drop-shadow(0 0 4px rgba(205, 127, 50, 0.5));
 }
 
+/* View Transition API for animated theme toggler */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+}
+
 @layer base {
   * {
     @apply border-border;

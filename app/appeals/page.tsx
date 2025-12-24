@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { FloatingNav, PageHeader, EmptyState } from "@/components/shared";
 import { Footer } from "@/components/shared/footer";
+import { ShareModal } from "@/components/share";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,7 @@ import {
   CrownIcon,
   TrendUpIcon,
   TrendDownIcon,
+  ShareIcon,
 } from "@/components/icons";
 
 type ViewMode = "treemap" | "list";
@@ -47,11 +49,20 @@ export default function AppealsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
 
+  // Share modal state
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selectedAppeal, setSelectedAppeal] = useState<Appeal | null>(null);
+
   // Form state
   const [targetSearch, setTargetSearch] = useState("");
   const [requestText, setRequestText] = useState("");
   const [pledgeAmount, setPledgeAmount] = useState("");
   const [appealCategory, setAppealCategory] = useState("");
+
+  const handleShareAppeal = (appeal: Appeal) => {
+    setSelectedAppeal(appeal);
+    setShareModalOpen(true);
+  };
 
   const filteredAppeals = useMemo(() => {
     return MOCK_APPEALS.filter(
@@ -264,14 +275,29 @@ export default function AppealsPage() {
               key="treemap"
               appeals={filteredAppeals}
               totalPledged={totalPledged}
+              onShare={handleShareAppeal}
             />
           ) : (
-            <ListView key="list" appeals={filteredAppeals} />
+            <ListView
+              key="list"
+              appeals={filteredAppeals}
+              onShare={handleShareAppeal}
+            />
           )}
         </AnimatePresence>
       </main>
 
       <Footer />
+
+      {/* Share Modal */}
+      {selectedAppeal && (
+        <ShareModal
+          open={shareModalOpen}
+          onOpenChange={setShareModalOpen}
+          type="appeal"
+          appeal={selectedAppeal}
+        />
+      )}
     </div>
   );
 }
@@ -280,9 +306,11 @@ export default function AppealsPage() {
 function TreemapView({
   appeals,
   totalPledged,
+  onShare,
 }: {
   appeals: Appeal[];
   totalPledged: number;
+  onShare: (appeal: Appeal) => void;
 }) {
   // Calculate treemap layout using imported utility
   const treemapRects = useMemo(() => {
@@ -428,6 +456,16 @@ function TreemapView({
                 <p className="text-[10px] text-white/60 mt-1">
                   {appeal.backers} backers · {rect.percentage.toFixed(2)}%
                 </p>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onShare(appeal);
+                  }}
+                  className="mt-2 px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-quicksand font-medium transition-colors flex items-center gap-1 mx-auto"
+                >
+                  <ShareIcon className="w-3 h-3" />
+                  Share
+                </button>
               </div>
             </div>
           </motion.div>
@@ -438,7 +476,13 @@ function TreemapView({
 }
 
 // List View Component
-function ListView({ appeals }: { appeals: Appeal[] }) {
+function ListView({
+  appeals,
+  onShare,
+}: {
+  appeals: Appeal[];
+  onShare: (appeal: Appeal) => void;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -518,6 +562,18 @@ function ListView({ appeals }: { appeals: Appeal[] }) {
                 )}
                 {appeal.trendValue.toFixed(2)}%
               </div>
+
+              {/* Share Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onShare(appeal);
+                }}
+                className="p-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-koru-golden/10 hover:text-koru-golden text-neutral-500 transition-all"
+                title="Share appeal"
+              >
+                <ShareIcon className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </motion.div>
