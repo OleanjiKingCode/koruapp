@@ -18,12 +18,15 @@ import {
   MoonIcon,
   HelpCircleIcon,
   ChevronRightIcon,
+  ChatIcon,
+  BellIcon,
 } from "@/components/icons";
 
 // Map icon names to components
 const iconMap = {
   home: HomeIcon,
   discover: DiscoverIcon,
+  chats: ChatIcon,
   appeals: AppealsIcon,
   profile: ProfileIcon,
 };
@@ -50,18 +53,18 @@ export function FloatingNav() {
         "font-tenor",
         "font-lemon"
       );
-    } else {
-      const savedFont = localStorage.getItem("koru-font") || "quicksand";
-      applyFont(savedFont, true);
+      return;
     }
+
+    const savedFont =
+      JSON.parse(localStorage.getItem("koru-font") || '"quicksand"') ??
+      "quicksand";
+    applyFont(savedFont, true);
   }, [pathname, mounted, applyFont]);
 
   const handleFontChange = (fontValue: string) => {
-    if (pathname !== "/") {
-      applyFont(fontValue, true);
-    } else {
-      localStorage.setItem("koru-font", fontValue);
-    }
+    // Always apply the font change
+    applyFont(fontValue, true);
   };
 
   if (!mounted) return null;
@@ -93,7 +96,7 @@ export function FloatingNav() {
               {/* Kōru Logo */}
               <div
                 className={cn(
-                  "flex items-center justify-center px-4 py-2 rounded-xl font-tenor text-lg font-bold",
+                  "flex items-center justify-center px-4 py-2 rounded-xl text-lg font-bold",
                   isDark
                     ? "bg-neutral-800 text-white"
                     : "bg-neutral-100 text-neutral-900"
@@ -116,7 +119,7 @@ export function FloatingNav() {
                       onMouseLeave={() => setHoveredItem(null)}
                       whileTap={{ scale: 0.98 }}
                       className={cn(
-                        "flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-quicksand font-medium transition-all cursor-pointer overflow-hidden",
+                        "flex items-center gap-2 px-5 py-3 rounded-xl text-sm   font-medium transition-all cursor-pointer overflow-hidden",
                         isActive
                           ? isDark
                             ? "bg-neutral-800 text-white border border-neutral-700"
@@ -195,7 +198,7 @@ export function FloatingNav() {
               >
                 <h3
                   className={cn(
-                    "text-lg font-tenor mb-5",
+                    "text-lg mb-5",
                     isDark ? "text-white" : "text-neutral-900"
                   )}
                 >
@@ -206,7 +209,7 @@ export function FloatingNav() {
                 <div className="mb-5">
                   <label
                     className={cn(
-                      "text-sm font-quicksand font-medium mb-2 block",
+                      "text-sm   font-medium mb-2 block",
                       isDark ? "text-neutral-400" : "text-neutral-600"
                     )}
                   >
@@ -216,7 +219,7 @@ export function FloatingNav() {
                     <button
                       onClick={() => setTheme("light")}
                       className={cn(
-                        "flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-quicksand transition-all",
+                        "flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm   transition-all",
                         !isDark
                           ? "bg-koru-purple text-white"
                           : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
@@ -228,7 +231,7 @@ export function FloatingNav() {
                     <button
                       onClick={() => setTheme("dark")}
                       className={cn(
-                        "flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-quicksand transition-all",
+                        "flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm   transition-all",
                         isDark
                           ? "bg-koru-purple text-white"
                           : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
@@ -244,7 +247,7 @@ export function FloatingNav() {
                 <div className="mb-5">
                   <label
                     className={cn(
-                      "text-sm font-quicksand font-medium mb-2 block",
+                      "text-sm   font-medium mb-2 block",
                       isDark ? "text-neutral-400" : "text-neutral-600"
                     )}
                   >
@@ -275,7 +278,7 @@ export function FloatingNav() {
                 <div className="mb-5">
                   <label
                     className={cn(
-                      "text-sm font-quicksand font-medium mb-2 block",
+                      "text-sm   font-medium mb-2 block",
                       isDark ? "text-neutral-400" : "text-neutral-600"
                     )}
                   >
@@ -287,7 +290,7 @@ export function FloatingNav() {
                         key={lang.code}
                         onClick={() => setSelectedLang(lang.code)}
                         className={cn(
-                          "flex-1 py-3 px-4 rounded-xl text-sm font-quicksand transition-all",
+                          "flex-1 py-3 px-4 rounded-xl text-sm   transition-all",
                           selectedLang === lang.code
                             ? "bg-koru-golden text-neutral-900"
                             : isDark
@@ -299,6 +302,31 @@ export function FloatingNav() {
                       </button>
                     ))}
                   </div>
+                </div>
+
+                {/* Notifications Link */}
+                <div className="mb-5">
+                  <Link
+                    href="/notifications"
+                    onClick={() => setIsSettingsOpen(false)}
+                    className={cn(
+                      "flex items-center justify-between w-full py-3 px-4 rounded-xl text-sm transition-all",
+                      isDark
+                        ? "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
+                        : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <BellIcon className="w-4 h-4" />
+                      <span>Notifications</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-koru-purple bg-koru-purple/10 px-2 py-0.5 rounded-full">
+                        3 new
+                      </span>
+                      <ChevronRightIcon className="w-4 h-4" />
+                    </div>
+                  </Link>
                 </div>
 
                 {/* Divider */}
@@ -314,7 +342,7 @@ export function FloatingNav() {
                   href="/how-it-works"
                   onClick={() => setIsSettingsOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-quicksand transition-all w-full",
+                    "flex items-center gap-3 py-3 px-4 rounded-xl text-sm transition-all w-full",
                     isDark
                       ? "bg-neutral-800 text-neutral-300 hover:bg-neutral-700 hover:text-white"
                       : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-neutral-900"

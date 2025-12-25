@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import {
   FloatingNav,
@@ -16,12 +17,13 @@ import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { cn, parseFollowerCount } from "@/lib/utils";
 import { MOCK_PROFILES } from "@/lib/data";
 import { ROUTES } from "@/lib/constants";
-import type { SortField, SortDirection } from "@/lib/types";
+import type { SortField, SortDirection, Profile } from "@/lib/types";
 import { CrownIcon, ChevronUpIcon, ChevronDownIcon } from "@/components/icons";
 
 type TabValue = "hot" | "daily" | "weekly";
 
 export default function DiscoverPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabValue>("hot");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -133,6 +135,10 @@ export default function DiscoverPage() {
     }
   };
 
+  const handleViewProfile = (profile: Profile) => {
+    router.push(ROUTES.PROFILE_VIEW(profile.id));
+  };
+
   return (
     <div className="min-h-screen pb-96">
       <FloatingNav />
@@ -239,9 +245,7 @@ export default function DiscoverPage() {
                       avatarComponent={
                         <AvatarGenerator seed={profile.handle} size={56} />
                       }
-                      onView={() => {
-                        window.location.href = ROUTES.CHAT(profile.id);
-                      }}
+                      onView={() => handleViewProfile(profile)}
                     />
                   </motion.div>
                 ))}
@@ -259,13 +263,13 @@ export default function DiscoverPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-neutral-200 dark:border-neutral-800">
-                        <th className="text-left p-4 font-quicksand font-semibold text-neutral-600 dark:text-neutral-400">
+                        <th className="text-left p-4  font-semibold text-neutral-600 dark:text-neutral-400">
                           Rank
                         </th>
-                        <th className="text-left p-4 font-quicksand font-semibold text-neutral-600 dark:text-neutral-400">
+                        <th className="text-left p-4  font-semibold text-neutral-600 dark:text-neutral-400">
                           Profile
                         </th>
-                        <th className="text-left p-4 font-quicksand font-semibold text-neutral-600 dark:text-neutral-400">
+                        <th className="text-left p-4  font-semibold text-neutral-600 dark:text-neutral-400">
                           <SortableHeader
                             label="Followers"
                             field="followers"
@@ -274,7 +278,7 @@ export default function DiscoverPage() {
                             onClick={() => handleTableSort("followers")}
                           />
                         </th>
-                        <th className="text-left p-4 font-quicksand font-semibold text-neutral-600 dark:text-neutral-400">
+                        <th className="text-left p-4  font-semibold text-neutral-600 dark:text-neutral-400">
                           <SortableHeader
                             label="Earnings"
                             field="earnings"
@@ -283,16 +287,16 @@ export default function DiscoverPage() {
                             onClick={() => handleTableSort("earnings")}
                           />
                         </th>
-                        <th className="text-left p-4 font-quicksand font-semibold text-neutral-600 dark:text-neutral-400">
+                        <th className="text-left p-4  font-semibold text-neutral-600 dark:text-neutral-400">
                           <SortableHeader
-                            label="Price"
+                            label="Min Price"
                             field="price"
                             currentField={tableSortField}
                             direction={tableSortDirection}
                             onClick={() => handleTableSort("price")}
                           />
                         </th>
-                        <th className="text-left p-4 font-quicksand font-semibold text-neutral-600 dark:text-neutral-400">
+                        <th className="text-left p-4  font-semibold text-neutral-600 dark:text-neutral-400">
                           <SortableHeader
                             label="Response"
                             field="responseTime"
@@ -326,7 +330,7 @@ export default function DiscoverPage() {
                                 size={40}
                               />
                               <div>
-                                <p className="font-quicksand font-semibold text-neutral-900 dark:text-neutral-100">
+                                <p className=" font-semibold text-neutral-900 dark:text-neutral-100">
                                   {profile.name}
                                 </p>
                                 <p className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -337,22 +341,22 @@ export default function DiscoverPage() {
                           </td>
 
                           {/* Followers */}
-                          <td className="p-4 text-neutral-700 dark:text-neutral-300 font-quicksand">
+                          <td className="p-4 text-neutral-700 dark:text-neutral-300 ">
                             {profile.followers}
                           </td>
 
                           {/* Earnings */}
-                          <td className="p-4 text-koru-golden font-quicksand font-semibold">
+                          <td className="p-4 text-koru-golden  font-semibold">
                             ${profile.earnings.toLocaleString()}
                           </td>
 
                           {/* Price */}
-                          <td className="p-4 text-neutral-700 dark:text-neutral-300 font-quicksand">
+                          <td className="p-4 text-neutral-700 dark:text-neutral-300 ">
                             ${profile.price}
                           </td>
 
                           {/* Response Time */}
-                          <td className="p-4 text-neutral-700 dark:text-neutral-300 font-quicksand">
+                          <td className="p-4 text-neutral-700 dark:text-neutral-300 ">
                             {profile.responseTime}h avg
                           </td>
 
@@ -360,9 +364,7 @@ export default function DiscoverPage() {
                           <td className="p-4">
                             <Button
                               size="sm"
-                              onClick={() => {
-                                window.location.href = ROUTES.CHAT(profile.id);
-                              }}
+                              onClick={() => handleViewProfile(profile)}
                             >
                               View
                             </Button>
@@ -426,7 +428,7 @@ function RankBadge({ rank }: { rank: number }) {
   }
   return (
     <div className="flex items-center justify-center w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800">
-      <span className="text-sm font-tenor font-medium text-neutral-600 dark:text-neutral-400">
+      <span className="text-sm   font-medium text-neutral-600 dark:text-neutral-400">
         {rank}
       </span>
     </div>

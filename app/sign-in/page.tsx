@@ -135,15 +135,15 @@ export default function SignInPage() {
               transition={{ delay: 0.2, duration: 0.5 }}
               className="mb-6"
             >
-              <h1 className="text-5xl font-tenor text-neutral-900 dark:text-neutral-100 tracking-wide">
+              <h1 className="text-5xl   text-neutral-900 dark:text-neutral-100 tracking-wide">
                 Kōru
               </h1>
             </motion.div>
 
-            <CardTitle className="text-2xl font-quicksand font-semibold text-neutral-900 dark:text-neutral-100">
+            <CardTitle className="text-2xl   font-semibold text-neutral-900 dark:text-neutral-100">
               Welcome to Kōru
             </CardTitle>
-            <CardDescription className="text-neutral-600 dark:text-neutral-400 font-quicksand text-base mt-2">
+            <CardDescription className="text-neutral-600 dark:text-neutral-400   text-base mt-2">
               A clean lane for serious conversations.
             </CardDescription>
           </CardHeader>
@@ -225,7 +225,7 @@ export default function SignInPage() {
                     </div>
                   </motion.div>
 
-                  <p className="text-center text-neutral-700 dark:text-neutral-300 font-quicksand">
+                  <p className="text-center text-neutral-700 dark:text-neutral-300  ">
                     Wallet connected! Sign to continue.
                   </p>
 
@@ -279,7 +279,7 @@ export default function SignInPage() {
                     </div>
                   </motion.div>
 
-                  <p className="text-center text-red-500 font-quicksand">
+                  <p className="text-center text-red-500  ">
                     {errorMessage}
                   </p>
 
@@ -318,7 +318,7 @@ export default function SignInPage() {
           className="flex justify-center mt-6"
         >
           <div className="px-4 py-2 rounded-full bg-koru-purple/10 border border-koru-purple/20">
-            <span className="text-sm font-quicksand text-koru-purple">
+            <span className="text-sm   text-koru-purple">
               Web3 Mode
             </span>
           </div>

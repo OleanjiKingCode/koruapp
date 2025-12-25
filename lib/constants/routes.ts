@@ -4,6 +4,7 @@ export const ROUTES = {
   DISCOVER: "/discover",
   APPEALS: "/appeals",
   PROFILE: "/profile",
+  PROFILE_VIEW: (id: string) => `/profile/${id}`,
   HOW_IT_WORKS: "/how-it-works",
   SIGN_IN: "/sign-in",
   CHAT: (id: string) => `/chat/${id}`,

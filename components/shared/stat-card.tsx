@@ -62,14 +62,14 @@ export function StatCard({
     >
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 font-quicksand font-medium">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400   font-medium">
             {title}
           </p>
-          <p className={cn("text-2xl font-tenor font-medium", styles.value)}>
+          <p className={cn("text-2xl   font-medium", styles.value)}>
             {value}
           </p>
           {subtitle && (
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 font-quicksand">
+            <p className="text-xs text-neutral-400 dark:text-neutral-500  ">
               {subtitle}
             </p>
           )}
@@ -83,7 +83,7 @@ export function StatCard({
           {trend && trendValue && (
             <div
               className={cn(
-                "flex items-center gap-1 text-xs font-quicksand font-semibold px-2 py-0.5 rounded-md",
+                "flex items-center gap-1 text-xs   font-semibold px-2 py-0.5 rounded-md",
                 trend === "up" && "text-koru-lime bg-koru-lime/15",
                 trend === "down" && "text-red-500 bg-red-500/15",
                 trend === "neutral" && "text-neutral-400 bg-neutral-200 dark:bg-neutral-700"

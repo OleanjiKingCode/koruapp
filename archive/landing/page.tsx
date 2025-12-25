@@ -96,7 +96,7 @@ export default function Home() {
             transition={{ delay: 1, duration: 0.5 }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="px-8 py-3 rounded-full border-2 border-neutral-400 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 font-quicksand text-lg hover:border-neutral-600 dark:hover:border-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors duration-300"
+            className="px-8 py-3 rounded-full border-2 border-neutral-400 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300   text-lg hover:border-neutral-600 dark:hover:border-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors duration-300"
           >
             Know more →
           </motion.button>

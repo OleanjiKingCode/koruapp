@@ -17,11 +17,11 @@ export function PageHeader({ title, description, children }: PageHeaderProps) {
       className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8"
     >
       <div>
-        <h1 className="text-3xl md:text-4xl font-tenor text-neutral-900 dark:text-neutral-100">
+        <h1 className="text-3xl md:text-4xl text-neutral-900 dark:text-neutral-100">
           {title}
         </h1>
         {description && (
-          <p className="text-neutral-600 dark:text-neutral-400 font-quicksand mt-1">
+          <p className="text-neutral-600 dark:text-neutral-400 mt-1">
             {description}
           </p>
         )}
@@ -30,4 +30,3 @@ export function PageHeader({ title, description, children }: PageHeaderProps) {
     </motion.div>
   );
 }
-

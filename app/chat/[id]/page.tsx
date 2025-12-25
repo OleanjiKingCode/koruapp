@@ -1,65 +1,81 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { useParams } from "next/navigation";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { motion } from "motion/react";
+import { useParams, useRouter, notFound } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusPill, FloatingNav } from "@/components/shared";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { cn } from "@/lib/utils";
+import { MOCK_PROFILES } from "@/lib/data";
+import { ROUTES } from "@/lib/constants";
 
-// Dummy chat data
-const chatData = {
-  id: "1",
-  otherParty: {
-    name: "Vitalik Buterin",
-    handle: "VitalikButerin",
-    initials: "VB",
-  },
-  escrow: {
-    amount: "$50.00",
-    status: "active" as const,
-    deadline: "2h 30m",
-  },
-  messages: [
+// Initial messages template
+function getInitialMessages(name: string) {
+  return [
     {
       id: "1",
-      sender: "user",
-      content:
-        "Hi Vitalik! I've been working on a Layer 2 scaling solution and would love your thoughts on the approach. We're using a novel ZK proof system.",
-      timestamp: "2:30 PM",
+      sender: "user" as const,
+      content: `Hi ${
+        name.split(" ")[0]
+      }! Thanks for accepting my booking. I have a few questions I'd like to discuss with you.`,
+      timestamp: new Date().toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit",
+      }),
     },
-    {
-      id: "2",
-      sender: "other",
-      content:
-        "Thanks for reaching out! I'd be happy to take a look. Can you share more details about the proof system you're using?",
-      timestamp: "2:45 PM",
-    },
-    {
-      id: "3",
-      sender: "user",
-      content:
-        "Sure! We're using a custom SNARK circuit that achieves better proving times while maintaining security assumptions. Here's a brief overview...",
-      timestamp: "2:47 PM",
-    },
-    {
-      id: "4",
-      sender: "other",
-      content:
-        "Interesting approach. The tradeoff between proving time and circuit complexity is always tricky. Have you considered the impact on decentralization if proof generation requires specialized hardware?",
-      timestamp: "3:00 PM",
-    },
-  ],
-};
+  ];
+}
 
 export default function ChatPage() {
   const params = useParams();
+  const router = useRouter();
   const [newMessage, setNewMessage] = useState("");
-  const [messages, setMessages] = useState(chatData.messages);
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Find the profile by ID
+  const profile = useMemo(() => {
+    return MOCK_PROFILES.find((p) => p.id === params.id);
+  }, [params.id]);
+
+  // If profile not found, show 404
+  if (!profile) {
+    notFound();
+  }
+
+  // Get booking info from localStorage
+  const bookingInfo = useMemo(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(`koru-booking-${params.id}`);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    }
+    return null;
+  }, [params.id]);
+
+  const [messages, setMessages] = useState(() =>
+    getInitialMessages(profile.name)
+  );
+
+  // Calculate deadline (24 hours from booking)
+  const deadline = useMemo(() => {
+    if (bookingInfo?.createdAt) {
+      const expires = new Date(
+        new Date(bookingInfo.createdAt).getTime() + 24 * 60 * 60 * 1000
+      );
+      const now = new Date();
+      const diff = expires.getTime() - now.getTime();
+      if (diff <= 0) return "Expired";
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      return `${hours}h ${minutes}m`;
+    }
+    return "24h";
+  }, [bookingInfo]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -74,8 +90,7 @@ export default function ChatPage() {
     if (!newMessage.trim() || isSending) return;
 
     setIsSending(true);
-    
-    // Add message optimistically
+
     const message = {
       id: Date.now().toString(),
       sender: "user" as const,
@@ -85,11 +100,10 @@ export default function ChatPage() {
         minute: "2-digit",
       }),
     };
-    
+
     setMessages((prev) => [...prev, message]);
     setNewMessage("");
-    
-    // Simulate send delay
+
     await new Promise((resolve) => setTimeout(resolve, 500));
     setIsSending(false);
   };
@@ -102,20 +116,22 @@ export default function ChatPage() {
         <div className="max-w-container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           {/* Left: Back + User Info */}
           <div className="flex items-center gap-4">
-            <a
-              href="/profile"
+            <Link
+              href={ROUTES.PROFILE_VIEW(profile.id)}
               className="p-2 -ml-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
               <BackIcon className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
-            </a>
+            </Link>
             <div className="flex items-center gap-3">
-              <AvatarGenerator seed={chatData.otherParty.handle} size={40} />
+              <div className="w-10 h-10 rounded-xl overflow-hidden">
+                <AvatarGenerator seed={profile.handle} size={40} />
+              </div>
               <div>
-                <h1 className="font-quicksand font-semibold text-neutral-900 dark:text-neutral-100">
-                  {chatData.otherParty.name}
+                <h1 className="font-semibold text-neutral-900 dark:text-neutral-100">
+                  {profile.name}
                 </h1>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  @{chatData.otherParty.handle}
+                  @{profile.handle}
                 </p>
               </div>
             </div>
@@ -123,11 +139,11 @@ export default function ChatPage() {
 
           {/* Right: Status + Deadline */}
           <div className="flex items-center gap-3">
-            <StatusPill status={chatData.escrow.status} />
+            <StatusPill status="active" />
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800">
               <ClockIcon className="w-4 h-4 text-neutral-500" />
-              <span className="text-sm font-quicksand text-neutral-600 dark:text-neutral-400">
-                {chatData.escrow.deadline}
+              <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                {deadline}
               </span>
             </div>
           </div>
@@ -160,9 +176,7 @@ export default function ChatPage() {
                         : "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border border-neutral-200 dark:border-neutral-700 rounded-bl-md"
                     )}
                   >
-                    <p className="text-sm font-quicksand leading-relaxed">
-                      {message.content}
-                    </p>
+                    <p className="text-sm leading-relaxed">{message.content}</p>
                     <p
                       className={cn(
                         "text-xs mt-2",
@@ -202,7 +216,9 @@ export default function ChatPage() {
                 <motion.div
                   whileTap={{ scale: 0.9 }}
                   animate={isSending ? { rotate: 360 } : {}}
-                  transition={isSending ? { duration: 1, repeat: Infinity } : {}}
+                  transition={
+                    isSending ? { duration: 1, repeat: Infinity } : {}
+                  }
                 >
                   <SendIcon className="w-5 h-5" />
                 </motion.div>
@@ -214,50 +230,64 @@ export default function ChatPage() {
         {/* Right Sidebar - Deal Terms (Desktop only) */}
         <aside className="hidden lg:block w-80 border-l border-neutral-200/50 dark:border-neutral-800/50 bg-white/50 dark:bg-neutral-900/50 p-6">
           <div className="sticky top-24">
-            <h2 className="font-tenor text-lg text-neutral-900 dark:text-neutral-100 mb-6">
-              Deal Terms
+            <h2 className="text-lg text-neutral-900 dark:text-neutral-100 mb-6">
+              Session Details
             </h2>
 
             {/* Amount Card */}
             <div className="bg-gradient-to-br from-koru-purple/10 to-koru-golden/10 rounded-2xl p-5 mb-4 border border-koru-purple/20">
-              <p className="text-sm text-neutral-600 dark:text-neutral-400 font-quicksand mb-1">
-                Amount Deposited
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
+                Amount Paid
               </p>
-              <p className="text-2xl font-tenor font-medium text-neutral-900 dark:text-neutral-100">
-                {chatData.escrow.amount}
+              <p className="text-2xl font-medium text-neutral-900 dark:text-neutral-100">
+                {bookingInfo?.price === 0
+                  ? "Free"
+                  : `$${bookingInfo?.price || profile.price}`}
               </p>
             </div>
 
             {/* Deadline Card */}
-            <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 mb-6 border border-neutral-200 dark:border-neutral-700">
-              <p className="text-sm text-neutral-600 dark:text-neutral-400 font-quicksand mb-1">
-                Deadline
+            <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 mb-4 border border-neutral-200 dark:border-neutral-700">
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
+                Auto-Refund In
               </p>
               <div className="flex items-center gap-2">
                 <ClockIcon className="w-5 h-5 text-koru-golden" />
-                <p className="text-lg font-quicksand font-semibold text-neutral-900 dark:text-neutral-100">
-                  {chatData.escrow.deadline}
+                <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                  {deadline}
                 </p>
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="space-y-3">
-              <Button className="w-full" variant="default">
-                <CheckIcon className="w-4 h-4 mr-2" />
-                Release Payment
-              </Button>
-              <Button className="w-full" variant="outline">
-                <RefundIcon className="w-4 h-4 mr-2" />
-                Request Refund
-              </Button>
-            </div>
+            {/* Slot Info */}
+            {bookingInfo?.slotName && (
+              <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 mb-6 border border-neutral-200 dark:border-neutral-700">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
+                  Session Type
+                </p>
+                <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                  {bookingInfo.slotName}
+                </p>
+                <p className="text-xs text-neutral-500 mt-1">
+                  {bookingInfo.date} · {bookingInfo.time}
+                </p>
+              </div>
+            )}
 
             {/* Info Note */}
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-6 leading-relaxed">
-              The recipient must reply before the deadline to claim the payment.
-              If no reply is received, you can request a full refund.
-            </p>
+            <div className="bg-koru-lime/10 rounded-xl p-4 border border-koru-lime/30">
+              <div className="flex items-start gap-3">
+                <InfoIcon className="w-5 h-5 text-koru-lime flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                  If {profile.name.split(" ")[0]} doesn&apos;t reply within 24
+                  hours, your payment will be{" "}
+                  <span className="text-koru-lime font-medium">
+                    automatically refunded
+                  </span>{" "}
+                  to your wallet.
+                </p>
+              </div>
+            </div>
           </div>
         </aside>
       </div>
@@ -272,16 +302,17 @@ export default function ChatPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                Escrow
+                Paid
               </p>
-              <p className="font-quicksand font-semibold text-neutral-900 dark:text-neutral-100">
-                {chatData.escrow.amount}
+              <p className="font-semibold text-neutral-900 dark:text-neutral-100">
+                {bookingInfo?.price === 0
+                  ? "Free"
+                  : `$${bookingInfo?.price || profile.price}`}
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button size="sm" className="rounded-full">
-                Release
-              </Button>
+            <div className="flex items-center gap-2 text-sm text-neutral-500">
+              <ClockIcon className="w-4 h-4" />
+              <span>Auto-refund: {deadline}</span>
             </div>
           </div>
         </motion.div>
@@ -335,7 +366,7 @@ function SendIcon({ className }: { className?: string }) {
   );
 }
 
-function CheckIcon({ className }: { className?: string }) {
+function InfoIcon({ className }: { className?: string }) {
   return (
     <svg
       className={className}
@@ -343,24 +374,12 @@ function CheckIcon({ className }: { className?: string }) {
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     >
-      <polyline points="20 6 9 17 4 12" />
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4" />
+      <path d="M12 8h.01" />
     </svg>
   );
 }
-
-function RefundIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-      <path d="M3 3v5h5" />
-    </svg>
-  );
-}
-

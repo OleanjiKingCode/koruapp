@@ -22,7 +22,7 @@ export function Navbar() {
         <div className="w-full max-w-container mx-auto px-6 h-16 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl font-tenor text-neutral-900 dark:text-neutral-100">
+            <span className="text-2xl   text-neutral-900 dark:text-neutral-100">
               Kōru
             </span>
           </Link>
@@ -35,7 +35,7 @@ export function Navbar() {
                 <Link key={item.href} href={item.href}>
                   <motion.div
                     className={cn(
-                      "px-5 py-2 rounded-full text-sm font-quicksand font-medium transition-colors relative",
+                      "px-5 py-2 rounded-full text-sm   font-medium transition-colors relative",
                       isActive
                         ? "text-white"
                         : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100"
@@ -47,7 +47,11 @@ export function Navbar() {
                       <motion.div
                         layoutId="activeTab"
                         className="absolute inset-0 bg-koru-purple rounded-full"
-                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                        transition={{
+                          type: "spring",
+                          bounce: 0.2,
+                          duration: 0.6,
+                        }}
                       />
                     )}
                     <span className="relative z-10">{item.name}</span>
@@ -60,7 +64,7 @@ export function Navbar() {
           {/* Right Side */}
           <div className="flex items-center gap-4">
             <div className="px-3 py-1.5 rounded-full bg-koru-purple/10 border border-koru-purple/20">
-              <span className="text-xs font-quicksand text-koru-purple font-medium">
+              <span className="text-xs   text-koru-purple font-medium">
                 Web3
               </span>
             </div>
@@ -89,9 +93,7 @@ export function Navbar() {
                   whileTap={{ scale: 0.9 }}
                 >
                   <NavIcon name={item.name} className="w-5 h-5" />
-                  <span className="text-xs font-quicksand font-medium">
-                    {item.name}
-                  </span>
+                  <span className="text-xs   font-medium">{item.name}</span>
                 </motion.div>
               </Link>
             );
@@ -129,14 +131,26 @@ function NavIcon({ name, className }: { name: string; className?: string }) {
   switch (name) {
     case "Discover":
       return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg
+          className={className}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
           <circle cx="11" cy="11" r="8" />
           <path d="m21 21-4.3-4.3" />
         </svg>
       );
     case "Appeals":
       return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg
+          className={className}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
           <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
           <polyline points="14 2 14 8 20 8" />
           <line x1="12" y1="18" x2="12" y2="12" />
@@ -145,7 +159,13 @@ function NavIcon({ name, className }: { name: string; className?: string }) {
       );
     case "Profile":
       return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg
+          className={className}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
           <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
           <circle cx="12" cy="7" r="4" />
         </svg>
@@ -154,4 +174,3 @@ function NavIcon({ name, className }: { name: string; className?: string }) {
       return null;
   }
 }
-

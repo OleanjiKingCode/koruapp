@@ -1,17 +1,8 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { toPng, toJpeg } from "html-to-image";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { toPng } from "html-to-image";
 import { ProfileShareCard } from "./profile-share-card";
 import { AppealShareCard } from "./appeal-share-card";
 import { CheckIcon, TwitterIcon } from "@/components/icons";
@@ -53,7 +44,7 @@ function CopyIcon({ className }: { className?: string }) {
   );
 }
 
-function ImageIcon({ className }: { className?: string }) {
+function CloseIcon({ className }: { className?: string }) {
   return (
     <svg
       className={className}
@@ -64,25 +55,8 @@ function ImageIcon({ className }: { className?: string }) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-      <circle cx="9" cy="9" r="2" />
-      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-    </svg>
-  );
-}
-
-function SparklesIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
     </svg>
   );
 }
@@ -143,12 +117,22 @@ export function ShareModal({
     dark: "Dark",
   };
 
+  // Close on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && open) {
+        onOpenChange(false);
+      }
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [open, onOpenChange]);
+
   const generateImage = useCallback(async () => {
     if (!cardRef.current) return null;
 
     setIsGenerating(true);
     try {
-      // Wait for any animations to complete
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const dataUrl = await toPng(cardRef.current, {
@@ -187,11 +171,9 @@ export function ShareModal({
     if (!dataUrl) return;
 
     try {
-      // Convert data URL to blob
       const response = await fetch(dataUrl);
       const blob = await response.blob();
 
-      // Copy to clipboard
       await navigator.clipboard.write([
         new ClipboardItem({
           [blob.type]: blob,
@@ -202,7 +184,6 @@ export function ShareModal({
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error("Error copying to clipboard:", error);
-      // Fallback: download the image
       handleDownload();
     }
   }, [generateImage, handleDownload]);
@@ -229,197 +210,211 @@ export function ShareModal({
     window.open(tweetUrl, "_blank", "width=550,height=420");
   }, [type, userData, appeal]);
 
+  const actionButtons = [
+    {
+      id: "twitter",
+      icon: TwitterIcon,
+      label: "Share on X",
+      onClick: handleShareToX,
+      className: "bg-black text-white hover:bg-neutral-800",
+      activeIcon: null,
+      activeLabel: null,
+      isActive: false,
+    },
+    {
+      id: "copy",
+      icon: CopyIcon,
+      label: "Copy",
+      onClick: handleCopyImage,
+      className:
+        "bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-700",
+      activeIcon: CheckIcon,
+      activeLabel: "Copied!",
+      isActive: copied,
+    },
+    {
+      id: "download",
+      icon: DownloadIcon,
+      label: "Download",
+      onClick: handleDownload,
+      className:
+        "bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-700",
+      activeIcon: CheckIcon,
+      activeLabel: "Done!",
+      isActive: downloaded,
+    },
+  ];
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 p-0 overflow-hidden">
-        <div className="p-6 pb-0">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-tenor flex items-center gap-3">
-              Share Your {type === "profile" ? "Profile" : "Appeal"}
-            </DialogTitle>
-            <DialogDescription className="text-neutral-500 dark:text-neutral-400">
-              Choose a style and share your card on social media
-            </DialogDescription>
-          </DialogHeader>
-        </div>
+    <AnimatePresence>
+      {open && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+            onClick={() => onOpenChange(false)}
+          />
 
-        <div className="p-6">
-          {/* Style Selector */}
-          <div className="mb-6">
-            <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
-              <SparklesIcon className="w-4 h-4 text-koru-purple" />
-              Choose a style
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {variants.map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setSelectedVariant(v)}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                    selectedVariant === v
-                      ? "bg-koru-purple text-white shadow-lg shadow-koru-purple/25"
-                      : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"
-                  }`}
-                >
-                  {variantLabels[v]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Card Preview */}
-          <div className="mb-6 overflow-hidden rounded-2xl bg-neutral-100 dark:bg-neutral-800 p-6">
-            <div className="flex justify-center overflow-x-auto">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={selectedVariant}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {type === "profile" && userData && (
-                    <ProfileShareCard
-                      ref={cardRef}
-                      userData={userData}
-                      variant={
-                        selectedVariant as
-                          | "default"
-                          | "minimal"
-                          | "gradient"
-                          | "neon"
-                      }
-                    />
-                  )}
-                  {type === "appeal" && appeal && (
-                    <AppealShareCard
-                      ref={cardRef}
-                      appeal={appeal}
-                      variant={
-                        selectedVariant as
-                          | "default"
-                          | "compact"
-                          | "vibrant"
-                          | "dark"
-                      }
-                    />
-                  )}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="grid grid-cols-3 gap-3">
-            {/* Share to X */}
-            <Button
-              onClick={handleShareToX}
-              className="h-14 bg-black hover:bg-neutral-800 text-white rounded-xl font-quicksand font-semibold group"
-            >
-              <TwitterIcon className="w-5 h-5 mr-2" />
-              Share on X
-            </Button>
-
-            {/* Copy Image */}
-            <Button
-              onClick={handleCopyImage}
-              disabled={isGenerating}
-              variant="outline"
-              className="h-14 rounded-xl font-quicksand font-semibold group relative overflow-hidden"
-            >
-              <AnimatePresence mode="wait">
-                {copied ? (
-                  <motion.span
-                    key="copied"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="flex items-center text-koru-lime"
-                  >
-                    <CheckIcon className="w-5 h-5 mr-2" />
-                    Copied!
-                  </motion.span>
-                ) : (
-                  <motion.span
-                    key="copy"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="flex items-center"
-                  >
-                    <CopyIcon className="w-5 h-5 mr-2" />
-                    Copy Image
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </Button>
-
-            {/* Download */}
-            <Button
-              onClick={handleDownload}
-              disabled={isGenerating}
-              variant="outline"
-              className="h-14 rounded-xl font-quicksand font-semibold group relative overflow-hidden"
-            >
-              <AnimatePresence mode="wait">
-                {downloaded ? (
-                  <motion.span
-                    key="downloaded"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="flex items-center text-koru-lime"
-                  >
-                    <CheckIcon className="w-5 h-5 mr-2" />
-                    Downloaded!
-                  </motion.span>
-                ) : (
-                  <motion.span
-                    key="download"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="flex items-center"
-                  >
-                    <DownloadIcon className="w-5 h-5 mr-2" />
-                    Download
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </Button>
-          </div>
-
-          {/* Loading overlay */}
-          <AnimatePresence>
-            {isGenerating && (
+          {/* Floating Container */}
+          <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center p-4">
+            <div className="pointer-events-auto flex flex-col items-center gap-4 max-h-[90vh] overflow-y-auto">
+              {/* Style Selector Pills */}
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm flex items-center justify-center z-50"
+                initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 20, scale: 0.9 }}
+                transition={{ duration: 0.3, delay: 0.05 }}
+                className="flex items-center gap-2 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl rounded-full p-1.5 shadow-2xl shadow-black/20"
               >
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-12 h-12 rounded-full border-4 border-koru-purple/20 border-t-koru-purple animate-spin" />
-                  <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                    Generating image...
-                  </p>
-                </div>
+                {variants.map((v, index) => (
+                  <motion.button
+                    key={v}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 + index * 0.03 }}
+                    onClick={() => setSelectedVariant(v)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      selectedVariant === v
+                        ? "bg-koru-purple text-white shadow-lg shadow-koru-purple/30"
+                        : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    }`}
+                  >
+                    {variantLabels[v]}
+                  </motion.button>
+                ))}
               </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
 
-        {/* Footer tip */}
-        <div className="px-6 pb-6">
-          <div className="p-4 rounded-xl bg-gradient-to-r from-koru-purple/5 to-koru-golden/5 border border-koru-purple/10">
-            <p className="text-sm text-neutral-600 dark:text-neutral-400 text-center">
-              💡 <span className="font-medium">Pro tip:</span> Share your card
-              on X to earn bonus Koru points!
-            </p>
+              {/* Card Preview */}
+              <motion.div
+                initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 30, scale: 0.9 }}
+                transition={{ duration: 0.35, delay: 0.1 }}
+                className="relative"
+              >
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={selectedVariant}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    className="shadow-2xl shadow-black/30 rounded-3xl overflow-hidden"
+                  >
+                    {type === "profile" && userData && (
+                      <ProfileShareCard
+                        ref={cardRef}
+                        userData={userData}
+                        variant={
+                          selectedVariant as
+                            | "default"
+                            | "minimal"
+                            | "gradient"
+                            | "neon"
+                        }
+                      />
+                    )}
+                    {type === "appeal" && appeal && (
+                      <AppealShareCard
+                        ref={cardRef}
+                        appeal={appeal}
+                        variant={
+                          selectedVariant as
+                            | "default"
+                            | "compact"
+                            | "vibrant"
+                            | "dark"
+                        }
+                      />
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </motion.div>
+
+              {/* Action Buttons */}
+              <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 20, scale: 0.9 }}
+                transition={{ duration: 0.3, delay: 0.15 }}
+                className="flex items-center gap-3"
+              >
+                {actionButtons.map((button, index) => {
+                  const Icon =
+                    button.isActive && button.activeIcon
+                      ? button.activeIcon
+                      : button.icon;
+                  const label =
+                    button.isActive && button.activeLabel
+                      ? button.activeLabel
+                      : button.label;
+
+                  return (
+                    <motion.button
+                      key={button.id}
+                      initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      transition={{ delay: 0.2 + index * 0.05 }}
+                      onClick={button.onClick}
+                      disabled={isGenerating}
+                      className={`
+                        flex items-center gap-2 px-5 py-3 rounded-full font-medium
+                        shadow-xl shadow-black/10 transition-all
+                        disabled:opacity-50 disabled:cursor-not-allowed
+                        ${button.className}
+                        ${
+                          button.isActive
+                            ? "!bg-koru-lime/20 !text-koru-lime !border-koru-lime/30"
+                            : ""
+                        }
+                      `}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="text-sm">{label}</span>
+                    </motion.button>
+                  );
+                })}
+              </motion.div>
+
+              {/* Close Button */}
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ delay: 0.3 }}
+                onClick={() => onOpenChange(false)}
+                className="w-12 h-12 rounded-full bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl shadow-xl shadow-black/10 flex items-center justify-center text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
+              >
+                <CloseIcon className="w-5 h-5" />
+              </motion.button>
+
+              {/* Loading Indicator */}
+              <AnimatePresence>
+                {isGenerating && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                  >
+                    <div className="bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl rounded-2xl px-6 py-4 shadow-2xl flex items-center gap-3">
+                      <div className="w-6 h-6 rounded-full border-2 border-koru-purple/20 border-t-koru-purple animate-spin" />
+                      <span className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                        Generating...
+                      </span>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </>
+      )}
+    </AnimatePresence>
   );
 }
 

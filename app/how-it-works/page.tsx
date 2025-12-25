@@ -169,7 +169,7 @@ export default function HowItWorksPage() {
           >
             <h1
               className={cn(
-                "text-5xl md:text-6xl lg:text-7xl font-tenor mb-6 leading-tight",
+                "text-5xl md:text-6xl lg:text-7xl  mb-6 leading-tight",
                 isDark ? "text-white" : "text-neutral-900"
               )}
             >
@@ -188,7 +188,7 @@ export default function HowItWorksPage() {
 
             <p
               className={cn(
-                "text-xl md:text-2xl font-quicksand max-w-2xl mx-auto leading-relaxed",
+                "text-xl md:text-2xl  max-w-2xl mx-auto leading-relaxed",
                 isDark ? "text-neutral-400" : "text-neutral-600"
               )}
             >
@@ -235,7 +235,7 @@ export default function HowItWorksPage() {
                       key={persona.id}
                       onClick={() => setActivePersona(persona.id)}
                       className={cn(
-                        "relative flex items-center gap-3 px-6 sm:px-8 py-4 rounded-xl font-quicksand transition-all duration-300",
+                        "relative flex items-center gap-3 px-6 sm:px-8 py-4 rounded-xl  transition-all duration-300",
                         isActive
                           ? "text-white"
                           : isDark
@@ -421,7 +421,7 @@ export default function HowItWorksPage() {
                             {/* Step number */}
                             <motion.div
                               className={cn(
-                                "relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center text-xl sm:text-2xl font-tenor font-bold flex-shrink-0",
+                                "relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center text-xl sm:text-2xl  font-bold flex-shrink-0",
                                 colors.bg,
                                 item.color === "lime"
                                   ? "text-neutral-900"
@@ -463,7 +463,7 @@ export default function HowItWorksPage() {
                             <div className="flex-1 min-w-0">
                               <h3
                                 className={cn(
-                                  "text-xl sm:text-2xl font-tenor mb-1",
+                                  "text-xl sm:text-2xl  mb-1",
                                   isDark ? "text-white" : "text-neutral-900"
                                 )}
                               >
@@ -472,7 +472,7 @@ export default function HowItWorksPage() {
 
                               <p
                                 className={cn(
-                                  "text-sm font-quicksand font-semibold mb-3",
+                                  "text-sm  font-semibold mb-3",
                                   colors.text
                                 )}
                               >
@@ -481,7 +481,7 @@ export default function HowItWorksPage() {
 
                               <p
                                 className={cn(
-                                  "font-quicksand leading-relaxed text-sm sm:text-base",
+                                  " leading-relaxed text-sm sm:text-base",
                                   isDark
                                     ? "text-neutral-400"
                                     : "text-neutral-600"
@@ -511,7 +511,7 @@ export default function HowItWorksPage() {
             <div className="text-center mb-12">
               <h2
                 className={cn(
-                  "text-3xl md:text-4xl font-tenor mb-4",
+                  "text-3xl md:text-4xl  mb-4",
                   isDark ? "text-white" : "text-neutral-900"
                 )}
               >
@@ -519,7 +519,7 @@ export default function HowItWorksPage() {
               </h2>
               <p
                 className={cn(
-                  "font-quicksand text-lg max-w-xl mx-auto",
+                  " text-lg max-w-xl mx-auto",
                   isDark ? "text-neutral-400" : "text-neutral-600"
                 )}
               >
@@ -556,7 +556,7 @@ export default function HowItWorksPage() {
                     <div>
                       <h3
                         className={cn(
-                          "text-lg font-tenor mb-2",
+                          "text-lg  mb-2",
                           isDark ? "text-white" : "text-neutral-900"
                         )}
                       >
@@ -564,7 +564,7 @@ export default function HowItWorksPage() {
                       </h3>
                       <p
                         className={cn(
-                          "font-quicksand",
+                          "",
                           isDark ? "text-neutral-400" : "text-neutral-600"
                         )}
                       >
@@ -614,7 +614,7 @@ export default function HowItWorksPage() {
                     />
                     <h2
                       className={cn(
-                        "text-2xl md:text-3xl font-tenor",
+                        "text-2xl md:text-3xl ",
                         isDark ? "text-white" : "text-neutral-900"
                       )}
                     >
@@ -624,7 +624,7 @@ export default function HowItWorksPage() {
 
                   <p
                     className={cn(
-                      "font-quicksand mb-6 leading-relaxed",
+                      " mb-6 leading-relaxed",
                       isDark ? "text-neutral-400" : "text-neutral-600"
                     )}
                   >
@@ -634,7 +634,7 @@ export default function HowItWorksPage() {
 
                   <div
                     className={cn(
-                      "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-quicksand",
+                      "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm ",
                       isDark
                         ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
                         : "bg-amber-50 text-amber-700 border border-amber-200"
@@ -655,7 +655,7 @@ export default function HowItWorksPage() {
                     <div>
                       <p
                         className={cn(
-                          "text-xs font-quicksand uppercase tracking-wider mb-1",
+                          "text-xs  uppercase tracking-wider mb-1",
                           "text-neutral-500"
                         )}
                       >
@@ -673,7 +673,7 @@ export default function HowItWorksPage() {
                     <div>
                       <p
                         className={cn(
-                          "text-xs font-quicksand uppercase tracking-wider mb-1",
+                          "text-xs  uppercase tracking-wider mb-1",
                           "text-neutral-500"
                         )}
                       >
@@ -694,7 +694,7 @@ export default function HowItWorksPage() {
                     <button
                       disabled
                       className={cn(
-                        "flex-1 py-3 px-4 rounded-xl text-sm font-quicksand font-medium cursor-not-allowed opacity-50",
+                        "flex-1 py-3 px-4 rounded-xl text-sm  font-medium cursor-not-allowed opacity-50",
                         isDark
                           ? "bg-neutral-700 text-neutral-400"
                           : "bg-neutral-200 text-neutral-500"
@@ -705,7 +705,7 @@ export default function HowItWorksPage() {
                     <button
                       disabled
                       className={cn(
-                        "flex-1 py-3 px-4 rounded-xl text-sm font-quicksand font-medium cursor-not-allowed opacity-50",
+                        "flex-1 py-3 px-4 rounded-xl text-sm  font-medium cursor-not-allowed opacity-50",
                         isDark
                           ? "bg-neutral-700 text-neutral-400"
                           : "bg-neutral-200 text-neutral-500"
@@ -738,7 +738,7 @@ export default function HowItWorksPage() {
             >
               <h2
                 className={cn(
-                  "text-3xl md:text-4xl font-tenor mb-4",
+                  "text-3xl md:text-4xl  mb-4",
                   isDark ? "text-white" : "text-neutral-900"
                 )}
               >
@@ -746,7 +746,7 @@ export default function HowItWorksPage() {
               </h2>
               <p
                 className={cn(
-                  "font-quicksand text-lg mb-8 max-w-lg mx-auto",
+                  " text-lg mb-8 max-w-lg mx-auto",
                   isDark ? "text-neutral-400" : "text-neutral-600"
                 )}
               >
@@ -756,7 +756,7 @@ export default function HowItWorksPage() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <motion.a
                   href="/discover"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-koru-purple text-white font-quicksand font-medium shadow-lg shadow-koru-purple/25"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-koru-purple text-white  font-medium shadow-lg shadow-koru-purple/25"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -766,7 +766,7 @@ export default function HowItWorksPage() {
                 <motion.a
                   href="/appeals"
                   className={cn(
-                    "inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-quicksand font-medium",
+                    "inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl  font-medium",
                     isDark
                       ? "bg-neutral-800 text-white border border-neutral-700"
                       : "bg-white text-neutral-900 border border-neutral-200"

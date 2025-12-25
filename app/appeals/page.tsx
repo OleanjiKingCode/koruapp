@@ -114,17 +114,17 @@ export default function AppealsPage() {
 
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle className="font-tenor text-xl">
+                <DialogTitle className=" text-xl">
                   Create New Appeal
                 </DialogTitle>
-                <DialogDescription className="font-quicksand">
+                <DialogDescription>
                   Rally others to get someone&apos;s attention
                 </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-5 mt-4">
                 <div>
-                  <label className="text-sm font-quicksand font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
                     Who do you want to reach?
                   </label>
                   <div className="relative">
@@ -139,19 +139,19 @@ export default function AppealsPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-quicksand font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                  <label className="text-sm  font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
                     What do you want?
                   </label>
                   <textarea
                     value={requestText}
                     onChange={(e) => setRequestText(e.target.value)}
                     placeholder="e.g., Host an AMA, Advice on starting a company..."
-                    className="w-full h-24 px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 font-quicksand text-sm resize-none focus:outline-none focus:ring-2 focus:ring-koru-purple/50 focus:border-koru-purple"
+                    className="w-full h-24 px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100  text-sm resize-none focus:outline-none focus:ring-2 focus:ring-koru-purple/50 focus:border-koru-purple"
                   />
                 </div>
 
                 <div>
-                  <label className="text-sm font-quicksand font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                  <label className="text-sm  font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
                     Your pledge (USDC)
                   </label>
                   <div className="relative">
@@ -167,7 +167,7 @@ export default function AppealsPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-quicksand font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                  <label className="text-sm  font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
                     Category
                   </label>
                   <Select
@@ -212,7 +212,7 @@ export default function AppealsPage() {
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-sm font-quicksand font-medium transition-all",
+                  "px-3 py-1.5 rounded-lg text-sm  font-medium transition-all",
                   selectedCategory === cat
                     ? "bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm"
                     : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
@@ -230,7 +230,7 @@ export default function AppealsPage() {
                 key={time}
                 onClick={() => setSelectedTime(time)}
                 className={cn(
-                  "px-3 py-1.5 text-sm font-quicksand font-medium transition-all",
+                  "px-3 py-1.5 text-sm  font-medium transition-all",
                   selectedTime === time
                     ? "text-koru-purple"
                     : "text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
@@ -394,7 +394,7 @@ function TreemapView({
                   )}
                   <span
                     className={cn(
-                      "font-quicksand font-bold text-white uppercase tracking-wide truncate",
+                      " font-bold text-white uppercase tracking-wide truncate",
                       isLarge
                         ? "text-sm sm:text-base"
                         : isMedium
@@ -424,7 +424,7 @@ function TreemapView({
               <div className="mt-auto">
                 <p
                   className={cn(
-                    "font-quicksand font-bold text-white leading-tight",
+                    " font-bold text-white leading-tight",
                     isLarge
                       ? "text-base sm:text-xl"
                       : isMedium
@@ -437,7 +437,7 @@ function TreemapView({
                   {rect.percentage.toFixed(2)}%
                 </p>
                 {(isLarge || isMedium) && (
-                  <p className="text-[10px] sm:text-xs text-white/70 font-quicksand">
+                  <p className="text-[10px] sm:text-xs text-white/70 ">
                     ${(appeal.totalPledged / 1000).toFixed(0)}K
                   </p>
                 )}
@@ -447,10 +447,10 @@ function TreemapView({
             {/* Hover overlay */}
             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
               <div className="text-center text-white">
-                <p className="font-tenor text-sm sm:text-base mb-0.5 truncate">
+                <p className=" text-sm sm:text-base mb-0.5 truncate">
                   {appeal.targetName}
                 </p>
-                <p className="text-xs text-white/80 font-quicksand line-clamp-2">
+                <p className="text-xs text-white/80  line-clamp-2">
                   {appeal.request}
                 </p>
                 <p className="text-[10px] text-white/60 mt-1">
@@ -461,7 +461,7 @@ function TreemapView({
                     e.stopPropagation();
                     onShare(appeal);
                   }}
-                  className="mt-2 px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-quicksand font-medium transition-colors flex items-center gap-1 mx-auto"
+                  className="mt-2 px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs  font-medium transition-colors flex items-center gap-1 mx-auto"
                 >
                   <ShareIcon className="w-3 h-3" />
                   Share
@@ -513,9 +513,7 @@ function ListView({
                   )}
                 />
               ) : (
-                <span className="text-sm font-tenor text-neutral-400">
-                  #{index + 1}
-                </span>
+                <span className="text-sm  text-neutral-400">#{index + 1}</span>
               )}
             </div>
 
@@ -525,7 +523,7 @@ function ListView({
             {/* Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-quicksand font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+                <h3 className=" font-semibold text-neutral-900 dark:text-neutral-100 truncate">
                   {appeal.targetName}
                 </h3>
                 <Badge variant="outline" className="shrink-0 text-xs">
@@ -540,7 +538,7 @@ function ListView({
             {/* Stats */}
             <div className="flex items-center gap-4 shrink-0">
               <div className="text-right">
-                <p className="text-lg font-tenor text-koru-golden">
+                <p className="text-lg  text-koru-golden">
                   ${(appeal.totalPledged / 1000).toFixed(1)}K
                 </p>
                 <p className="text-xs text-neutral-500">
@@ -549,7 +547,7 @@ function ListView({
               </div>
               <div
                 className={cn(
-                  "flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-quicksand",
+                  "flex items-center gap-1 px-2 py-1 rounded-lg text-sm ",
                   appeal.trend === "up"
                     ? "bg-emerald-500/10 text-emerald-500"
                     : "bg-rose-500/10 text-rose-500"

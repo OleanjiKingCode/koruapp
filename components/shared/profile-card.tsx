@@ -78,7 +78,7 @@ export function ProfileCard({
               />
             ) : (
               <div className="w-14 h-14 rounded-full bg-gradient-to-br from-koru-purple/20 to-koru-golden/20 flex items-center justify-center border-2 border-koru-purple/30">
-                <span className="text-lg font-tenor font-medium text-koru-purple">
+                <span className="text-lg   font-medium text-koru-purple">
                   {displayInitials}
                 </span>
               </div>
@@ -87,10 +87,10 @@ export function ProfileCard({
 
           {/* Name & Handle */}
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-quicksand font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+            <h3 className="text-lg  font-semibold text-neutral-900 dark:text-neutral-100 truncate">
               {name}
             </h3>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 font-quicksand truncate">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400  truncate">
               @{handle}
             </p>
           </div>
@@ -109,7 +109,7 @@ export function ProfileCard({
 
         {/* Bio */}
         {bio && (
-          <p className="text-sm text-neutral-600 dark:text-neutral-400 font-quicksand line-clamp-2">
+          <p className="text-sm text-neutral-600 dark:text-neutral-400  line-clamp-2">
             {bio}
           </p>
         )}
@@ -206,4 +206,3 @@ function ArrowRightIcon({ className }: { className?: string }) {
 }
 
 export { ProfileCardSkeleton };
-

@@ -94,4 +94,3 @@ export function useScrollPosition(
 
   return scrollPosition;
 }
-

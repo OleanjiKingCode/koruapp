@@ -2,6 +2,7 @@
 export const NAV_ITEMS = [
   { name: "Home", href: "/", iconName: "home" },
   { name: "Discover", href: "/discover", iconName: "discover" },
+  { name: "Chats", href: "/chats", iconName: "chats" },
   { name: "Appeals", href: "/appeals", iconName: "appeals" },
   { name: "Profile", href: "/profile", iconName: "profile" },
 ] as const;
@@ -20,4 +21,3 @@ export const LANGUAGE_OPTIONS = [
 export type NavItem = (typeof NAV_ITEMS)[number];
 export type FontOption = (typeof FONT_OPTIONS)[number];
 export type LanguageOption = (typeof LANGUAGE_OPTIONS)[number];
-

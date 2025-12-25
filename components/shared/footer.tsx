@@ -181,7 +181,7 @@ export function Footer() {
                   <div className="md:max-w-xs">
                     <h2
                       className={cn(
-                        "text-2xl font-tenor mb-2",
+                        "text-2xl   mb-2",
                         isDark ? "text-white" : "text-neutral-900"
                       )}
                     >
@@ -189,7 +189,7 @@ export function Footer() {
                     </h2>
                     <p
                       className={cn(
-                        "text-sm font-quicksand italic",
+                        "text-sm   italic",
                         isDark ? "text-neutral-400" : "text-neutral-600"
                       )}
                     >
@@ -202,7 +202,7 @@ export function Footer() {
                     <div>
                       <h3
                         className={cn(
-                          "text-sm font-quicksand font-semibold mb-3",
+                          "text-sm   font-semibold mb-3",
                           isDark ? "text-white" : "text-neutral-900"
                         )}
                       >
@@ -214,7 +214,7 @@ export function Footer() {
                             <Link
                               href={link.href}
                               className={cn(
-                                "text-sm font-quicksand transition-colors",
+                                "text-sm   transition-colors",
                                 isDark
                                   ? "text-neutral-400 hover:text-white"
                                   : "text-neutral-600 hover:text-neutral-900"
@@ -229,7 +229,7 @@ export function Footer() {
                     <div>
                       <h3
                         className={cn(
-                          "text-sm font-quicksand font-semibold mb-3",
+                          "text-sm   font-semibold mb-3",
                           isDark ? "text-white" : "text-neutral-900"
                         )}
                       >
@@ -241,7 +241,7 @@ export function Footer() {
                             <Link
                               href={link.href}
                               className={cn(
-                                "text-sm font-quicksand transition-colors",
+                                "text-sm   transition-colors",
                                 isDark
                                   ? "text-neutral-400 hover:text-white"
                                   : "text-neutral-600 hover:text-neutral-900"
@@ -256,7 +256,7 @@ export function Footer() {
                     <div>
                       <h3
                         className={cn(
-                          "text-sm font-quicksand font-semibold mb-3",
+                          "text-sm   font-semibold mb-3",
                           isDark ? "text-white" : "text-neutral-900"
                         )}
                       >
@@ -268,7 +268,7 @@ export function Footer() {
                             <Link
                               href={link.href}
                               className={cn(
-                                "text-sm font-quicksand transition-colors",
+                                "text-sm   transition-colors",
                                 isDark
                                   ? "text-neutral-400 hover:text-white"
                                   : "text-neutral-600 hover:text-neutral-900"
@@ -296,7 +296,7 @@ export function Footer() {
                   {/* Copyright */}
                   <p
                     className={cn(
-                      "text-sm font-quicksand",
+                      "text-sm  ",
                       isDark ? "text-neutral-500" : "text-neutral-500"
                     )}
                   >

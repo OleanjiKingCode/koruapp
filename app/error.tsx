@@ -95,7 +95,7 @@ export default function Error({ error, reset }: ErrorProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="text-neutral-600 dark:text-neutral-400 font-quicksand mb-8"
+          className="text-neutral-600 dark:text-neutral-400 mb-8"
         >
           Don't worry, it happens to the best of us. Let's try that again.
         </motion.p>

@@ -43,13 +43,13 @@ export function EmptyState({
       </motion.div>
 
       {/* Title */}
-      <h3 className="text-xl font-quicksand font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
+      <h3 className="text-xl   font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
         {title}
       </h3>
 
       {/* Description */}
       {description && (
-        <p className="text-neutral-600 dark:text-neutral-400 font-quicksand max-w-sm">
+        <p className="text-neutral-600 dark:text-neutral-400   max-w-sm">
           {description}
         </p>
       )}
