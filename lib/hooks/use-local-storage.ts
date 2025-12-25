@@ -102,8 +102,7 @@ export interface AvailabilitySlot {
   duration: number;
   times: string[];
   price: number;
-  startDate: string;
-  endDate: string;
+  selectedDates: string[]; // Array of ISO date strings
 }
 
 export interface AvailabilityData {
@@ -111,19 +110,19 @@ export interface AvailabilityData {
   slots: AvailabilitySlot[];
 }
 
-function getDefaultDateRange() {
+function getDefaultSelectedDates(): string[] {
+  const dates: string[] = [];
   const today = new Date();
-  const start = new Date(today);
-  start.setDate(start.getDate() + 1);
-  const end = new Date(today);
-  end.setDate(end.getDate() + 28);
-  return {
-    startDate: start.toISOString().split("T")[0],
-    endDate: end.toISOString().split("T")[0],
-  };
+  // Generate next 14 days by default
+  for (let i = 1; i <= 14; i++) {
+    const nextDay = new Date(today);
+    nextDay.setDate(today.getDate() + i);
+    dates.push(nextDay.toISOString().split("T")[0]);
+  }
+  return dates;
 }
 
-const defaultDates = getDefaultDateRange();
+const defaultSelectedDates = getDefaultSelectedDates();
 
 const DEFAULT_AVAILABILITY: AvailabilityData = {
   timezone: "America/New_York",
@@ -134,8 +133,7 @@ const DEFAULT_AVAILABILITY: AvailabilityData = {
       duration: 30,
       times: [],
       price: 50,
-      startDate: defaultDates.startDate,
-      endDate: defaultDates.endDate,
+      selectedDates: defaultSelectedDates,
     },
     {
       id: 2,
@@ -143,8 +141,7 @@ const DEFAULT_AVAILABILITY: AvailabilityData = {
       duration: 30,
       times: [],
       price: 50,
-      startDate: defaultDates.startDate,
-      endDate: defaultDates.endDate,
+      selectedDates: defaultSelectedDates,
     },
     {
       id: 3,
@@ -152,8 +149,7 @@ const DEFAULT_AVAILABILITY: AvailabilityData = {
       duration: 30,
       times: [],
       price: 50,
-      startDate: defaultDates.startDate,
-      endDate: defaultDates.endDate,
+      selectedDates: defaultSelectedDates,
     },
   ],
 };
