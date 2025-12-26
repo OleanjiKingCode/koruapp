@@ -252,3 +252,14 @@ body.font-lemon *:not(.font-quicksand):not(.font-tenor):not(.font-lemon) {
     @apply bg-background text-foreground;
   }
 }
+
+/* Utility to hide scrollbar */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

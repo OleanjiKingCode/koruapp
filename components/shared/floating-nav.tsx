@@ -86,17 +86,17 @@ export function FloatingNav() {
             <motion.div
               layout
               className={cn(
-                "flex items-center gap-2 p-2 rounded-2xl",
+                "flex items-center gap-1 sm:gap-2 p-1.5 sm:p-2 rounded-2xl",
                 "shadow-2xl",
                 isDark
                   ? "bg-neutral-900 border border-neutral-800 shadow-black/40"
                   : "bg-white border border-neutral-200 shadow-black/10"
               )}
             >
-              {/* Kōru Logo */}
+              {/* Kōru Logo - Hidden on mobile */}
               <div
                 className={cn(
-                  "flex items-center justify-center px-4 py-2 rounded-xl text-lg font-bold",
+                  "hidden sm:flex items-center justify-center px-4 py-2 rounded-xl text-lg font-bold",
                   isDark
                     ? "bg-neutral-800 text-white"
                     : "bg-neutral-100 text-neutral-900"
@@ -119,7 +119,7 @@ export function FloatingNav() {
                       onMouseLeave={() => setHoveredItem(null)}
                       whileTap={{ scale: 0.98 }}
                       className={cn(
-                        "flex items-center gap-2 px-5 py-3 rounded-xl text-sm   font-medium transition-all cursor-pointer overflow-hidden",
+                        "flex items-center justify-center gap-2 p-3 sm:px-5 sm:py-3 rounded-xl text-sm font-medium transition-all cursor-pointer overflow-hidden",
                         isActive
                           ? isDark
                             ? "bg-neutral-800 text-white border border-neutral-700"
@@ -129,6 +129,12 @@ export function FloatingNav() {
                           : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
                       )}
                     >
+                      {/* Mobile: Always show icon */}
+                      <span className="sm:hidden">
+                        <Icon className="w-5 h-5" />
+                      </span>
+                      
+                      {/* Desktop: Show icon on hover/active */}
                       <AnimatePresence mode="popLayout">
                         {(isHovered || isActive) && (
                           <motion.span
@@ -136,13 +142,14 @@ export function FloatingNav() {
                             animate={{ width: "auto", opacity: 1 }}
                             exit={{ width: 0, opacity: 0 }}
                             transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
+                            className="hidden sm:block overflow-hidden"
                           >
                             <Icon className="w-4 h-4" />
                           </motion.span>
                         )}
                       </AnimatePresence>
-                      <span>{item.name}</span>
+                      {/* Desktop: Show text */}
+                      <span className="hidden sm:inline">{item.name}</span>
                     </motion.button>
                   </Link>
                 );
@@ -160,7 +167,7 @@ export function FloatingNav() {
                     : "bg-koru-purple/80 text-white hover:bg-koru-purple"
                 )}
               >
-                <SettingsIcon className="w-4 h-4" />
+                <SettingsIcon className="w-4 h-4 sm:w-4 sm:h-4" />
               </motion.button>
             </motion.div>
           </motion.nav>
@@ -186,7 +193,7 @@ export function FloatingNav() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.95 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 w-80"
+              className="fixed bottom-20 sm:bottom-28 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] sm:w-80 max-w-80"
             >
               <div
                 className={cn(

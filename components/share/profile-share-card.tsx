@@ -331,8 +331,10 @@ export const ProfileShareCard = forwardRef<
   if (variant === "ticket") {
     // Generate a ticket number from address
     const ticketNum = userData.address.slice(2, 8).toUpperCase();
-    const seatCode = `${String.fromCharCode(65 + (parseInt(userData.address.slice(8, 10), 16) % 6))}${(parseInt(userData.address.slice(10, 12), 16) % 40) + 1}`;
-    
+    const seatCode = `${String.fromCharCode(
+      65 + (parseInt(userData.address.slice(8, 10), 16) % 6)
+    )}${(parseInt(userData.address.slice(10, 12), 16) % 40) + 1}`;
+
     return (
       <div
         ref={ref}
@@ -363,15 +365,17 @@ export const ProfileShareCard = forwardRef<
                   <p className="text-3xl font-black text-neutral-800 tracking-tight">
                     {userData.shortAddress.slice(0, 4).toUpperCase()}
                   </p>
-                  <p className="text-xs text-neutral-500 font-medium">
-                    Origin
-                  </p>
+                  <p className="text-xs text-neutral-500 font-medium">Origin</p>
                 </div>
-                
+
                 <div className="flex items-center gap-2 px-4">
                   <div className="w-8 h-px bg-gradient-to-r from-neutral-300 to-transparent" />
-                  <svg className="w-5 h-5 text-[#c385ee]" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+                  <svg
+                    className="w-5 h-5 text-[#c385ee]"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
                   </svg>
                   <div className="w-8 h-px bg-gradient-to-l from-neutral-300 to-transparent" />
                 </div>
@@ -390,20 +394,36 @@ export const ProfileShareCard = forwardRef<
               <div className="flex-1 flex items-center">
                 <div className="w-full grid grid-cols-4 gap-3 bg-white/60 rounded-xl p-4 border border-neutral-200/50">
                   <div>
-                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-medium">Level</p>
-                    <p className="text-lg font-bold text-[#c385ee]">{userData.level}</p>
+                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-medium">
+                      Level
+                    </p>
+                    <p className="text-lg font-bold text-[#c385ee]">
+                      {userData.level}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-medium">Points</p>
-                    <p className="text-lg font-bold text-neutral-800">{userData.points.toLocaleString()}</p>
+                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-medium">
+                      Points
+                    </p>
+                    <p className="text-lg font-bold text-neutral-800">
+                      {userData.points.toLocaleString()}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-medium">Seat</p>
-                    <p className="text-lg font-bold text-neutral-800">{seatCode}</p>
+                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-medium">
+                      Seat
+                    </p>
+                    <p className="text-lg font-bold text-neutral-800">
+                      {seatCode}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-medium">Ticket No.</p>
-                    <p className="text-lg font-bold text-[#9deb61]">{ticketNum}</p>
+                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-medium">
+                      Ticket No.
+                    </p>
+                    <p className="text-lg font-bold text-[#9deb61]">
+                      {ticketNum}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -414,10 +434,14 @@ export const ProfileShareCard = forwardRef<
                   <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#c385ee] to-[#9deb61] flex items-center justify-center">
                     <span className="text-white text-[10px] font-bold">K</span>
                   </div>
-                  <span className="text-neutral-600 text-xs font-semibold">koruapp.xyz</span>
+                  <span className="text-neutral-600 text-xs font-semibold">
+                    koruapp.xyz
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-neutral-400 text-xs">@{userData.username}</span>
+                  <span className="text-neutral-400 text-xs">
+                    @{userData.username}
+                  </span>
                   <div className="w-4 h-4 rounded-full bg-[#c385ee] flex items-center justify-center">
                     <CheckIcon className="w-2.5 h-2.5 text-white" />
                   </div>
@@ -469,7 +493,10 @@ export const ProfileShareCard = forwardRef<
                       key={i}
                       className="bg-white"
                       style={{
-                        width: (parseInt(userData.address[i + 2] || '5', 16) % 2) + 1 + "px",
+                        width:
+                          (parseInt(userData.address[i + 2] || "5", 16) % 2) +
+                          1 +
+                          "px",
                         height: "32px",
                         opacity: 0.9,
                       }}

@@ -85,28 +85,33 @@ export function FilterBar({
       {/* Filters Row */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         {/* Category Pills */}
-        <div className="flex-1 overflow-x-auto pb-2 sm:pb-0">
-          <div className="flex items-center gap-2">
-            {categories.map((category) => {
-              const isSelected = selectedCategory === category || (category === "All" && !selectedCategory);
-              return (
-                <motion.button
-                  key={category}
-                  onClick={() => onCategoryChange?.(category === "All" ? null : category)}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={cn(
-                    "px-4 py-2 rounded-full text-sm   font-medium whitespace-nowrap transition-all",
-                    isSelected
-                      ? "bg-koru-purple text-white shadow-md shadow-koru-purple/25"
-                      : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"
-                  )}
-                >
-                  {category}
-                </motion.button>
-              );
-            })}
+        <div className="flex-1 relative">
+          {/* Scrollable container with hidden scrollbar */}
+          <div className="overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
+            <div className="flex items-center gap-2 pr-8 sm:pr-0">
+              {categories.map((category) => {
+                const isSelected = selectedCategory === category || (category === "All" && !selectedCategory);
+                return (
+                  <motion.button
+                    key={category}
+                    onClick={() => onCategoryChange?.(category === "All" ? null : category)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={cn(
+                      "px-4 py-2 rounded-full text-sm   font-medium whitespace-nowrap transition-all",
+                      isSelected
+                        ? "bg-koru-purple text-white shadow-md shadow-koru-purple/25"
+                        : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                    )}
+                  >
+                    {category}
+                  </motion.button>
+                );
+              })}
+            </div>
           </div>
+          {/* Fade overlay on right to indicate more content */}
+          <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white dark:from-neutral-950 to-transparent pointer-events-none sm:hidden" />
         </div>
 
         {/* Sort & View Controls */}

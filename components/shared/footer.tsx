@@ -71,8 +71,12 @@ export function Footer() {
     const scrolledPercentage =
       scrollableHeight > 0 ? (scrollTop / scrollableHeight) * 100 : 100;
 
-    // Show footer only when scrolled past 90% OR when page is not scrollable at all
-    const nearBottom = scrolledPercentage >= 90;
+    // On mobile, be even more strict - only show when at 95%+ or at actual bottom
+    const isMobile = windowHeight < 768;
+    const threshold = isMobile ? 95 : 90;
+    
+    // Show footer only when scrolled past threshold OR when page is not scrollable at all
+    const nearBottom = scrolledPercentage >= threshold;
     const cannotScroll = scrollableHeight <= 50; // Page is basically viewport height
 
     setIsVisible(nearBottom || cannotScroll);
