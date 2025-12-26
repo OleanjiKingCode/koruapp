@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "next-themes";
+import { SiFarcaster } from "react-icons/si";
 import {
   PageHeader,
   StatCard,
@@ -146,15 +147,6 @@ function XIcon({ className }: { className?: string }) {
   );
 }
 
-// Farcaster Icon
-function FarcasterIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M3 4h18v16H3V4zm2 2v12h14V6H5zm2 2h10v2H7V8zm0 4h10v2H7v-2z" />
-    </svg>
-  );
-}
-
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("chats");
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -200,163 +192,162 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen pb-[500px] sm:pb-96">
-
       <main className="max-w-container mx-auto px-4 sm:px-6 py-8">
         {/* Profile Header Card */}
         {isLoading ? (
           <ProfileHeaderSkeleton className="mb-8" />
         ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 overflow-hidden mb-8 shadow-soft"
-        >
-          {/* Banner */}
-          <div className="h-32 bg-gradient-to-r from-koru-purple via-koru-golden/50 to-koru-lime/30 relative overflow-hidden">
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzMiAyIDIgNC0yIDQtMiA0LTItMi0yLTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 overflow-hidden mb-8 shadow-soft"
+          >
+            {/* Banner */}
+            <div className="h-32 bg-gradient-to-r from-koru-purple via-koru-golden/50 to-koru-lime/30 relative overflow-hidden">
+              <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzMiAyIDIgNC0yIDQtMiA0LTItMi0yLTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
 
-            {/* Kaya Sideways - Background Decoration in Banner Only */}
-            <div className="absolute -right-24 -top-16 pointer-events-none select-none">
-              <Image
-                src="/kayaSideWays.png"
-                alt=""
-                width={350}
-                height={350}
-                className="object-contain opacity-20 -scale-x-100"
-                aria-hidden="true"
-              />
-            </div>
-          </div>
-
-          <div className="px-6 md:px-8 pb-6 -mt-16 relative">
-            <div className="flex flex-col md:flex-row md:items-end gap-4">
-              {/* Avatar */}
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="relative"
-              >
-                <div className="w-28 h-28 md:w-32 md:h-32 rounded-2xl border-4 border-white dark:border-neutral-900 shadow-xl overflow-hidden bg-white dark:bg-neutral-800">
-                  <AvatarGenerator seed={MOCK_USER_DATA.address} size={128} />
-                </div>
-                {/* Level Badge */}
-                <div className="absolute -bottom-2 -right-2 px-3 py-1 rounded-full bg-koru-golden text-neutral-900 text-xs   font-bold shadow-lg">
-                  {MOCK_USER_DATA.level}
-                </div>
-              </motion.div>
-
-              {/* Info */}
-              <div className="flex-1 pt-4 md:pt-0">
-                <div className="flex flex-wrap items-center gap-3 mb-1">
-                  <h1 className="text-2xl md:text-3xl   text-neutral-900 dark:text-neutral-100">
-                    {MOCK_USER_DATA.displayName}
-                  </h1>
-                  <Badge className="bg-koru-purple/20 text-koru-purple border-0">
-                    {MOCK_USER_DATA.points.toLocaleString()} pts
-                  </Badge>
-                </div>
-
-                {/* Username and address */}
-                <div className="flex flex-wrap items-center gap-2 mb-3">
-                  <span className="text-sm text-neutral-600 dark:text-neutral-300  ">
-                    @{MOCK_USER_DATA.username}
-                  </span>
-                  <span className="text-neutral-300 dark:text-neutral-600">
-                    •
-                  </span>
-                  <span className="text-sm text-neutral-500 dark:text-neutral-400 font-mono">
-                    {MOCK_USER_DATA.shortAddress}
-                  </span>
-                </div>
-
-                {/* Bio */}
-                {MOCK_USER_DATA.bio && (
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3 max-w-lg">
-                    {MOCK_USER_DATA.bio}
-                  </p>
-                )}
-
-                {/* Links row */}
-                <div className="flex flex-wrap items-center gap-4 mb-3">
-                  {MOCK_USER_DATA.website && (
-                    <a
-                      href={MOCK_USER_DATA.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-sm text-koru-purple hover:text-koru-purple/80 transition-colors group"
-                    >
-                      <GlobeIcon className="w-4 h-4" />
-                      <span className="group-hover:underline">
-                        {MOCK_USER_DATA.website.replace("https://", "")}
-                      </span>
-                    </a>
-                  )}
-                  {MOCK_USER_DATA.twitterHandle && (
-                    <a
-                      href={`https://x.com/${MOCK_USER_DATA.twitterHandle}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors group"
-                    >
-                      <XIcon className="w-4 h-4" />
-                      <span className="group-hover:underline">
-                        @{MOCK_USER_DATA.twitterHandle}
-                      </span>
-                    </a>
-                  )}
-                </div>
-
-                {/* Badges */}
-                <div className="flex flex-wrap gap-2">
-                  {MOCK_USER_DATA.badges.map((badge) => (
-                    <Badge
-                      key={badge}
-                      variant="outline"
-                      className={cn(
-                        "text-xs",
-                        badge === "Early Adopter" &&
-                          "border-koru-golden text-koru-golden bg-koru-golden/10",
-                        badge === "Power User" &&
-                          "border-koru-purple text-koru-purple bg-koru-purple/10",
-                        badge === "Verified" &&
-                          "border-koru-lime text-koru-lime bg-koru-lime/10"
-                      )}
-                    >
-                      {badge === "Verified" && (
-                        <CheckIcon className="w-3 h-3 mr-1" />
-                      )}
-                      {badge}
-                    </Badge>
-                  ))}
-                </div>
+              {/* Kaya Sideways - Background Decoration in Banner Only */}
+              <div className="absolute -right-24 -top-16 pointer-events-none select-none">
+                <Image
+                  src="/kayaSideWays.png"
+                  alt=""
+                  width={350}
+                  height={350}
+                  className="object-contain opacity-20 -scale-x-100"
+                  aria-hidden="true"
+                />
               </div>
+            </div>
 
-              {/* Actions */}
-              <div className="flex gap-2 pt-4 md:pt-0">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleShareProfile}
+            <div className="px-6 md:px-8 pb-6 -mt-16 relative">
+              <div className="flex flex-col md:flex-row md:items-end gap-4">
+                {/* Avatar */}
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="relative"
                 >
-                  <ShareIcon className="w-4 h-4 mr-2" />
-                  Share
-                </Button>
-                <Link href="/profile/edit">
-                  <Button size="sm">
-                    <EditIcon className="w-4 h-4 mr-2" />
-                    Edit Profile
-                  </Button>
-                </Link>
-              </div>
-            </div>
+                  <div className="w-28 h-28 md:w-32 md:h-32 rounded-2xl border-4 border-white dark:border-neutral-900 shadow-xl overflow-hidden bg-white dark:bg-neutral-800">
+                    <AvatarGenerator seed={MOCK_USER_DATA.address} size={128} />
+                  </div>
+                  {/* Level Badge */}
+                  <div className="absolute -bottom-2 -right-2 px-3 py-1 rounded-full bg-koru-golden text-neutral-900 text-xs   font-bold shadow-lg">
+                    {MOCK_USER_DATA.level}
+                  </div>
+                </motion.div>
 
-            {/* Member Since */}
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-4">
-              Member since {MOCK_USER_DATA.joinDate}
-            </p>
-          </div>
-        </motion.div>
+                {/* Info */}
+                <div className="flex-1 pt-4 md:pt-0">
+                  <div className="flex flex-wrap items-center gap-3 mb-1">
+                    <h1 className="text-2xl md:text-3xl   text-neutral-900 dark:text-neutral-100">
+                      {MOCK_USER_DATA.displayName}
+                    </h1>
+                    <Badge className="bg-koru-purple/20 text-koru-purple border-0">
+                      {MOCK_USER_DATA.points.toLocaleString()} pts
+                    </Badge>
+                  </div>
+
+                  {/* Username and address */}
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <span className="text-sm text-neutral-600 dark:text-neutral-300  ">
+                      @{MOCK_USER_DATA.username}
+                    </span>
+                    <span className="text-neutral-300 dark:text-neutral-600">
+                      •
+                    </span>
+                    <span className="text-sm text-neutral-500 dark:text-neutral-400 font-mono">
+                      {MOCK_USER_DATA.shortAddress}
+                    </span>
+                  </div>
+
+                  {/* Bio */}
+                  {MOCK_USER_DATA.bio && (
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3 max-w-lg">
+                      {MOCK_USER_DATA.bio}
+                    </p>
+                  )}
+
+                  {/* Links row */}
+                  <div className="flex flex-wrap items-center gap-4 mb-3">
+                    {MOCK_USER_DATA.website && (
+                      <a
+                        href={MOCK_USER_DATA.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-sm text-koru-purple hover:text-koru-purple/80 transition-colors group"
+                      >
+                        <GlobeIcon className="w-4 h-4" />
+                        <span className="group-hover:underline">
+                          {MOCK_USER_DATA.website.replace("https://", "")}
+                        </span>
+                      </a>
+                    )}
+                    {MOCK_USER_DATA.twitterHandle && (
+                      <a
+                        href={`https://x.com/${MOCK_USER_DATA.twitterHandle}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors group"
+                      >
+                        <XIcon className="w-4 h-4" />
+                        <span className="group-hover:underline">
+                          @{MOCK_USER_DATA.twitterHandle}
+                        </span>
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Badges */}
+                  <div className="flex flex-wrap gap-2">
+                    {MOCK_USER_DATA.badges.map((badge) => (
+                      <Badge
+                        key={badge}
+                        variant="outline"
+                        className={cn(
+                          "text-xs",
+                          badge === "Early Adopter" &&
+                            "border-koru-golden text-koru-golden bg-koru-golden/10",
+                          badge === "Power User" &&
+                            "border-koru-purple text-koru-purple bg-koru-purple/10",
+                          badge === "Verified" &&
+                            "border-koru-lime text-koru-lime bg-koru-lime/10"
+                        )}
+                      >
+                        {badge === "Verified" && (
+                          <CheckIcon className="w-3 h-3 mr-1" />
+                        )}
+                        {badge}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-4 md:pt-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleShareProfile}
+                  >
+                    <ShareIcon className="w-4 h-4 mr-2" />
+                    Share
+                  </Button>
+                  <Link href="/profile/edit">
+                    <Button size="sm">
+                      <EditIcon className="w-4 h-4 mr-2" />
+                      Edit Profile
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Member Since */}
+              <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-4">
+                Member since {MOCK_USER_DATA.joinDate}
+              </p>
+            </div>
+          </motion.div>
         )}
 
         {/* Connect Farcaster Card */}
@@ -372,14 +363,14 @@ export default function ProfilePage() {
               <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft overflow-hidden relative">
                 {/* Farcaster branding background */}
                 <div className="absolute -right-16 -top-16 w-48 h-48 bg-gradient-to-br from-purple-100 dark:from-purple-900/20 to-transparent rounded-full opacity-50" />
-                <div className="absolute -right-8 -top-8 w-32 h-32 flex items-center justify-center opacity-5">
-                  <FarcasterIcon className="w-24 h-24" />
+                <div className="absolute right-2 top-2 opacity-10">
+                  <SiFarcaster className="w-20 h-20 text-purple-600" />
                 </div>
 
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center shrink-0">
-                      <FarcasterIcon className="w-6 h-6 text-white" />
+                      <SiFarcaster className="w-6 h-6 text-white" />
                     </div>
                     <div>
                       <h3 className="  font-bold text-neutral-900 dark:text-neutral-100">
@@ -395,7 +386,7 @@ export default function ProfilePage() {
                     onClick={handleConnectFarcaster}
                     className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-xl   font-semibold group shrink-0"
                   >
-                    <FarcasterIcon className="w-4 h-4 mr-2" />
+                    <SiFarcaster className="w-4 h-4 mr-2" />
                     Connect Farcaster
                     <ChevronRightIcon className="w-4 h-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
                   </Button>
@@ -442,66 +433,66 @@ export default function ProfilePage() {
         {isLoading ? (
           <BalanceCardSkeleton className="mb-8" />
         ) : (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="mb-8"
-        >
-          <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="  text-lg text-neutral-900 dark:text-neutral-100">
-                💳 Balances
-              </h3>
-              <Button variant="outline" size="sm" className="text-xs">
-                Withdraw
-              </Button>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              {/* Wallet Balance */}
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-koru-purple/10 via-koru-purple/5 to-transparent border border-koru-purple/20 p-5">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-koru-purple/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-                <div className="relative">
-                  <div className="flex items-center gap-2 mb-2">
-                    <WalletIcon className="w-5 h-5 text-koru-purple" />
-                    <span className="text-sm text-neutral-500 dark:text-neutral-400  ">
-                      Wallet Balance
-                    </span>
-                  </div>
-                  <p className="text-3xl   text-neutral-900 dark:text-neutral-100">
-                    {MOCK_USER_DATA.walletBalance.onChain}
-                  </p>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-                    ≈ {MOCK_USER_DATA.walletBalance.onChainUSD}
-                  </p>
-                </div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="mb-8"
+          >
+            <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="  text-lg text-neutral-900 dark:text-neutral-100">
+                  💳 Balances
+                </h3>
+                <Button variant="outline" size="sm" className="text-xs">
+                  Withdraw
+                </Button>
               </div>
 
-              {/* In-App Balance */}
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-koru-golden/10 via-koru-golden/5 to-transparent border border-koru-golden/20 p-5">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-koru-golden/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-                <div className="relative">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CoinsIcon className="w-5 h-5 text-koru-golden" />
-                    <span className="text-sm text-neutral-500 dark:text-neutral-400  ">
-                      In-App Balance
-                    </span>
+              <div className="grid md:grid-cols-2 gap-4">
+                {/* Wallet Balance */}
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-koru-purple/10 via-koru-purple/5 to-transparent border border-koru-purple/20 p-5">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-koru-purple/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
+                  <div className="relative">
+                    <div className="flex items-center gap-2 mb-2">
+                      <WalletIcon className="w-5 h-5 text-koru-purple" />
+                      <span className="text-sm text-neutral-500 dark:text-neutral-400  ">
+                        Wallet Balance
+                      </span>
+                    </div>
+                    <p className="text-3xl   text-neutral-900 dark:text-neutral-100">
+                      {MOCK_USER_DATA.walletBalance.onChain}
+                    </p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                      ≈ {MOCK_USER_DATA.walletBalance.onChainUSD}
+                    </p>
                   </div>
-                  <p className="text-3xl   text-neutral-900 dark:text-neutral-100">
-                    {MOCK_USER_DATA.walletBalance.inApp}
-                  </p>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-                    ≈ {MOCK_USER_DATA.walletBalance.inAppUSD}
-                  </p>
-                  <p className="text-xs text-koru-golden mt-2  ">
-                    💰 Available to withdraw
-                  </p>
+                </div>
+
+                {/* In-App Balance */}
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-koru-golden/10 via-koru-golden/5 to-transparent border border-koru-golden/20 p-5">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-koru-golden/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
+                  <div className="relative">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CoinsIcon className="w-5 h-5 text-koru-golden" />
+                      <span className="text-sm text-neutral-500 dark:text-neutral-400  ">
+                        In-App Balance
+                      </span>
+                    </div>
+                    <p className="text-3xl   text-neutral-900 dark:text-neutral-100">
+                      {MOCK_USER_DATA.walletBalance.inApp}
+                    </p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                      ≈ {MOCK_USER_DATA.walletBalance.inAppUSD}
+                    </p>
+                    <p className="text-xs text-koru-golden mt-2  ">
+                      💰 Available to withdraw
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
         )}
 
         {/* Stats Grid */}
@@ -908,7 +899,6 @@ export default function ProfilePage() {
         initialData={availability}
         onSave={setAvailability}
       />
-
 
       {/* Share Modal */}
       <ShareModal
