@@ -278,11 +278,11 @@ export function FloatingNav() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.95 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="fixed bottom-20 sm:bottom-28 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] sm:w-80 max-w-80"
+              className="fixed bottom-20 sm:bottom-28 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-50 sm:w-80"
             >
               <div
                 className={cn(
-                  "p-5 rounded-2xl shadow-2xl",
+                  "p-4 sm:p-5 rounded-2xl shadow-2xl max-h-[70vh] overflow-y-auto",
                   isDark
                     ? "bg-neutral-900 border border-neutral-800 shadow-black/40"
                     : "bg-white border border-neutral-200 shadow-black/10"
@@ -290,7 +290,7 @@ export function FloatingNav() {
               >
                 <h3
                   className={cn(
-                    "text-lg mb-5",
+                    "text-base sm:text-lg mb-4",
                     isDark ? "text-white" : "text-neutral-900"
                   )}
                 >
@@ -298,10 +298,10 @@ export function FloatingNav() {
                 </h3>
 
                 {/* Theme Toggle */}
-                <div className="mb-5">
+                <div className="mb-4">
                   <label
                     className={cn(
-                      "text-sm   font-medium mb-2 block",
+                      "text-xs sm:text-sm font-medium mb-2 block",
                       isDark ? "text-neutral-400" : "text-neutral-600"
                     )}
                   >
@@ -311,7 +311,7 @@ export function FloatingNav() {
                     <button
                       onClick={() => setTheme("light")}
                       className={cn(
-                        "flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm   transition-all",
+                        "flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs sm:text-sm transition-all",
                         !isDark
                           ? "bg-koru-purple text-white"
                           : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
@@ -323,7 +323,7 @@ export function FloatingNav() {
                     <button
                       onClick={() => setTheme("dark")}
                       className={cn(
-                        "flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm   transition-all",
+                        "flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs sm:text-sm transition-all",
                         isDark
                           ? "bg-koru-purple text-white"
                           : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
@@ -336,22 +336,22 @@ export function FloatingNav() {
                 </div>
 
                 {/* Font Selector */}
-                <div className="mb-5">
+                <div className="mb-4">
                   <label
                     className={cn(
-                      "text-sm   font-medium mb-2 block",
+                      "text-xs sm:text-sm font-medium mb-2 block",
                       isDark ? "text-neutral-400" : "text-neutral-600"
                     )}
                   >
                     Font
                   </label>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     {FONT_OPTIONS.map((font) => (
                       <button
                         key={font.value}
                         onClick={() => handleFontChange(font.value)}
                         className={cn(
-                          "flex-1 py-3 px-3 rounded-xl text-sm transition-all",
+                          "flex-1 py-2.5 px-2 sm:px-3 rounded-xl text-xs sm:text-sm transition-all",
                           font.className,
                           selectedFont === font.value
                             ? "bg-koru-purple text-white"
@@ -367,22 +367,22 @@ export function FloatingNav() {
                 </div>
 
                 {/* Language Selector */}
-                <div className="mb-5">
+                <div className="mb-4">
                   <label
                     className={cn(
-                      "text-sm   font-medium mb-2 block",
+                      "text-xs sm:text-sm font-medium mb-2 block",
                       isDark ? "text-neutral-400" : "text-neutral-600"
                     )}
                   >
                     Language
                   </label>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     {LANGUAGE_OPTIONS.map((lang) => (
                       <button
                         key={lang.code}
                         onClick={() => setSelectedLang(lang.code)}
                         className={cn(
-                          "flex-1 py-3 px-4 rounded-xl text-sm   transition-all",
+                          "flex-1 py-2.5 px-2 sm:px-4 rounded-xl text-xs sm:text-sm transition-all",
                           selectedLang === lang.code
                             ? "bg-koru-golden text-neutral-900"
                             : isDark
@@ -397,23 +397,23 @@ export function FloatingNav() {
                 </div>
 
                 {/* Notifications Link */}
-                <div className="mb-5">
+                <div className="mb-4">
                   <Link
                     href="/notifications"
                     onClick={() => setIsSettingsOpen(false)}
                     className={cn(
-                      "flex items-center justify-between w-full py-3 px-4 rounded-xl text-sm transition-all",
+                      "flex items-center justify-between w-full py-2.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm transition-all",
                       isDark
                         ? "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
                         : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
                     )}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       <BellIcon className="w-4 h-4" />
                       <span>Notifications</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-koru-purple bg-koru-purple/10 px-2 py-0.5 rounded-full">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <span className="text-[10px] sm:text-xs font-medium text-koru-purple bg-koru-purple/10 px-1.5 sm:px-2 py-0.5 rounded-full">
                         3 new
                       </span>
                       <ChevronRightIcon className="w-4 h-4" />
@@ -424,7 +424,7 @@ export function FloatingNav() {
                 {/* Divider */}
                 <div
                   className={cn(
-                    "h-px mb-4",
+                    "h-px mb-3",
                     isDark ? "bg-neutral-800" : "bg-neutral-200"
                   )}
                 />
@@ -434,7 +434,7 @@ export function FloatingNav() {
                   href="/how-it-works"
                   onClick={() => setIsSettingsOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 py-3 px-4 rounded-xl text-sm transition-all w-full",
+                    "flex items-center gap-2 sm:gap-3 py-2.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm transition-all w-full",
                     isDark
                       ? "bg-neutral-800 text-neutral-300 hover:bg-neutral-700 hover:text-white"
                       : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-neutral-900"
