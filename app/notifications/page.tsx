@@ -3,8 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
-import { FloatingNav } from "@/components/shared";
-import { Footer } from "@/components/shared/footer";
 import { Button } from "@/components/ui/button";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { cn } from "@/lib/utils";
@@ -289,7 +287,6 @@ export default function NotificationsPage() {
 
   return (
     <div className="min-h-screen pb-[500px] sm:pb-96">
-      <FloatingNav />
 
       <main className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
         {/* Header */}
@@ -420,7 +417,6 @@ export default function NotificationsPage() {
         </AnimatePresence>
       </main>
 
-      <Footer />
     </div>
   );
 }

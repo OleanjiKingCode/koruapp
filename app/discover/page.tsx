@@ -4,8 +4,6 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  FloatingNav,
-  Footer,
   PageHeader,
   FilterBar,
   ProfileCard,
@@ -141,7 +139,6 @@ export default function DiscoverPage() {
 
   return (
     <div className="min-h-screen pb-[500px] sm:pb-96">
-      <FloatingNav />
 
       <main className="max-w-container mx-auto px-4 sm:px-6 py-8">
         {/* Page Header */}
@@ -398,7 +395,6 @@ export default function DiscoverPage() {
         </AnimatePresence>
       </main>
 
-      <Footer />
     </div>
   );
 }

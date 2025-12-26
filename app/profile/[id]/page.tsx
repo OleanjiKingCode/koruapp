@@ -4,7 +4,6 @@ import { useState, useMemo } from "react";
 import { useParams, useRouter, notFound } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { FloatingNav, Footer } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
@@ -249,7 +248,6 @@ export default function ViewProfilePage() {
 
   return (
     <div className="min-h-screen pb-[500px] sm:pb-96">
-      <FloatingNav />
 
       <main className="max-w-container mx-auto px-4 sm:px-6 py-8">
         {/* Back Button */}
@@ -508,7 +506,6 @@ export default function ViewProfilePage() {
         </motion.div>
       </main>
 
-      <Footer />
 
       {/* Booking Modal */}
       <BookingModal

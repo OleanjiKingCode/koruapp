@@ -6,13 +6,11 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "next-themes";
 import {
-  FloatingNav,
   PageHeader,
   StatCard,
   StatusPill,
   EmptyState,
 } from "@/components/shared";
-import { Footer } from "@/components/shared/footer";
 import { ShareModal } from "@/components/share";
 import {
   AvailabilityModal,
@@ -191,7 +189,6 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen pb-[500px] sm:pb-96">
-      <FloatingNav />
 
       <main className="max-w-container mx-auto px-4 sm:px-6 py-8">
         {/* Profile Header Card */}
@@ -883,7 +880,6 @@ export default function ProfilePage() {
         onSave={setAvailability}
       />
 
-      <Footer />
 
       {/* Share Modal */}
       <ShareModal

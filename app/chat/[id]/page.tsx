@@ -6,7 +6,7 @@ import { useParams, useRouter, notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { StatusPill, FloatingNav } from "@/components/shared";
+import { StatusPill } from "@/components/shared";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { cn } from "@/lib/utils";
 import { MOCK_PROFILES } from "@/lib/data";
@@ -110,7 +110,6 @@ export default function ChatPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <FloatingNav />
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-b border-neutral-200/50 dark:border-neutral-800/50">
         <div className="max-w-container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">

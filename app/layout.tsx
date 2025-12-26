@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Quicksand, Tenor_Sans, Caveat } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AppShell } from "@/components/shared";
 import "./globals.css";
 
 const quicksand = Quicksand({
@@ -63,7 +64,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange={false}
         >
-          {children}
+          <AppShell>{children}</AppShell>
         </ThemeProvider>
       </body>
     </html>

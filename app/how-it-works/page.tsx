@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
-import { FloatingNav, Footer } from "@/components/shared";
 
 type Persona = "seeker" | "host";
 
@@ -157,7 +156,6 @@ export default function HowItWorksPage() {
   return (
     <>
       <div className="min-h-screen pb-[500px] sm:pb-96">
-        <FloatingNav />
 
         <main className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
           {/* Hero Section */}
@@ -781,7 +779,6 @@ export default function HowItWorksPage() {
           </motion.section>
         </main>
 
-        <Footer />
       </div>
     </>
   );

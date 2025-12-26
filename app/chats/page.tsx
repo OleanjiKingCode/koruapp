@@ -3,8 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
-import { FloatingNav, StatusPill, EmptyState } from "@/components/shared";
-import { Footer } from "@/components/shared/footer";
+import { StatusPill, EmptyState } from "@/components/shared";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -268,7 +267,6 @@ export default function ChatsPage() {
 
   return (
     <div className="min-h-screen pb-[500px] sm:pb-96">
-      <FloatingNav />
 
       <main className="max-w-container mx-auto px-4 sm:px-6 py-8">
         {/* Header */}
@@ -675,7 +673,6 @@ export default function ChatsPage() {
         </Tabs>
       </main>
 
-      <Footer />
     </div>
   );
 }

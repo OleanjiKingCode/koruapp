@@ -2,8 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { FloatingNav, PageHeader, EmptyState } from "@/components/shared";
-import { Footer } from "@/components/shared/footer";
+import { PageHeader, EmptyState } from "@/components/shared";
 import { ShareModal } from "@/components/share";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,7 +93,6 @@ export default function AppealsPage() {
 
   return (
     <div className="min-h-screen pb-[500px] sm:pb-96">
-      <FloatingNav />
 
       <main className="max-w-container mx-auto px-4 sm:px-6 py-8">
         {/* Header */}
@@ -287,7 +285,6 @@ export default function AppealsPage() {
         </AnimatePresence>
       </main>
 
-      <Footer />
 
       {/* Share Modal */}
       {selectedAppeal && (

@@ -4,8 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "next-themes";
-import { FloatingNav } from "@/components/shared";
-import { Footer } from "@/components/shared/footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -143,7 +141,6 @@ export default function EditProfilePage() {
 
   return (
     <div className="min-h-screen">
-      <FloatingNav />
 
       {/* Success Toast */}
       <AnimatePresence>
@@ -602,7 +599,6 @@ export default function EditProfilePage() {
         onSave={setAvailability}
       />
 
-      <Footer />
     </div>
   );
 }
