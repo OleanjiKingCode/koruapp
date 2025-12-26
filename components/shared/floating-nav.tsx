@@ -71,9 +71,12 @@ export function FloatingNav() {
 
   const isDark = theme === "dark";
 
+  // Find active item index for mobile nav
+  const activeIndex = NAV_ITEMS.findIndex((item) => pathname === item.href);
+
   return (
     <>
-      {/* Floating Nav - Bottom Center */}
+      {/* Mobile Nav - Bubble Style */}
       <AnimatePresence>
         {!isNearBottom && (
           <motion.nav
@@ -81,22 +84,111 @@ export function FloatingNav() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: "spring", stiffness: 120, damping: 20 }}
-            className="fixed bottom-6 inset-x-0 z-50 flex justify-center px-4"
+            className="fixed bottom-6 inset-x-0 z-50 flex justify-center px-4 sm:hidden"
+          >
+            <div className="relative">
+              {/* Main bar */}
+              <div
+                className={cn(
+                  "flex items-center h-14 px-4 rounded-full shadow-2xl relative",
+                  isDark
+                    ? "bg-neutral-800 shadow-black/50"
+                    : "bg-neutral-700 shadow-black/30"
+                )}
+              >
+                {/* Notch/Bubble cutout effect */}
+                {activeIndex >= 0 && (
+                  <motion.div
+                    layoutId="mobile-notch"
+                    className={cn(
+                      "absolute -top-5 w-16 h-16 rounded-full flex items-center justify-center",
+                      isDark ? "bg-neutral-900" : "bg-neutral-800"
+                    )}
+                    style={{
+                      left: `${activeIndex * 52 + 16}px`,
+                    }}
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  >
+                    {/* Inner active circle */}
+                    <div className={cn(
+                      "w-12 h-12 rounded-full flex items-center justify-center",
+                      isDark ? "bg-neutral-700" : "bg-neutral-600"
+                    )}>
+                      {NAV_ITEMS[activeIndex] && (
+                        (() => {
+                          const Icon = iconMap[NAV_ITEMS[activeIndex].iconName as keyof typeof iconMap];
+                          return <Icon className="w-6 h-6 text-white" />;
+                        })()
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Nav Items */}
+                {NAV_ITEMS.map((item, index) => {
+                  const isActive = pathname === item.href;
+                  const Icon = iconMap[item.iconName as keyof typeof iconMap];
+
+                  return (
+                    <Link key={item.href} href={item.href} passHref>
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        className={cn(
+                          "w-10 h-10 flex items-center justify-center mx-1.5 rounded-full transition-all cursor-pointer",
+                          isActive
+                            ? "opacity-0" // Hide the inline button when active (shown in bubble)
+                            : "text-neutral-400 hover:text-white"
+                        )}
+                      >
+                        <Icon className="w-5 h-5" />
+                      </motion.button>
+                    </Link>
+                  );
+                })}
+
+                {/* Settings Button */}
+                <motion.button
+                  onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                  whileTap={{ scale: 0.9 }}
+                  className={cn(
+                    "w-10 h-10 flex items-center justify-center ml-1 rounded-full transition-all cursor-pointer",
+                    isSettingsOpen
+                      ? "text-koru-purple"
+                      : "text-neutral-400 hover:text-white"
+                  )}
+                >
+                  <SettingsIcon className="w-5 h-5" />
+                </motion.button>
+              </div>
+            </div>
+          </motion.nav>
+        )}
+      </AnimatePresence>
+
+      {/* Desktop Nav */}
+      <AnimatePresence>
+        {!isNearBottom && (
+          <motion.nav
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 120, damping: 20 }}
+            className="fixed bottom-6 inset-x-0 z-50 justify-center px-4 hidden sm:flex"
           >
             <motion.div
               layout
               className={cn(
-                "flex items-center gap-1 sm:gap-2 p-1.5 sm:p-2 rounded-2xl",
+                "flex items-center gap-2 p-2 rounded-2xl",
                 "shadow-2xl",
                 isDark
                   ? "bg-neutral-900 border border-neutral-800 shadow-black/40"
                   : "bg-white border border-neutral-200 shadow-black/10"
               )}
             >
-              {/* Kōru Logo - Hidden on mobile */}
+              {/* Kōru Logo */}
               <div
                 className={cn(
-                  "hidden sm:flex items-center justify-center px-4 py-2 rounded-xl text-lg font-bold",
+                  "flex items-center justify-center px-4 py-2 rounded-xl text-lg font-bold",
                   isDark
                     ? "bg-neutral-800 text-white"
                     : "bg-neutral-100 text-neutral-900"
@@ -119,7 +211,7 @@ export function FloatingNav() {
                       onMouseLeave={() => setHoveredItem(null)}
                       whileTap={{ scale: 0.98 }}
                       className={cn(
-                        "flex items-center justify-center gap-2 p-3 sm:px-5 sm:py-3 rounded-xl text-sm font-medium transition-all cursor-pointer overflow-hidden",
+                        "flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all cursor-pointer overflow-hidden",
                         isActive
                           ? isDark
                             ? "bg-neutral-800 text-white border border-neutral-700"
@@ -129,12 +221,6 @@ export function FloatingNav() {
                           : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
                       )}
                     >
-                      {/* Mobile: Always show icon */}
-                      <span className="sm:hidden">
-                        <Icon className="w-5 h-5" />
-                      </span>
-                      
-                      {/* Desktop: Show icon on hover/active */}
                       <AnimatePresence mode="popLayout">
                         {(isHovered || isActive) && (
                           <motion.span
@@ -142,20 +228,19 @@ export function FloatingNav() {
                             animate={{ width: "auto", opacity: 1 }}
                             exit={{ width: 0, opacity: 0 }}
                             transition={{ duration: 0.2 }}
-                            className="hidden sm:block overflow-hidden"
+                            className="overflow-hidden"
                           >
                             <Icon className="w-4 h-4" />
                           </motion.span>
                         )}
                       </AnimatePresence>
-                      {/* Desktop: Show text */}
-                      <span className="hidden sm:inline">{item.name}</span>
+                      <span>{item.name}</span>
                     </motion.button>
                   </Link>
                 );
               })}
 
-              {/* Settings Button - Gear Icon */}
+              {/* Settings Button */}
               <motion.button
                 onClick={() => setIsSettingsOpen(!isSettingsOpen)}
                 whileHover={{ scale: 1.05, rotate: 15 }}
@@ -167,7 +252,7 @@ export function FloatingNav() {
                     : "bg-koru-purple/80 text-white hover:bg-koru-purple"
                 )}
               >
-                <SettingsIcon className="w-4 h-4 sm:w-4 sm:h-4" />
+                <SettingsIcon className="w-4 h-4" />
               </motion.button>
             </motion.div>
           </motion.nav>

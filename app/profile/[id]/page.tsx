@@ -248,7 +248,7 @@ export default function ViewProfilePage() {
   const hasAvailability = mockAvailabilityData.slots.length > 0;
 
   return (
-    <div className="min-h-screen pb-96">
+    <div className="min-h-screen pb-[500px] sm:pb-96">
       <FloatingNav />
 
       <main className="max-w-container mx-auto px-4 sm:px-6 py-8">
