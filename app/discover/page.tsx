@@ -382,13 +382,17 @@ export default function DiscoverPage() {
               exit={{ opacity: 0 }}
             >
               <EmptyState
-                icon="search"
+                icon="compass"
                 title="No profiles found"
                 description={
                   searchQuery
                     ? `No results for "${searchQuery}". Try a different search term.`
-                    : "No profiles match your current filters."
+                    : "No profiles match your current filters. Try clearing filters or browse all."
                 }
+                ctaText="Clear Filters"
+                ctaHref="/discover"
+                secondaryCtaText="Browse Appeals"
+                secondaryCtaHref="/appeals"
               />
             </motion.div>
           )}

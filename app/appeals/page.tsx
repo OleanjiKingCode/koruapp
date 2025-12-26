@@ -1,8 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { PageHeader, EmptyState } from "@/components/shared";
+import {
+  PageHeader,
+  EmptyState,
+  AppealCardSkeleton,
+  TreemapSkeleton,
+} from "@/components/shared";
 import { ShareModal } from "@/components/share";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +52,13 @@ export default function AppealsPage() {
   const [selectedTime, setSelectedTime] = useState("24H");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulate initial loading
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 600);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Share modal state
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -93,7 +105,6 @@ export default function AppealsPage() {
 
   return (
     <div className="min-h-screen pb-[500px] sm:pb-96">
-
       <main className="max-w-container mx-auto px-4 sm:px-6 py-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
@@ -268,7 +279,23 @@ export default function AppealsPage() {
 
         {/* Views */}
         <AnimatePresence mode="wait">
-          {viewMode === "treemap" ? (
+          {isLoading ? (
+            viewMode === "treemap" ? (
+              <TreemapSkeleton key="treemap-skeleton" />
+            ) : (
+              <motion.div
+                key="list-skeleton"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-3"
+              >
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <AppealCardSkeleton key={i} />
+                ))}
+              </motion.div>
+            )
+          ) : viewMode === "treemap" ? (
             <TreemapView
               key="treemap"
               appeals={filteredAppeals}
@@ -284,7 +311,6 @@ export default function AppealsPage() {
           )}
         </AnimatePresence>
       </main>
-
 
       {/* Share Modal */}
       {selectedAppeal && (

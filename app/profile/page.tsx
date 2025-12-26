@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
@@ -10,6 +10,10 @@ import {
   StatCard,
   StatusPill,
   EmptyState,
+  ProfileHeaderSkeleton,
+  BalanceCardSkeleton,
+  StatCardSkeleton,
+  ChatCardSkeleton,
 } from "@/components/shared";
 import { ShareModal } from "@/components/share";
 import {
@@ -158,6 +162,13 @@ export default function ProfilePage() {
   const [selectedAppeal, setSelectedAppeal] = useState(MOCK_APPEALS[0]);
   const [isFarcasterConnected, setIsFarcasterConnected] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulate initial loading
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 700);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Availability
   const { availability, setAvailability, filledSlots, hasAvailability } =
@@ -192,6 +203,9 @@ export default function ProfilePage() {
 
       <main className="max-w-container mx-auto px-4 sm:px-6 py-8">
         {/* Profile Header Card */}
+        {isLoading ? (
+          <ProfileHeaderSkeleton className="mb-8" />
+        ) : (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -343,6 +357,7 @@ export default function ProfilePage() {
             </p>
           </div>
         </motion.div>
+        )}
 
         {/* Connect Farcaster Card */}
         <AnimatePresence>
@@ -424,6 +439,9 @@ export default function ProfilePage() {
         </AnimatePresence>
 
         {/* Wallet Balances Card */}
+        {isLoading ? (
+          <BalanceCardSkeleton className="mb-8" />
+        ) : (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -484,6 +502,7 @@ export default function ProfilePage() {
             </div>
           </div>
         </motion.div>
+        )}
 
         {/* Stats Grid */}
         <motion.div
@@ -492,31 +511,41 @@ export default function ProfilePage() {
           transition={{ delay: 0.15 }}
           className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
         >
-          <StatCard
-            title="Total Spent"
-            value={MOCK_USER_DATA.stats.totalSpent}
-            icon={<DollarIcon className="w-5 h-5" />}
-            variant="purple"
-          />
-          <StatCard
-            title="Total Refunded"
-            value={MOCK_USER_DATA.stats.totalRefunded}
-            icon={<RefundIcon className="w-5 h-5" />}
-            trend="down"
-            trendValue="12%"
-          />
-          <StatCard
-            title="Active Chats"
-            value={MOCK_USER_DATA.stats.activeChats}
-            icon={<ChatIcon className="w-5 h-5" />}
-            variant="golden"
-          />
-          <StatCard
-            title="Appeals Created"
-            value={MOCK_USER_DATA.stats.appealsCreated}
-            icon={<BeaconIcon className="w-5 h-5" />}
-            variant="lime"
-          />
+          {isLoading ? (
+            <>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <StatCardSkeleton key={i} />
+              ))}
+            </>
+          ) : (
+            <>
+              <StatCard
+                title="Total Spent"
+                value={MOCK_USER_DATA.stats.totalSpent}
+                icon={<DollarIcon className="w-5 h-5" />}
+                variant="purple"
+              />
+              <StatCard
+                title="Total Refunded"
+                value={MOCK_USER_DATA.stats.totalRefunded}
+                icon={<RefundIcon className="w-5 h-5" />}
+                trend="down"
+                trendValue="12%"
+              />
+              <StatCard
+                title="Active Chats"
+                value={MOCK_USER_DATA.stats.activeChats}
+                icon={<ChatIcon className="w-5 h-5" />}
+                variant="golden"
+              />
+              <StatCard
+                title="Appeals Created"
+                value={MOCK_USER_DATA.stats.appealsCreated}
+                icon={<BeaconIcon className="w-5 h-5" />}
+                variant="lime"
+              />
+            </>
+          )}
         </motion.div>
 
         {/* Availability Card */}

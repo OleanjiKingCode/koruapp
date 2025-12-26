@@ -4,3 +4,4 @@ export * from "./use-scroll-position";
 export * from "./use-local-storage";
 export * from "./use-filter";
 export * from "./use-transactions";
+export * from "./use-unread-count";

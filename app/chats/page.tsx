@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
-import { StatusPill, EmptyState } from "@/components/shared";
+import { StatusPill, EmptyState, ChatCardSkeleton, StatCardSkeleton } from "@/components/shared";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -220,6 +220,13 @@ export default function ChatsPage() {
   const [receivedSubTab, setReceivedSubTab] = useState<
     "pending" | "active" | "completed"
   >("pending");
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulate initial loading
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Filter chats by type
   const sentChats = useMemo(
@@ -301,61 +308,71 @@ export default function ChatsPage() {
           transition={{ delay: 0.1 }}
           className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
         >
-          <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-koru-golden/10 flex items-center justify-center">
-                <InboxIcon className="w-5 h-5 text-koru-golden" />
+          {isLoading ? (
+            <>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <StatCardSkeleton key={i} />
+              ))}
+            </>
+          ) : (
+            <>
+              <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-koru-golden/10 flex items-center justify-center">
+                    <InboxIcon className="w-5 h-5 text-koru-golden" />
+                  </div>
+                  <div>
+                    <p className="text-2xl text-neutral-900 dark:text-neutral-100">
+                      {receivedChats.length}
+                    </p>
+                    <p className="text-xs text-neutral-500">Inbox</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl text-neutral-900 dark:text-neutral-100">
-                  {receivedChats.length}
-                </p>
-                <p className="text-xs text-neutral-500">Inbox</p>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-koru-purple/10 flex items-center justify-center">
-                <SendIcon className="w-5 h-5 text-koru-purple" />
+              <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-koru-purple/10 flex items-center justify-center">
+                    <SendIcon className="w-5 h-5 text-koru-purple" />
+                  </div>
+                  <div>
+                    <p className="text-2xl text-neutral-900 dark:text-neutral-100">
+                      {sentChats.length}
+                    </p>
+                    <p className="text-xs text-neutral-500">Sent</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl text-neutral-900 dark:text-neutral-100">
-                  {sentChats.length}
-                </p>
-                <p className="text-xs text-neutral-500">Sent</p>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
-                <ClockIcon className="w-5 h-5 text-orange-500" />
+              <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
+                    <ClockIcon className="w-5 h-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <p className="text-2xl text-neutral-900 dark:text-neutral-100">
+                      {receivedActive.length + sentActive.length}
+                    </p>
+                    <p className="text-xs text-neutral-500">Active</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl text-neutral-900 dark:text-neutral-100">
-                  {receivedActive.length + sentActive.length}
-                </p>
-                <p className="text-xs text-neutral-500">Active</p>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-koru-lime/10 flex items-center justify-center">
-                <CheckIcon className="w-5 h-5 text-koru-lime" />
+              <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-koru-lime/10 flex items-center justify-center">
+                    <CheckIcon className="w-5 h-5 text-koru-lime" />
+                  </div>
+                  <div>
+                    <p className="text-2xl text-neutral-900 dark:text-neutral-100">
+                      {sentCompleted.length + receivedCompleted.length}
+                    </p>
+                    <p className="text-xs text-neutral-500">Completed</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl text-neutral-900 dark:text-neutral-100">
-                  {sentCompleted.length + receivedCompleted.length}
-                </p>
-                <p className="text-xs text-neutral-500">Completed</p>
-              </div>
-            </div>
-          </div>
+            </>
+          )}
         </motion.div>
 
         {/* Main Tabs */}
@@ -456,9 +473,12 @@ export default function ChatsPage() {
                     </motion.div>
                   ) : (
                     <EmptyState
-                      icon="search"
+                      icon="inbox"
                       title="No pending requests"
-                      description="New requests from people who want to chat will appear here."
+                      description="New requests from people who want to chat will appear here. Share your profile to get more requests!"
+                      variant="card"
+                      ctaText="Share Profile"
+                      ctaHref="/profile"
                     />
                   )}
                 </AnimatePresence>
@@ -487,9 +507,10 @@ export default function ChatsPage() {
                     </motion.div>
                   ) : (
                     <EmptyState
-                      icon="search"
+                      icon="chat"
                       title="No active conversations"
-                      description="Ongoing conversations will appear here."
+                      description="Once you accept pending requests, active conversations will show here."
+                      variant="compact"
                     />
                   )}
                 </AnimatePresence>
@@ -518,9 +539,10 @@ export default function ChatsPage() {
                     </motion.div>
                   ) : (
                     <EmptyState
-                      icon="search"
+                      icon="inbox"
                       title="No completed chats yet"
-                      description="Your completed conversations will appear here."
+                      description="Your completed and refunded conversations will appear here."
+                      variant="compact"
                     />
                   )}
                 </AnimatePresence>
@@ -594,14 +616,9 @@ export default function ChatsPage() {
                       icon="search"
                       title="No pending requests"
                       description="Start a conversation by finding someone on the Discover page."
-                      action={
-                        <Link href="/discover">
-                          <Button className="mt-4">
-                            <SendIcon className="w-4 h-4 mr-2" />
-                            Find Someone
-                          </Button>
-                        </Link>
-                      }
+                      showSuggestions
+                      ctaText="Discover People"
+                      ctaHref="/discover"
                     />
                   )}
                 </AnimatePresence>
@@ -630,9 +647,10 @@ export default function ChatsPage() {
                     </motion.div>
                   ) : (
                     <EmptyState
-                      icon="search"
+                      icon="chat"
                       title="No active conversations"
-                      description="Ongoing conversations will appear here."
+                      description="Once someone accepts your request, the conversation will appear here."
+                      variant="compact"
                     />
                   )}
                 </AnimatePresence>
@@ -661,9 +679,10 @@ export default function ChatsPage() {
                     </motion.div>
                   ) : (
                     <EmptyState
-                      icon="search"
+                      icon="wallet"
                       title="No completed chats yet"
-                      description="Your completed conversations will appear here."
+                      description="Your completed conversations and refunds will appear here."
+                      variant="compact"
                     />
                   )}
                 </AnimatePresence>

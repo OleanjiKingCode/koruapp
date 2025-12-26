@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS, FONT_OPTIONS, LANGUAGE_OPTIONS } from "@/lib/constants";
-import { useMounted, useScrollPosition, useFontPreference } from "@/lib/hooks";
+import { useMounted, useScrollPosition, useFontPreference, useUnreadCount, formatUnreadCount } from "@/lib/hooks";
 import {
   HomeIcon,
   DiscoverIcon,
@@ -42,6 +42,7 @@ export function FloatingNav() {
   const mounted = useMounted();
   const { isNearBottom } = useScrollPosition({ bottomThreshold: 90 });
   const { font: selectedFont, applyFont } = useFontPreference();
+  const unreadCounts = useUnreadCount();
 
   // Apply font based on route
   useEffect(() => {
@@ -128,13 +129,14 @@ export function FloatingNav() {
                 {NAV_ITEMS.map((item, index) => {
                   const isActive = pathname === item.href;
                   const Icon = iconMap[item.iconName as keyof typeof iconMap];
+                  const showBadge = item.iconName === "chats" && unreadCounts.chats > 0;
 
                   return (
                     <Link key={item.href} href={item.href} passHref>
                       <motion.button
                         whileTap={{ scale: 0.9 }}
                         className={cn(
-                          "w-10 h-10 flex items-center justify-center mx-1.5 rounded-full transition-all cursor-pointer",
+                          "relative w-10 h-10 flex items-center justify-center mx-1.5 rounded-full transition-all cursor-pointer",
                           isActive
                             ? "opacity-0" // Hide the inline button when active (shown in bubble)
                             : isDark
@@ -143,6 +145,12 @@ export function FloatingNav() {
                         )}
                       >
                         <Icon className="w-5 h-5" />
+                        {/* Unread Badge */}
+                        {showBadge && !isActive && (
+                          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 text-[10px] font-bold text-white bg-red-500 rounded-full shadow-lg animate-pulse">
+                            {formatUnreadCount(unreadCounts.chats)}
+                          </span>
+                        )}
                       </motion.button>
                     </Link>
                   );
@@ -206,6 +214,7 @@ export function FloatingNav() {
                 const isActive = pathname === item.href;
                 const isHovered = hoveredItem === item.href;
                 const Icon = iconMap[item.iconName as keyof typeof iconMap];
+                const showBadge = item.iconName === "chats" && unreadCounts.chats > 0;
 
                 return (
                   <Link key={item.href} href={item.href} passHref>
@@ -215,7 +224,7 @@ export function FloatingNav() {
                       onMouseLeave={() => setHoveredItem(null)}
                       whileTap={{ scale: 0.98 }}
                       className={cn(
-                        "flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all cursor-pointer overflow-hidden",
+                        "relative flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all cursor-pointer overflow-hidden",
                         isActive
                           ? isDark
                             ? "bg-neutral-800 text-white border border-neutral-700"
@@ -239,6 +248,12 @@ export function FloatingNav() {
                         )}
                       </AnimatePresence>
                       <span>{item.name}</span>
+                      {/* Unread Badge */}
+                      {showBadge && (
+                        <span className="min-w-[20px] h-5 flex items-center justify-center px-1.5 text-[10px] font-bold text-white bg-red-500 rounded-full ml-1">
+                          {formatUnreadCount(unreadCounts.chats)}
+                        </span>
+                      )}
                     </motion.button>
                   </Link>
                 );
@@ -417,9 +432,11 @@ export function FloatingNav() {
                       <span>Notifications</span>
                     </div>
                     <div className="flex items-center gap-1.5 sm:gap-2">
-                      <span className="text-[10px] sm:text-xs font-medium text-koru-purple bg-koru-purple/10 px-1.5 sm:px-2 py-0.5 rounded-full">
-                        3 new
-                      </span>
+                      {unreadCounts.notifications > 0 && (
+                        <span className="text-[10px] sm:text-xs font-medium text-koru-purple bg-koru-purple/10 px-1.5 sm:px-2 py-0.5 rounded-full">
+                          {formatUnreadCount(unreadCounts.notifications)} new
+                        </span>
+                      )}
                       <ChevronRightIcon className="w-4 h-4" />
                     </div>
                   </Link>
