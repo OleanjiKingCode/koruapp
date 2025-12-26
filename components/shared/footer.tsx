@@ -65,21 +65,32 @@ export function Footer() {
     const windowHeight = window.innerHeight;
     const documentHeight = document.documentElement.scrollHeight;
 
-    // Only show footer when user has scrolled to near the bottom
-    // Be more conservative - only show when truly at the bottom
-    const scrollableHeight = documentHeight - windowHeight;
-    const scrolledPercentage =
-      scrollableHeight > 0 ? (scrollTop / scrollableHeight) * 100 : 100;
-
-    // On mobile, be even more strict - only show when at 95%+ or at actual bottom
-    const isMobile = windowHeight < 768;
-    const threshold = isMobile ? 95 : 90;
+    // Calculate how far from the actual bottom the user is (in pixels)
+    const distanceFromBottom = documentHeight - windowHeight - scrollTop;
     
-    // Show footer only when scrolled past threshold OR when page is not scrollable at all
-    const nearBottom = scrolledPercentage >= threshold;
-    const cannotScroll = scrollableHeight <= 50; // Page is basically viewport height
-
-    setIsVisible(nearBottom || cannotScroll);
+    // On mobile, require being within 100px of the bottom
+    // On desktop, within 150px
+    const isMobile = window.innerWidth < 768;
+    const pixelThreshold = isMobile ? 100 : 150;
+    
+    // Only show footer when user has scrolled close to the actual bottom
+    // Never show if user hasn't scrolled at all and page has content to scroll
+    const scrollableHeight = documentHeight - windowHeight;
+    const hasScrollableContent = scrollableHeight > 200; // More than 200px to scroll
+    
+    // Show footer only when:
+    // 1. User is within threshold pixels of the bottom, OR
+    // 2. Page is truly not scrollable (very short page)
+    const nearBottom = distanceFromBottom <= pixelThreshold;
+    const pageNotScrollable = scrollableHeight <= 100;
+    
+    // Additional check: if page is scrollable, user must have scrolled at least a bit
+    const hasScrolled = scrollTop > 50;
+    
+    setIsVisible(
+      (nearBottom && (!hasScrollableContent || hasScrolled)) || 
+      pageNotScrollable
+    );
   }, []);
 
   useEffect(() => {
