@@ -8,7 +8,7 @@ import type { UserData } from "@/lib/types";
 
 interface ProfileShareCardProps {
   userData: UserData;
-  variant?: "default" | "minimal" | "gradient" | "neon";
+  variant?: "default" | "minimal" | "gradient" | "neon" | "ticket";
   className?: string;
 }
 
@@ -324,6 +324,165 @@ export const ProfileShareCard = forwardRef<
             }
           }
         `}</style>
+      </div>
+    );
+  }
+
+  if (variant === "ticket") {
+    // Generate a ticket number from address
+    const ticketNum = userData.address.slice(2, 8).toUpperCase();
+    const seatCode = `${String.fromCharCode(65 + (parseInt(userData.address.slice(8, 10), 16) % 6))}${(parseInt(userData.address.slice(10, 12), 16) % 40) + 1}`;
+    
+    return (
+      <div
+        ref={ref}
+        className={`w-[520px] h-[220px] relative ${className}`}
+        style={{ fontFamily: "system-ui, sans-serif" }}
+      >
+        <div className="flex h-full">
+          {/* Main Ticket Section */}
+          <div
+            className="flex-1 relative overflow-hidden rounded-l-2xl"
+            style={{
+              background: "linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%)",
+            }}
+          >
+            {/* Subtle pattern */}
+            <div
+              className="absolute inset-0 opacity-[0.03]"
+              style={{
+                backgroundImage: `repeating-linear-gradient(45deg, #000 0, #000 1px, transparent 0, transparent 50%)`,
+                backgroundSize: "10px 10px",
+              }}
+            />
+
+            <div className="relative z-10 h-full p-6 flex flex-col">
+              {/* Route Header */}
+              <div className="flex items-center justify-center gap-4 mb-4">
+                <div className="text-center">
+                  <p className="text-3xl font-black text-neutral-800 tracking-tight">
+                    {userData.shortAddress.slice(0, 4).toUpperCase()}
+                  </p>
+                  <p className="text-xs text-neutral-500 font-medium">
+                    Origin
+                  </p>
+                </div>
+                
+                <div className="flex items-center gap-2 px-4">
+                  <div className="w-8 h-px bg-gradient-to-r from-neutral-300 to-transparent" />
+                  <svg className="w-5 h-5 text-[#c385ee]" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+                  </svg>
+                  <div className="w-8 h-px bg-gradient-to-l from-neutral-300 to-transparent" />
+                </div>
+
+                <div className="text-center">
+                  <p className="text-3xl font-black text-[#c385ee] tracking-tight">
+                    KORU
+                  </p>
+                  <p className="text-xs text-neutral-500 font-medium">
+                    Destination
+                  </p>
+                </div>
+              </div>
+
+              {/* Details Grid */}
+              <div className="flex-1 flex items-center">
+                <div className="w-full grid grid-cols-4 gap-3 bg-white/60 rounded-xl p-4 border border-neutral-200/50">
+                  <div>
+                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-medium">Level</p>
+                    <p className="text-lg font-bold text-[#c385ee]">{userData.level}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-medium">Points</p>
+                    <p className="text-lg font-bold text-neutral-800">{userData.points.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-medium">Seat</p>
+                    <p className="text-lg font-bold text-neutral-800">{seatCode}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-medium">Ticket No.</p>
+                    <p className="text-lg font-bold text-[#9deb61]">{ticketNum}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-between pt-3 border-t border-neutral-200/50">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#c385ee] to-[#9deb61] flex items-center justify-center">
+                    <span className="text-white text-[10px] font-bold">K</span>
+                  </div>
+                  <span className="text-neutral-600 text-xs font-semibold">koruapp.xyz</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-neutral-400 text-xs">@{userData.username}</span>
+                  <div className="w-4 h-4 rounded-full bg-[#c385ee] flex items-center justify-center">
+                    <CheckIcon className="w-2.5 h-2.5 text-white" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Perforated Edge */}
+          <div className="relative w-4 flex flex-col justify-between py-2">
+            {Array.from({ length: 11 }).map((_, i) => (
+              <div
+                key={i}
+                className="w-4 h-4 rounded-full bg-white"
+                style={{
+                  boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.05)",
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Stub Section */}
+          <div
+            className="w-[140px] relative overflow-hidden rounded-r-2xl"
+            style={{
+              background: "linear-gradient(180deg, #1a1446 0%, #0f0d24 100%)",
+            }}
+          >
+            <div className="relative z-10 h-full p-4 flex flex-col items-center justify-between">
+              {/* Avatar */}
+              <div className="w-14 h-14 rounded-xl overflow-hidden ring-2 ring-white/20">
+                <AvatarGenerator seed={userData.address} size={56} />
+              </div>
+
+              {/* Vertical Text */}
+              <div className="flex-1 flex items-center justify-center">
+                <div className="transform -rotate-90 whitespace-nowrap">
+                  <p className="text-lg font-bold text-white tracking-wider">
+                    {userData.shortAddress}
+                  </p>
+                </div>
+              </div>
+
+              {/* Barcode */}
+              <div className="w-full flex flex-col items-center gap-1">
+                <div className="flex gap-[2px]">
+                  {Array.from({ length: 20 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="bg-white"
+                      style={{
+                        width: (parseInt(userData.address[i + 2] || '5', 16) % 2) + 1 + "px",
+                        height: "32px",
+                        opacity: 0.9,
+                      }}
+                    />
+                  ))}
+                </div>
+                <p className="text-[8px] text-white/50 font-mono tracking-widest">
+                  {ticketNum}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

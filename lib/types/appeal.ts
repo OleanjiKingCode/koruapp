@@ -38,3 +38,4 @@ export interface TreemapItem {
   value: number;
   percentage: number;
 }
+

@@ -156,3 +156,4 @@ export function getInitials(name: string): string {
     .slice(0, 2);
 }
 
+

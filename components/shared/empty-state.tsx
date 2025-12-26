@@ -138,3 +138,4 @@ function KayaIcon({ type, className }: { type: string; className?: string }) {
   }
 }
 
+

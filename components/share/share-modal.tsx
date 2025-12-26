@@ -67,6 +67,7 @@ type CardVariant =
   | "minimal"
   | "gradient"
   | "neon"
+  | "ticket"
   | "compact"
   | "vibrant"
   | "dark";
@@ -98,6 +99,7 @@ export function ShareModal({
     "minimal",
     "gradient",
     "neon",
+    "ticket",
   ];
   const appealVariants: CardVariant[] = [
     "default",
@@ -112,6 +114,7 @@ export function ShareModal({
     minimal: "Minimal",
     gradient: "Gradient",
     neon: "Neon",
+    ticket: "Ticket",
     compact: "Compact",
     vibrant: "Vibrant",
     dark: "Dark",
@@ -315,6 +318,7 @@ export function ShareModal({
                             | "minimal"
                             | "gradient"
                             | "neon"
+                            | "ticket"
                         }
                       />
                     )}
