@@ -93,7 +93,7 @@ export function FloatingNav() {
                   "flex items-center h-14 px-4 rounded-full shadow-2xl relative",
                   isDark
                     ? "bg-neutral-800 shadow-black/50"
-                    : "bg-neutral-700 shadow-black/30"
+                    : "bg-white/90 backdrop-blur-xl border border-neutral-200 shadow-black/10"
                 )}
               >
                 {/* Notch/Bubble cutout effect */}
@@ -102,7 +102,7 @@ export function FloatingNav() {
                     layoutId="mobile-notch"
                     className={cn(
                       "absolute -top-5 w-16 h-16 rounded-full flex items-center justify-center",
-                      isDark ? "bg-neutral-900" : "bg-neutral-800"
+                      isDark ? "bg-neutral-900" : "bg-neutral-100 border border-neutral-200"
                     )}
                     style={{
                       left: `${activeIndex * 52 + 16}px`,
@@ -112,7 +112,7 @@ export function FloatingNav() {
                     {/* Inner active circle */}
                     <div className={cn(
                       "w-12 h-12 rounded-full flex items-center justify-center",
-                      isDark ? "bg-neutral-700" : "bg-neutral-600"
+                      isDark ? "bg-neutral-700" : "bg-neutral-900"
                     )}>
                       {NAV_ITEMS[activeIndex] && (
                         (() => {
@@ -137,7 +137,9 @@ export function FloatingNav() {
                           "w-10 h-10 flex items-center justify-center mx-1.5 rounded-full transition-all cursor-pointer",
                           isActive
                             ? "opacity-0" // Hide the inline button when active (shown in bubble)
-                            : "text-neutral-400 hover:text-white"
+                            : isDark
+                            ? "text-neutral-400 hover:text-white"
+                            : "text-neutral-500 hover:text-neutral-900"
                         )}
                       >
                         <Icon className="w-5 h-5" />
@@ -154,7 +156,9 @@ export function FloatingNav() {
                     "w-10 h-10 flex items-center justify-center ml-1 rounded-full transition-all cursor-pointer",
                     isSettingsOpen
                       ? "text-koru-purple"
-                      : "text-neutral-400 hover:text-white"
+                      : isDark
+                      ? "text-neutral-400 hover:text-white"
+                      : "text-neutral-500 hover:text-neutral-900"
                   )}
                 >
                   <SettingsIcon className="w-5 h-5" />
