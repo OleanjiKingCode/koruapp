@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "motion/react";
@@ -8,7 +8,24 @@ import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
+// Loading fallback for Suspense
+function LoginLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-koru-purple to-koru-golden animate-pulse" />
+    </div>
+  );
+}
+
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginLoading />}>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent() {
   const { theme } = useTheme();
   const router = useRouter();
   const searchParams = useSearchParams();
