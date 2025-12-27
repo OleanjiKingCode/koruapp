@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useParams, useRouter, notFound } from "next/navigation";
 import Link from "next/link";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
@@ -164,10 +164,61 @@ function CheckIcon({ className }: { className?: string }) {
   );
 }
 
+function MegaphoneIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m3 11 18-5v12L3 13v-2z" />
+      <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
+    </svg>
+  );
+}
+
+function SparklesIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z" />
+    </svg>
+  );
+}
+
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M18 6L6 18" />
+      <path d="M6 6l12 12" />
+    </svg>
+  );
+}
+
 export default function ViewProfilePage() {
   const params = useParams();
   const router = useRouter();
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [appealModalOpen, setAppealModalOpen] = useState(false);
 
   // Find the profile by ID
   const profile = useMemo(() => {
@@ -303,16 +354,27 @@ export default function ViewProfilePage() {
                   </a>
                 </div>
 
-                {/* Talk to Button */}
-                <Button
-                  size="lg"
-                  onClick={() => setBookingModalOpen(true)}
-                  disabled={!hasAvailability}
-                  className="bg-koru-purple hover:bg-koru-purple/90 text-white font-semibold px-8"
-                >
-                  <ChatIcon className="w-5 h-5 mr-2" />
-                  Talk to {profile.name.split(" ")[0]}
-                </Button>
+                {/* Action Buttons */}
+                <div className="flex items-center gap-3">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={() => setAppealModalOpen(true)}
+                    className="border-koru-golden text-koru-golden hover:bg-koru-golden/10"
+                  >
+                    <MegaphoneIcon className="w-5 h-5 mr-2" />
+                    Appeal
+                  </Button>
+                  <Button
+                    size="lg"
+                    onClick={() => setBookingModalOpen(true)}
+                    disabled={!hasAvailability}
+                    className="bg-koru-purple hover:bg-koru-purple/90 text-white font-semibold px-8"
+                  >
+                    <ChatIcon className="w-5 h-5 mr-2" />
+                    Talk to {profile.name.split(" ")[0]}
+                  </Button>
+                </div>
               </div>
 
               {/* Bio */}
@@ -516,7 +578,161 @@ export default function ViewProfilePage() {
         availability={mockAvailabilityData}
         onBook={handleBook}
       />
+
+      {/* Appeal Modal */}
+      <AppealModal
+        open={appealModalOpen}
+        onOpenChange={setAppealModalOpen}
+        personName={profile.name}
+        personHandle={profile.handle}
+        onCreateAppeal={() => {
+          setAppealModalOpen(false);
+          router.push(`${ROUTES.APPEALS}/new?to=${profile.handle}`);
+        }}
+      />
     </div>
+  );
+}
+
+// Appeal Modal Component
+function AppealModal({
+  open,
+  onOpenChange,
+  personName,
+  personHandle,
+  onCreateAppeal,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  personName: string;
+  personHandle: string;
+  onCreateAppeal: () => void;
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+            onClick={() => onOpenChange(false)}
+          />
+
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-lg mx-4"
+          >
+            <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden">
+              {/* Header */}
+              <div className="relative bg-gradient-to-r from-koru-golden/20 via-koru-purple/10 to-koru-lime/20 p-6 pb-8">
+                <button
+                  onClick={() => onOpenChange(false)}
+                  className="absolute top-4 right-4 p-2 rounded-full bg-black/10 hover:bg-black/20 text-neutral-600 dark:text-neutral-400 transition-colors"
+                >
+                  <CloseIcon className="w-4 h-4" />
+                </button>
+                
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-12 h-12 rounded-2xl bg-koru-golden/20 flex items-center justify-center">
+                    <MegaphoneIcon className="w-6 h-6 text-koru-golden" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+                      Appeal to {personName.split(" ")[0]}
+                    </h2>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      @{personHandle}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-3">
+                    What is an Appeal?
+                  </h3>
+                  <p className="text-neutral-600 dark:text-neutral-400 text-sm leading-relaxed">
+                    An appeal is a public request to connect with a creator. It shows them you&apos;re genuinely interested in their expertise and helps them prioritize who to respond to.
+                  </p>
+                </div>
+
+                {/* Benefits */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
+                    Why Appeal?
+                  </h4>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-3 p-3 rounded-xl bg-koru-purple/5 border border-koru-purple/10">
+                      <SparklesIcon className="w-5 h-5 text-koru-purple shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                          Stand Out
+                        </p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                          Your appeal becomes visible to {personName.split(" ")[0]}, showing your genuine interest
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3 p-3 rounded-xl bg-koru-golden/5 border border-koru-golden/10">
+                      <UsersIcon className="w-5 h-5 text-koru-golden shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                          Community Support
+                        </p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                          Others can upvote your appeal, increasing its visibility
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3 p-3 rounded-xl bg-koru-lime/5 border border-koru-lime/10">
+                      <DollarIcon className="w-5 h-5 text-koru-lime shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                          Set Your Price
+                        </p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                          Offer what you&apos;re willing to pay for their time and expertise
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CTA */}
+                <div className="flex flex-col gap-3 pt-2">
+                  <Button
+                    onClick={onCreateAppeal}
+                    className="w-full bg-gradient-to-r from-koru-golden to-koru-golden/80 hover:from-koru-golden/90 hover:to-koru-golden/70 text-neutral-900 font-semibold"
+                  >
+                    <MegaphoneIcon className="w-4 h-4 mr-2" />
+                    Create Appeal
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => onOpenChange(false)}
+                    className="w-full"
+                  >
+                    Maybe Later
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }
 
