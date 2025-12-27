@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Quicksand, Tenor_Sans, Caveat } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/components/providers/auth-provider";
 import { AppShell } from "@/components/shared";
 import "./globals.css";
 
@@ -58,14 +59,16 @@ export default function RootLayout({
       <body
         className={`${quicksand.variable} ${tenorSans.variable} ${lemonTuesday.variable} antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange={false}
-        >
-          <AppShell>{children}</AppShell>
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange={false}
+          >
+            <AppShell>{children}</AppShell>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

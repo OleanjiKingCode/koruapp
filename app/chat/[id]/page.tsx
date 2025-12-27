@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusPill } from "@/components/shared";
+import { AuthGuard } from "@/components/auth";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { cn } from "@/lib/utils";
 import { MOCK_PROFILES } from "@/lib/data";
@@ -109,6 +110,7 @@ export default function ChatPage() {
   };
 
   return (
+    <AuthGuard>
     <div className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-b border-neutral-200/50 dark:border-neutral-800/50">
@@ -317,6 +319,7 @@ export default function ChatPage() {
         </motion.div>
       </div>
     </div>
+    </AuthGuard>
   );
 }
 

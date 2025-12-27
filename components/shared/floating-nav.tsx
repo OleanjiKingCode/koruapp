@@ -2,12 +2,21 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "next-themes";
+import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS, FONT_OPTIONS, LANGUAGE_OPTIONS } from "@/lib/constants";
-import { useMounted, useScrollPosition, useFontPreference, useUnreadCount, formatUnreadCount } from "@/lib/hooks";
+import {
+  useMounted,
+  useScrollPosition,
+  useFontPreference,
+  useUnreadCount,
+  formatUnreadCount,
+} from "@/lib/hooks";
+import { LoginModal } from "@/components/auth";
+import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import {
   HomeIcon,
   DiscoverIcon,
@@ -22,6 +31,12 @@ import {
   BellIcon,
 } from "@/components/icons";
 
+// Protected routes that require authentication
+const PROTECTED_ROUTES = ["/profile", "/chats", "/chat", "/notifications"];
+
+// Nav items to hide when not authenticated
+const HIDDEN_WHEN_UNAUTHENTICATED = ["chats"];
+
 // Map icon names to components
 const iconMap = {
   home: HomeIcon,
@@ -33,16 +48,52 @@ const iconMap = {
 
 export function FloatingNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const { data: session, status } = useSession();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedLang, setSelectedLang] = useState("en");
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [pendingRoute, setPendingRoute] = useState<string | null>(null);
 
   // Use custom hooks
   const mounted = useMounted();
   const { isNearBottom } = useScrollPosition({ bottomThreshold: 90 });
   const { font: selectedFont, applyFont } = useFontPreference();
   const unreadCounts = useUnreadCount();
+
+  const isAuthenticated = status === "authenticated";
+
+  // Filter nav items based on auth status
+  const visibleNavItems = NAV_ITEMS.filter((item) => {
+    if (
+      !isAuthenticated &&
+      HIDDEN_WHEN_UNAUTHENTICATED.includes(item.iconName)
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  // Handle protected route navigation
+  const handleNavClick = (href: string, e: React.MouseEvent) => {
+    if (
+      PROTECTED_ROUTES.some((route) => href.startsWith(route)) &&
+      !isAuthenticated
+    ) {
+      e.preventDefault();
+      setPendingRoute(href);
+      setShowLoginModal(true);
+    }
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
+    await signOut({ redirect: false });
+    router.push("/");
+    setIsSettingsOpen(false);
+  };
 
   // Apply font based on route
   useEffect(() => {
@@ -72,8 +123,10 @@ export function FloatingNav() {
 
   const isDark = theme === "dark";
 
-  // Find active item index for mobile nav
-  const activeIndex = NAV_ITEMS.findIndex((item) => pathname === item.href);
+  // Find active item index for mobile nav (using visible items)
+  const activeIndex = visibleNavItems.findIndex(
+    (item) => pathname === item.href
+  );
 
   return (
     <>
@@ -103,7 +156,9 @@ export function FloatingNav() {
                     layoutId="mobile-notch"
                     className={cn(
                       "absolute -top-5 w-16 h-16 rounded-full flex items-center justify-center",
-                      isDark ? "bg-neutral-900" : "bg-neutral-100 border border-neutral-200"
+                      isDark
+                        ? "bg-neutral-900"
+                        : "bg-neutral-100 border border-neutral-200"
                     )}
                     style={{
                       left: `${activeIndex * 52 + 16}px`,
@@ -111,28 +166,42 @@ export function FloatingNav() {
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                   >
                     {/* Inner active circle */}
-                    <div className={cn(
-                      "w-12 h-12 rounded-full flex items-center justify-center",
-                      isDark ? "bg-neutral-700" : "bg-neutral-900"
-                    )}>
-                      {NAV_ITEMS[activeIndex] && (
-                        (() => {
-                          const Icon = iconMap[NAV_ITEMS[activeIndex].iconName as keyof typeof iconMap];
-                          return <Icon className="w-6 h-6 text-white" />;
-                        })()
+                    <div
+                      className={cn(
+                        "w-12 h-12 rounded-full flex items-center justify-center",
+                        isDark ? "bg-neutral-700" : "bg-neutral-900"
                       )}
+                    >
+                      {visibleNavItems[activeIndex] &&
+                        (() => {
+                          const Icon =
+                            iconMap[
+                              visibleNavItems[activeIndex]
+                                .iconName as keyof typeof iconMap
+                            ];
+                          return <Icon className="w-6 h-6 text-white" />;
+                        })()}
                     </div>
                   </motion.div>
                 )}
 
                 {/* Nav Items */}
-                {NAV_ITEMS.map((item, index) => {
+                {visibleNavItems.map((item, index) => {
                   const isActive = pathname === item.href;
                   const Icon = iconMap[item.iconName as keyof typeof iconMap];
-                  const showBadge = item.iconName === "chats" && unreadCounts.chats > 0;
+                  const showBadge =
+                    item.iconName === "chats" && unreadCounts.chats > 0;
+                  const isProtected = PROTECTED_ROUTES.some((route) =>
+                    item.href.startsWith(route)
+                  );
 
                   return (
-                    <Link key={item.href} href={item.href} passHref>
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      passHref
+                      onClick={(e) => handleNavClick(item.href, e)}
+                    >
                       <motion.button
                         whileTap={{ scale: 0.9 }}
                         className={cn(
@@ -149,6 +218,12 @@ export function FloatingNav() {
                         {showBadge && !isActive && (
                           <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 text-[10px] font-bold text-white bg-red-500 rounded-full shadow-lg animate-pulse">
                             {formatUnreadCount(unreadCounts.chats)}
+                          </span>
+                        )}
+                        {/* Lock indicator for protected routes when not authenticated */}
+                        {isProtected && !isAuthenticated && !isActive && (
+                          <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 flex items-center justify-center text-[8px] text-white bg-neutral-500 rounded-full">
+                            🔒
                           </span>
                         )}
                       </motion.button>
@@ -210,14 +285,23 @@ export function FloatingNav() {
               </div>
 
               {/* Nav Items */}
-              {NAV_ITEMS.map((item) => {
+              {visibleNavItems.map((item) => {
                 const isActive = pathname === item.href;
                 const isHovered = hoveredItem === item.href;
                 const Icon = iconMap[item.iconName as keyof typeof iconMap];
-                const showBadge = item.iconName === "chats" && unreadCounts.chats > 0;
+                const showBadge =
+                  item.iconName === "chats" && unreadCounts.chats > 0;
+                const isProtected = PROTECTED_ROUTES.some((route) =>
+                  item.href.startsWith(route)
+                );
 
                 return (
-                  <Link key={item.href} href={item.href} passHref>
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    passHref
+                    onClick={(e) => handleNavClick(item.href, e)}
+                  >
                     <motion.button
                       layout
                       onMouseEnter={() => setHoveredItem(item.href)}
@@ -253,6 +337,10 @@ export function FloatingNav() {
                         <span className="min-w-[20px] h-5 flex items-center justify-center px-1.5 text-[10px] font-bold text-white bg-red-500 rounded-full ml-1">
                           {formatUnreadCount(unreadCounts.chats)}
                         </span>
+                      )}
+                      {/* Lock indicator for protected routes when not authenticated */}
+                      {isProtected && !isAuthenticated && (
+                        <span className="text-[10px] ml-1">🔒</span>
                       )}
                     </motion.button>
                   </Link>
@@ -301,7 +389,8 @@ export function FloatingNav() {
             >
               <div
                 className={cn(
-                  "p-4 sm:p-5 rounded-2xl shadow-2xl max-h-[70vh] overflow-y-auto",
+                  "p-4 sm:p-5 rounded-2xl shadow-2xl max-h-[70vh] overflow-y-auto scrollbar-none",
+                  "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
                   isDark
                     ? "bg-neutral-900 border border-neutral-800 shadow-black/40"
                     : "bg-white border border-neutral-200 shadow-black/10"
@@ -465,11 +554,126 @@ export function FloatingNav() {
                   How Kōru Works
                   <ChevronRightIcon className="w-4 h-4 ml-auto" />
                 </Link>
+
+                {/* Auth Section */}
+                {isAuthenticated && session?.user ? (
+                  <div className="space-y-3">
+                    {/* User Info */}
+                    <div
+                      className={cn(
+                        "flex items-center gap-3 p-3 rounded-xl",
+                        isDark ? "bg-neutral-800" : "bg-neutral-100"
+                      )}
+                    >
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-neutral-200 dark:bg-neutral-700">
+                        {session.user.image ? (
+                          <img
+                            src={session.user.image}
+                            alt={session.user.name || "User"}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <AvatarGenerator
+                            seed={session.user.id || "user"}
+                            size={40}
+                          />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={cn(
+                            "text-sm font-medium truncate",
+                            isDark ? "text-white" : "text-neutral-900"
+                          )}
+                        >
+                          {session.user.name || "User"}
+                        </p>
+                        {session.user.username && (
+                          <p
+                            className={cn(
+                              "text-xs truncate",
+                              isDark ? "text-neutral-400" : "text-neutral-500"
+                            )}
+                          >
+                            @{session.user.username}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Logout Button */}
+                    <button
+                      onClick={handleLogout}
+                      className={cn(
+                        "flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-sm font-medium transition-all",
+                        isDark
+                          ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
+                          : "bg-red-50 text-red-600 hover:bg-red-100"
+                      )}
+                    >
+                      <LogoutIcon className="w-4 h-4" />
+                      Sign out
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setIsSettingsOpen(false);
+                      setPendingRoute("/profile");
+                      setShowLoginModal(true);
+                    }}
+                    className={cn(
+                      "flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl text-sm font-medium transition-all",
+                      "bg-neutral-900 text-white hover:bg-neutral-800",
+                      "dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100"
+                    )}
+                  >
+                    <XIcon className="w-4 h-4" />
+                    Sign in with X
+                  </button>
+                )}
               </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
+
+      {/* Login Modal */}
+      <LoginModal
+        open={showLoginModal}
+        onOpenChange={setShowLoginModal}
+        callbackUrl={pendingRoute || "/profile"}
+        title="Sign in to continue"
+        description="Connect your X account to access all features"
+      />
     </>
+  );
+}
+
+// Logout Icon
+function LogoutIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" x2="9" y1="12" y2="12" />
+    </svg>
+  );
+}
+
+// X (Twitter) Icon
+function XIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
   );
 }

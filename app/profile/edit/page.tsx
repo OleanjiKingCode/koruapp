@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
+import { AuthGuard } from "@/components/auth";
 import { cn } from "@/lib/utils";
 import { MOCK_USER_DATA } from "@/lib/data";
 import { CheckIcon, ChevronRightIcon } from "@/components/icons";
@@ -140,6 +141,7 @@ export default function EditProfilePage() {
   };
 
   return (
+    <AuthGuard>
     <div className="min-h-screen">
 
       {/* Success Toast */}
@@ -600,5 +602,6 @@ export default function EditProfilePage() {
       />
 
     </div>
+    </AuthGuard>
   );
 }

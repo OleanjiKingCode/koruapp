@@ -3,7 +3,13 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
-import { StatusPill, EmptyState, ChatCardSkeleton, StatCardSkeleton } from "@/components/shared";
+import {
+  StatusPill,
+  EmptyState,
+  ChatCardSkeleton,
+  StatCardSkeleton,
+} from "@/components/shared";
+import { AuthGuard } from "@/components/auth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -273,425 +279,425 @@ export default function ChatsPage() {
   );
 
   return (
-    <div className="min-h-screen pb-[500px] sm:pb-96">
+    <AuthGuard>
+      <div className="min-h-screen pb-[500px] sm:pb-96">
+        <main className="max-w-container mx-auto px-4 sm:px-6 py-8">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl text-neutral-900 dark:text-neutral-100 mb-2">
+                  Chats
+                </h1>
+                <p className="text-neutral-500 dark:text-neutral-400">
+                  Manage your conversations and requests
+                </p>
+              </div>
 
-      <main className="max-w-container mx-auto px-4 sm:px-6 py-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl text-neutral-900 dark:text-neutral-100 mb-2">
-                Chats
-              </h1>
-              <p className="text-neutral-500 dark:text-neutral-400">
-                Manage your conversations and requests
-              </p>
+              <Link href="/discover">
+                <Button className="bg-koru-purple hover:bg-koru-purple/90">
+                  <SendIcon className="w-4 h-4 mr-2" />
+                  New Request
+                </Button>
+              </Link>
             </div>
+          </motion.div>
 
-            <Link href="/discover">
-              <Button className="bg-koru-purple hover:bg-koru-purple/90">
+          {/* Quick Stats */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+          >
+            {isLoading ? (
+              <>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <StatCardSkeleton key={i} />
+                ))}
+              </>
+            ) : (
+              <>
+                <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-koru-golden/10 flex items-center justify-center">
+                      <InboxIcon className="w-5 h-5 text-koru-golden" />
+                    </div>
+                    <div>
+                      <p className="text-2xl text-neutral-900 dark:text-neutral-100">
+                        {receivedChats.length}
+                      </p>
+                      <p className="text-xs text-neutral-500">Inbox</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-koru-purple/10 flex items-center justify-center">
+                      <SendIcon className="w-5 h-5 text-koru-purple" />
+                    </div>
+                    <div>
+                      <p className="text-2xl text-neutral-900 dark:text-neutral-100">
+                        {sentChats.length}
+                      </p>
+                      <p className="text-xs text-neutral-500">Sent</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
+                      <ClockIcon className="w-5 h-5 text-orange-500" />
+                    </div>
+                    <div>
+                      <p className="text-2xl text-neutral-900 dark:text-neutral-100">
+                        {receivedActive.length + sentActive.length}
+                      </p>
+                      <p className="text-xs text-neutral-500">Active</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-koru-lime/10 flex items-center justify-center">
+                      <CheckIcon className="w-5 h-5 text-koru-lime" />
+                    </div>
+                    <div>
+                      <p className="text-2xl text-neutral-900 dark:text-neutral-100">
+                        {sentCompleted.length + receivedCompleted.length}
+                      </p>
+                      <p className="text-xs text-neutral-500">Completed</p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </motion.div>
+
+          {/* Main Tabs */}
+          <Tabs
+            value={mainTab}
+            onValueChange={(v) => setMainTab(v as "sent" | "received")}
+            className="w-full"
+          >
+            <TabsList className="bg-neutral-100 dark:bg-neutral-800/50 p-1 rounded-xl mb-6 w-full md:w-auto">
+              <TabsTrigger
+                value="received"
+                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700 data-[state=active]:shadow-sm flex-1 md:flex-initial"
+              >
+                <InboxIcon className="w-4 h-4 mr-2" />
+                Inbox
+                {receivedPending.length > 0 && (
+                  <Badge className="ml-2 bg-orange-500 text-white text-xs h-5 px-1.5">
+                    {receivedPending.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger
+                value="sent"
+                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700 data-[state=active]:shadow-sm flex-1 md:flex-initial"
+              >
                 <SendIcon className="w-4 h-4 mr-2" />
-                New Request
-              </Button>
-            </Link>
-          </div>
-        </motion.div>
-
-        {/* Quick Stats */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
-        >
-          {isLoading ? (
-            <>
-              {Array.from({ length: 4 }).map((_, i) => (
-                <StatCardSkeleton key={i} />
-              ))}
-            </>
-          ) : (
-            <>
-              <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-koru-golden/10 flex items-center justify-center">
-                    <InboxIcon className="w-5 h-5 text-koru-golden" />
-                  </div>
-                  <div>
-                    <p className="text-2xl text-neutral-900 dark:text-neutral-100">
-                      {receivedChats.length}
-                    </p>
-                    <p className="text-xs text-neutral-500">Inbox</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-koru-purple/10 flex items-center justify-center">
-                    <SendIcon className="w-5 h-5 text-koru-purple" />
-                  </div>
-                  <div>
-                    <p className="text-2xl text-neutral-900 dark:text-neutral-100">
-                      {sentChats.length}
-                    </p>
-                    <p className="text-xs text-neutral-500">Sent</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
-                    <ClockIcon className="w-5 h-5 text-orange-500" />
-                  </div>
-                  <div>
-                    <p className="text-2xl text-neutral-900 dark:text-neutral-100">
-                      {receivedActive.length + sentActive.length}
-                    </p>
-                    <p className="text-xs text-neutral-500">Active</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-koru-lime/10 flex items-center justify-center">
-                    <CheckIcon className="w-5 h-5 text-koru-lime" />
-                  </div>
-                  <div>
-                    <p className="text-2xl text-neutral-900 dark:text-neutral-100">
-                      {sentCompleted.length + receivedCompleted.length}
-                    </p>
-                    <p className="text-xs text-neutral-500">Completed</p>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </motion.div>
-
-        {/* Main Tabs */}
-        <Tabs
-          value={mainTab}
-          onValueChange={(v) => setMainTab(v as "sent" | "received")}
-          className="w-full"
-        >
-          <TabsList className="bg-neutral-100 dark:bg-neutral-800/50 p-1 rounded-xl mb-6 w-full md:w-auto">
-            <TabsTrigger
-              value="received"
-              className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700 data-[state=active]:shadow-sm flex-1 md:flex-initial"
-            >
-              <InboxIcon className="w-4 h-4 mr-2" />
-              Inbox
-              {receivedPending.length > 0 && (
-                <Badge className="ml-2 bg-orange-500 text-white text-xs h-5 px-1.5">
-                  {receivedPending.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger
-              value="sent"
-              className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700 data-[state=active]:shadow-sm flex-1 md:flex-initial"
-            >
-              <SendIcon className="w-4 h-4 mr-2" />
-              Sent
-              {sentPending.length > 0 && (
-                <Badge className="ml-2 bg-koru-purple/20 text-koru-purple text-xs h-5 px-1.5">
-                  {sentPending.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Inbox Tab */}
-          <TabsContent value="received">
-            <Tabs
-              value={receivedSubTab}
-              onValueChange={(v) =>
-                setReceivedSubTab(v as typeof receivedSubTab)
-              }
-            >
-              <TabsList className="bg-neutral-50 dark:bg-neutral-800/30 p-1 rounded-lg mb-4">
-                <TabsTrigger
-                  value="pending"
-                  className="rounded-md text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
-                >
-                  Pending
-                  {receivedPending.length > 0 && (
-                    <Badge className="ml-1.5 bg-orange-500/20 text-orange-500 text-xs h-4 px-1">
-                      {receivedPending.length}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger
-                  value="active"
-                  className="rounded-md text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
-                >
-                  Active
-                  {receivedActive.length > 0 && (
-                    <Badge className="ml-1.5 bg-koru-lime/20 text-koru-lime text-xs h-4 px-1">
-                      {receivedActive.length}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger
-                  value="completed"
-                  className="rounded-md text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
-                >
-                  Completed
-                  <Badge className="ml-1.5 bg-neutral-200 dark:bg-neutral-600 text-neutral-500 dark:text-neutral-400 text-xs h-4 px-1">
-                    {receivedCompleted.length}
+                Sent
+                {sentPending.length > 0 && (
+                  <Badge className="ml-2 bg-koru-purple/20 text-koru-purple text-xs h-5 px-1.5">
+                    {sentPending.length}
                   </Badge>
-                </TabsTrigger>
-              </TabsList>
+                )}
+              </TabsTrigger>
+            </TabsList>
 
-              <TabsContent value="pending" className="space-y-4">
-                <AnimatePresence mode="wait">
-                  {receivedPending.length > 0 ? (
-                    <motion.div
-                      key="list"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="space-y-4"
-                    >
-                      {receivedPending.map((chat, index) => (
-                        <motion.div
-                          key={chat.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                        >
-                          <ChatCard chat={chat} variant="received" />
-                        </motion.div>
-                      ))}
-                    </motion.div>
-                  ) : (
-                    <EmptyState
-                      icon="inbox"
-                      title="No pending requests"
-                      description="New requests from people who want to chat will appear here. Share your profile to get more requests!"
-                      variant="card"
-                      ctaText="Share Profile"
-                      ctaHref="/profile"
-                    />
-                  )}
-                </AnimatePresence>
-              </TabsContent>
-
-              <TabsContent value="active" className="space-y-4">
-                <AnimatePresence mode="wait">
-                  {receivedActive.length > 0 ? (
-                    <motion.div
-                      key="list"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="space-y-4"
-                    >
-                      {receivedActive.map((chat, index) => (
-                        <motion.div
-                          key={chat.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                        >
-                          <ChatCard chat={chat} variant="received" />
-                        </motion.div>
-                      ))}
-                    </motion.div>
-                  ) : (
-                    <EmptyState
-                      icon="chat"
-                      title="No active conversations"
-                      description="Once you accept pending requests, active conversations will show here."
-                      variant="compact"
-                    />
-                  )}
-                </AnimatePresence>
-              </TabsContent>
-
-              <TabsContent value="completed" className="space-y-4">
-                <AnimatePresence mode="wait">
-                  {receivedCompleted.length > 0 ? (
-                    <motion.div
-                      key="list"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="space-y-4"
-                    >
-                      {receivedCompleted.map((chat, index) => (
-                        <motion.div
-                          key={chat.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                        >
-                          <ChatCard chat={chat} variant="received" />
-                        </motion.div>
-                      ))}
-                    </motion.div>
-                  ) : (
-                    <EmptyState
-                      icon="inbox"
-                      title="No completed chats yet"
-                      description="Your completed and refunded conversations will appear here."
-                      variant="compact"
-                    />
-                  )}
-                </AnimatePresence>
-              </TabsContent>
-            </Tabs>
-          </TabsContent>
-
-          {/* Sent Tab */}
-          <TabsContent value="sent">
-            <Tabs
-              value={sentSubTab}
-              onValueChange={(v) => setSentSubTab(v as typeof sentSubTab)}
-            >
-              <TabsList className="bg-neutral-50 dark:bg-neutral-800/30 p-1 rounded-lg mb-4">
-                <TabsTrigger
-                  value="pending"
-                  className="rounded-md text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
-                >
-                  Pending
-                  {sentPending.length > 0 && (
-                    <Badge className="ml-1.5 bg-koru-purple/20 text-koru-purple text-xs h-4 px-1">
-                      {sentPending.length}
+            {/* Inbox Tab */}
+            <TabsContent value="received">
+              <Tabs
+                value={receivedSubTab}
+                onValueChange={(v) =>
+                  setReceivedSubTab(v as typeof receivedSubTab)
+                }
+              >
+                <TabsList className="bg-neutral-50 dark:bg-neutral-800/30 p-1 rounded-lg mb-4">
+                  <TabsTrigger
+                    value="pending"
+                    className="rounded-md text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
+                  >
+                    Pending
+                    {receivedPending.length > 0 && (
+                      <Badge className="ml-1.5 bg-orange-500/20 text-orange-500 text-xs h-4 px-1">
+                        {receivedPending.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="active"
+                    className="rounded-md text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
+                  >
+                    Active
+                    {receivedActive.length > 0 && (
+                      <Badge className="ml-1.5 bg-koru-lime/20 text-koru-lime text-xs h-4 px-1">
+                        {receivedActive.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="completed"
+                    className="rounded-md text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
+                  >
+                    Completed
+                    <Badge className="ml-1.5 bg-neutral-200 dark:bg-neutral-600 text-neutral-500 dark:text-neutral-400 text-xs h-4 px-1">
+                      {receivedCompleted.length}
                     </Badge>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger
-                  value="active"
-                  className="rounded-md text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
-                >
-                  Active
-                  {sentActive.length > 0 && (
-                    <Badge className="ml-1.5 bg-koru-lime/20 text-koru-lime text-xs h-4 px-1">
-                      {sentActive.length}
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="pending" className="space-y-4">
+                  <AnimatePresence mode="wait">
+                    {receivedPending.length > 0 ? (
+                      <motion.div
+                        key="list"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="space-y-4"
+                      >
+                        {receivedPending.map((chat, index) => (
+                          <motion.div
+                            key={chat.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                          >
+                            <ChatCard chat={chat} variant="received" />
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                    ) : (
+                      <EmptyState
+                        icon="inbox"
+                        title="No pending requests"
+                        description="New requests from people who want to chat will appear here. Share your profile to get more requests!"
+                        variant="card"
+                        ctaText="Share Profile"
+                        ctaHref="/profile"
+                      />
+                    )}
+                  </AnimatePresence>
+                </TabsContent>
+
+                <TabsContent value="active" className="space-y-4">
+                  <AnimatePresence mode="wait">
+                    {receivedActive.length > 0 ? (
+                      <motion.div
+                        key="list"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="space-y-4"
+                      >
+                        {receivedActive.map((chat, index) => (
+                          <motion.div
+                            key={chat.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                          >
+                            <ChatCard chat={chat} variant="received" />
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                    ) : (
+                      <EmptyState
+                        icon="chat"
+                        title="No active conversations"
+                        description="Once you accept pending requests, active conversations will show here."
+                        variant="compact"
+                      />
+                    )}
+                  </AnimatePresence>
+                </TabsContent>
+
+                <TabsContent value="completed" className="space-y-4">
+                  <AnimatePresence mode="wait">
+                    {receivedCompleted.length > 0 ? (
+                      <motion.div
+                        key="list"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="space-y-4"
+                      >
+                        {receivedCompleted.map((chat, index) => (
+                          <motion.div
+                            key={chat.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                          >
+                            <ChatCard chat={chat} variant="received" />
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                    ) : (
+                      <EmptyState
+                        icon="inbox"
+                        title="No completed chats yet"
+                        description="Your completed and refunded conversations will appear here."
+                        variant="compact"
+                      />
+                    )}
+                  </AnimatePresence>
+                </TabsContent>
+              </Tabs>
+            </TabsContent>
+
+            {/* Sent Tab */}
+            <TabsContent value="sent">
+              <Tabs
+                value={sentSubTab}
+                onValueChange={(v) => setSentSubTab(v as typeof sentSubTab)}
+              >
+                <TabsList className="bg-neutral-50 dark:bg-neutral-800/30 p-1 rounded-lg mb-4">
+                  <TabsTrigger
+                    value="pending"
+                    className="rounded-md text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
+                  >
+                    Pending
+                    {sentPending.length > 0 && (
+                      <Badge className="ml-1.5 bg-koru-purple/20 text-koru-purple text-xs h-4 px-1">
+                        {sentPending.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="active"
+                    className="rounded-md text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
+                  >
+                    Active
+                    {sentActive.length > 0 && (
+                      <Badge className="ml-1.5 bg-koru-lime/20 text-koru-lime text-xs h-4 px-1">
+                        {sentActive.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="completed"
+                    className="rounded-md text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
+                  >
+                    Completed
+                    <Badge className="ml-1.5 bg-neutral-200 dark:bg-neutral-600 text-neutral-500 dark:text-neutral-400 text-xs h-4 px-1">
+                      {sentCompleted.length}
                     </Badge>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger
-                  value="completed"
-                  className="rounded-md text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
-                >
-                  Completed
-                  <Badge className="ml-1.5 bg-neutral-200 dark:bg-neutral-600 text-neutral-500 dark:text-neutral-400 text-xs h-4 px-1">
-                    {sentCompleted.length}
-                  </Badge>
-                </TabsTrigger>
-              </TabsList>
+                  </TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="pending" className="space-y-4">
-                <AnimatePresence mode="wait">
-                  {sentPending.length > 0 ? (
-                    <motion.div
-                      key="list"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="space-y-4"
-                    >
-                      {sentPending.map((chat, index) => (
-                        <motion.div
-                          key={chat.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                        >
-                          <ChatCard chat={chat} variant="sent" />
-                        </motion.div>
-                      ))}
-                    </motion.div>
-                  ) : (
-                    <EmptyState
-                      icon="search"
-                      title="No pending requests"
-                      description="Start a conversation by finding someone on the Discover page."
-                      showSuggestions
-                      ctaText="Discover People"
-                      ctaHref="/discover"
-                    />
-                  )}
-                </AnimatePresence>
-              </TabsContent>
+                <TabsContent value="pending" className="space-y-4">
+                  <AnimatePresence mode="wait">
+                    {sentPending.length > 0 ? (
+                      <motion.div
+                        key="list"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="space-y-4"
+                      >
+                        {sentPending.map((chat, index) => (
+                          <motion.div
+                            key={chat.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                          >
+                            <ChatCard chat={chat} variant="sent" />
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                    ) : (
+                      <EmptyState
+                        icon="search"
+                        title="No pending requests"
+                        description="Start a conversation by finding someone on the Discover page."
+                        showSuggestions
+                        ctaText="Discover People"
+                        ctaHref="/discover"
+                      />
+                    )}
+                  </AnimatePresence>
+                </TabsContent>
 
-              <TabsContent value="active" className="space-y-4">
-                <AnimatePresence mode="wait">
-                  {sentActive.length > 0 ? (
-                    <motion.div
-                      key="list"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="space-y-4"
-                    >
-                      {sentActive.map((chat, index) => (
-                        <motion.div
-                          key={chat.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                        >
-                          <ChatCard chat={chat} variant="sent" />
-                        </motion.div>
-                      ))}
-                    </motion.div>
-                  ) : (
-                    <EmptyState
-                      icon="chat"
-                      title="No active conversations"
-                      description="Once someone accepts your request, the conversation will appear here."
-                      variant="compact"
-                    />
-                  )}
-                </AnimatePresence>
-              </TabsContent>
+                <TabsContent value="active" className="space-y-4">
+                  <AnimatePresence mode="wait">
+                    {sentActive.length > 0 ? (
+                      <motion.div
+                        key="list"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="space-y-4"
+                      >
+                        {sentActive.map((chat, index) => (
+                          <motion.div
+                            key={chat.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                          >
+                            <ChatCard chat={chat} variant="sent" />
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                    ) : (
+                      <EmptyState
+                        icon="chat"
+                        title="No active conversations"
+                        description="Once someone accepts your request, the conversation will appear here."
+                        variant="compact"
+                      />
+                    )}
+                  </AnimatePresence>
+                </TabsContent>
 
-              <TabsContent value="completed" className="space-y-4">
-                <AnimatePresence mode="wait">
-                  {sentCompleted.length > 0 ? (
-                    <motion.div
-                      key="list"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="space-y-4"
-                    >
-                      {sentCompleted.map((chat, index) => (
-                        <motion.div
-                          key={chat.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                        >
-                          <ChatCard chat={chat} variant="sent" />
-                        </motion.div>
-                      ))}
-                    </motion.div>
-                  ) : (
-                    <EmptyState
-                      icon="wallet"
-                      title="No completed chats yet"
-                      description="Your completed conversations and refunds will appear here."
-                      variant="compact"
-                    />
-                  )}
-                </AnimatePresence>
-              </TabsContent>
-            </Tabs>
-          </TabsContent>
-        </Tabs>
-      </main>
-
-    </div>
+                <TabsContent value="completed" className="space-y-4">
+                  <AnimatePresence mode="wait">
+                    {sentCompleted.length > 0 ? (
+                      <motion.div
+                        key="list"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="space-y-4"
+                      >
+                        {sentCompleted.map((chat, index) => (
+                          <motion.div
+                            key={chat.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                          >
+                            <ChatCard chat={chat} variant="sent" />
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                    ) : (
+                      <EmptyState
+                        icon="wallet"
+                        title="No completed chats yet"
+                        description="Your completed conversations and refunds will appear here."
+                        variant="compact"
+                      />
+                    )}
+                  </AnimatePresence>
+                </TabsContent>
+              </Tabs>
+            </TabsContent>
+          </Tabs>
+        </main>
+      </div>
+    </AuthGuard>
   );
 }

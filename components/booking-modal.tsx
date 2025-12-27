@@ -5,8 +5,14 @@ import { motion, AnimatePresence } from "motion/react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { AvailabilitySlot, AvailabilityData } from "@/components/availability-modal";
-import { DURATION_OPTIONS, formatDateShort } from "@/components/availability-modal";
+import type {
+  AvailabilitySlot,
+  AvailabilityData,
+} from "@/components/availability-modal";
+import {
+  DURATION_OPTIONS,
+  formatDateShort,
+} from "@/components/availability-modal";
 
 // Icons
 function ClockIcon({ className }: { className?: string }) {
@@ -111,6 +117,23 @@ function ChevronRightIcon({ className }: { className?: string }) {
   );
 }
 
+function CreditCardIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect width="20" height="14" x="2" y="5" rx="2" />
+      <line x1="2" x2="22" y1="10" y2="10" />
+    </svg>
+  );
+}
+
 function DollarIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -134,7 +157,12 @@ interface BookingModalProps {
   personName: string;
   personId: string;
   availability: AvailabilityData;
-  onBook: (slot: AvailabilitySlot, date: Date, timeSlot: string, receipt: Receipt) => void;
+  onBook: (
+    slot: AvailabilitySlot,
+    date: Date,
+    timeSlot: string,
+    receipt: Receipt
+  ) => void;
 }
 
 export interface Receipt {
@@ -153,8 +181,18 @@ type Step = "slots" | "date" | "time" | "confirm" | "paying" | "receipt";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 export function BookingModal({
@@ -166,7 +204,9 @@ export function BookingModal({
   onBook,
 }: BookingModalProps) {
   const [step, setStep] = useState<Step>("slots");
-  const [selectedSlot, setSelectedSlot] = useState<AvailabilitySlot | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<AvailabilitySlot | null>(
+    null
+  );
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
@@ -177,10 +217,10 @@ export function BookingModal({
   });
 
   const timezone = availability.timezone || "UTC";
-  
+
   // Get configured slots only
   const configuredSlots = useMemo(() => {
-    return availability.slots.filter(s => s.name && s.times.length > 0);
+    return availability.slots.filter((s) => s.name && s.times.length > 0);
   }, [availability.slots]);
 
   // Generate calendar days for current month
@@ -193,24 +233,24 @@ export function BookingModal({
     const startDayOfWeek = firstDay.getDay();
 
     const days: (Date | null)[] = [];
-    
+
     // Add empty cells for days before the first
     for (let i = 0; i < startDayOfWeek; i++) {
       days.push(null);
     }
-    
+
     // Add days of the month
     for (let i = 1; i <= daysInMonth; i++) {
       days.push(new Date(year, month, i));
     }
-    
+
     return days;
   }, [currentMonth]);
 
   // Check if a day is available (in the selected slot's selected dates)
   const isDayAvailable = (date: Date) => {
     if (!selectedSlot || !selectedSlot.selectedDates) return false;
-    
+
     const dateStr = date.toISOString().split("T")[0];
     return selectedSlot.selectedDates.includes(dateStr);
   };
@@ -236,10 +276,10 @@ export function BookingModal({
   const handlePay = async () => {
     if (selectedSlot && selectedDate && selectedTime) {
       setStep("paying");
-      
+
       // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
       // Generate receipt
       const now = new Date();
       const newReceipt: Receipt = {
@@ -253,19 +293,22 @@ export function BookingModal({
         createdAt: now.toISOString(),
         expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
       };
-      
+
       setReceipt(newReceipt);
       setStep("receipt");
-      
+
       // Store booking info in localStorage for the chat page
-      localStorage.setItem(`koru-booking-${personId}`, JSON.stringify({
-        slotName: selectedSlot.name,
-        price: selectedSlot.price,
-        date: formatDate(selectedDate),
-        time: selectedTime,
-        createdAt: now.toISOString(),
-        receiptId: newReceipt.id,
-      }));
+      localStorage.setItem(
+        `koru-booking-${personId}`,
+        JSON.stringify({
+          slotName: selectedSlot.name,
+          price: selectedSlot.price,
+          date: formatDate(selectedDate),
+          time: selectedTime,
+          createdAt: now.toISOString(),
+          receiptId: newReceipt.id,
+        })
+      );
     }
   };
 
@@ -295,11 +338,15 @@ export function BookingModal({
   };
 
   const goToPrevMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+    setCurrentMonth(
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1)
+    );
   };
 
   const goToNextMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+    setCurrentMonth(
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1)
+    );
   };
 
   const formatDate = (date: Date) => {
@@ -321,7 +368,11 @@ export function BookingModal({
       <DialogContent
         className={cn(
           "p-0 gap-0 overflow-hidden transition-all duration-300",
-          step === "slots" ? "max-w-sm" : step === "confirm" ? "max-w-sm" : "max-w-md"
+          step === "slots"
+            ? "max-w-sm"
+            : step === "confirm"
+            ? "max-w-sm"
+            : "max-w-md"
         )}
       >
         <DialogTitle className="sr-only">Book a Session</DialogTitle>
@@ -334,7 +385,7 @@ export function BookingModal({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2 }}
-              className="p-6"
+              className="p-1"
             >
               {/* Header */}
               <div className="mb-6">
@@ -369,10 +420,14 @@ export function BookingModal({
                         <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">
                           {slot.name}
                         </h3>
-                        <span className={cn(
-                          "text-lg font-bold",
-                          slot.price === 0 ? "text-koru-lime" : "text-koru-golden"
-                        )}>
+                        <span
+                          className={cn(
+                            "text-lg font-bold",
+                            slot.price === 0
+                              ? "text-koru-lime"
+                              : "text-koru-golden"
+                          )}
+                        >
                           {slot.price === 0 ? "Free" : `$${slot.price}`}
                         </span>
                       </div>
@@ -380,7 +435,11 @@ export function BookingModal({
                         <div className="flex items-center gap-1">
                           <ClockIcon className="w-3.5 h-3.5" />
                           <span>
-                            {DURATION_OPTIONS.find(d => d.value === slot.duration)?.label}
+                            {
+                              DURATION_OPTIONS.find(
+                                (d) => d.value === slot.duration
+                              )?.label
+                            }
                           </span>
                         </div>
                         <div className="flex items-center gap-1">
@@ -410,7 +469,7 @@ export function BookingModal({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2 }}
-              className="p-6"
+              className="p-1"
             >
               {/* Header with Back */}
               <div className="flex items-center gap-3 mb-4">
@@ -441,7 +500,8 @@ export function BookingModal({
                     <ChevronLeftIcon className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
                   </button>
                   <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                    {MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                    {MONTHS[currentMonth.getMonth()]}{" "}
+                    {currentMonth.getFullYear()}
                   </span>
                   <button
                     onClick={goToNextMonth}
@@ -467,11 +527,14 @@ export function BookingModal({
                 <div className="grid grid-cols-7 gap-1">
                   {calendarDays.map((date, index) => {
                     if (!date) {
-                      return <div key={`empty-${index}`} className="aspect-square" />;
+                      return (
+                        <div key={`empty-${index}`} className="aspect-square" />
+                      );
                     }
 
                     const isAvailable = isDayAvailable(date);
-                    const isToday = date.toDateString() === new Date().toDateString();
+                    const isToday =
+                      date.toDateString() === new Date().toDateString();
 
                     return (
                       <button
@@ -483,7 +546,8 @@ export function BookingModal({
                           isAvailable
                             ? "hover:bg-koru-purple/10 hover:text-koru-purple cursor-pointer text-neutral-700 dark:text-neutral-300"
                             : "text-neutral-300 dark:text-neutral-600 cursor-not-allowed",
-                          isToday && "ring-2 ring-koru-golden ring-offset-2 dark:ring-offset-neutral-900"
+                          isToday &&
+                            "ring-2 ring-koru-golden ring-offset-2 dark:ring-offset-neutral-900"
                         )}
                       >
                         {date.getDate()}
@@ -515,7 +579,7 @@ export function BookingModal({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2 }}
-              className="p-6"
+              className="p-1"
             >
               {/* Header with Back */}
               <div className="flex items-center gap-3 mb-6">
@@ -568,100 +632,107 @@ export function BookingModal({
           )}
 
           {/* Step 4: Confirm */}
-          {step === "confirm" && selectedSlot && selectedDate && selectedTime && (
-            <motion.div
-              key="confirm"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-              className="p-6"
-            >
-              {/* Header with Back */}
-              <div className="flex items-center gap-3 mb-6">
-                <button
-                  onClick={() => setStep("time")}
-                  className="p-2 -ml-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-                >
-                  <ChevronLeftIcon className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
-                </button>
-                <div>
-                  <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                    Confirm Booking
-                  </h2>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Review your request
-                  </p>
-                </div>
-              </div>
-
-              {/* Booking Summary */}
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-koru-purple/5 border border-koru-purple/20">
-                  <div className="w-10 h-10 rounded-full bg-koru-purple/10 flex items-center justify-center">
-                    <ClockIcon className="w-5 h-5 text-koru-purple" />
-                  </div>
+          {step === "confirm" &&
+            selectedSlot &&
+            selectedDate &&
+            selectedTime && (
+              <motion.div
+                key="confirm"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                className="p-1"
+              >
+                {/* Header with Back */}
+                <div className="flex items-center gap-3 mb-6">
+                  <button
+                    onClick={() => setStep("time")}
+                    className="p-2 -ml-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                  >
+                    <ChevronLeftIcon className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
+                  </button>
                   <div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                      Session
-                    </p>
-                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                      {selectedSlot.name}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-koru-golden/5 border border-koru-golden/20">
-                  <div className="w-10 h-10 rounded-full bg-koru-golden/10 flex items-center justify-center">
-                    <CalendarIcon className="w-5 h-5 text-koru-golden" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                      Date & Time
-                    </p>
-                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                      {formatDate(selectedDate)}
-                    </p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">
-                      {selectedTime}
+                    <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                      Confirm Booking
+                    </h2>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      Review your request
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-koru-lime/5 border border-koru-lime/20">
-                  <div className="w-10 h-10 rounded-full bg-koru-lime/10 flex items-center justify-center">
-                    <DollarIcon className="w-5 h-5 text-koru-lime" />
+                {/* Booking Summary */}
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center gap-3 p-4 rounded-xl bg-koru-purple/5 border border-koru-purple/20">
+                    <div className="w-10 h-10 rounded-full bg-koru-purple/10 flex items-center justify-center">
+                      <ClockIcon className="w-5 h-5 text-koru-purple" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                        Session
+                      </p>
+                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                        {selectedSlot.name}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                      Price
-                    </p>
-                    <p className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
-                      {selectedSlot.price === 0 ? "Free" : `$${selectedSlot.price}`}
-                    </p>
+
+                  <div className="flex items-center gap-3 p-4 rounded-xl bg-koru-golden/5 border border-koru-golden/20">
+                    <div className="w-10 h-10 rounded-full bg-koru-golden/10 flex items-center justify-center">
+                      <CalendarIcon className="w-5 h-5 text-koru-golden" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                        Date & Time
+                      </p>
+                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                        {formatDate(selectedDate)}
+                      </p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">
+                        {selectedTime}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-4 rounded-xl bg-koru-lime/5 border border-koru-lime/20">
+                    <div className="w-10 h-10 rounded-full bg-koru-lime/10 flex items-center justify-center">
+                      <DollarIcon className="w-5 h-5 text-koru-lime" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                        Price
+                      </p>
+                      <p className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                        {selectedSlot.price === 0
+                          ? "Free"
+                          : `$${selectedSlot.price}`}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => handleOpenChange(false)}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handlePay}
-                  className="flex-1 bg-koru-lime hover:bg-koru-lime/90 text-neutral-900"
-                >
-                  <CheckIcon className="w-4 h-4 mr-2" />
-                  {selectedSlot.price === 0 ? "Confirm Booking" : `Pay $${selectedSlot.price}`}
-                </Button>
-              </div>
-            </motion.div>
-          )}
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleOpenChange(false)}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handlePay}
+                    className="flex-1 bg-koru-lime hover:bg-koru-lime/90 text-neutral-900"
+                  >
+                    <CheckIcon className="w-4 h-4 mr-2" />
+                    {selectedSlot.price === 0
+                      ? "Confirm Booking"
+                      : `Pay $${selectedSlot.price}`}
+                  </Button>
+                </div>
+              </motion.div>
+            )}
 
           {/* Step 5: Processing Payment */}
           {step === "paying" && (
@@ -673,17 +744,92 @@ export function BookingModal({
               transition={{ duration: 0.2 }}
               className="p-8 flex flex-col items-center justify-center min-h-[300px]"
             >
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                className="w-12 h-12 rounded-full border-3 border-koru-purple border-t-transparent mb-4"
-              />
+              {/* Loading Animation Container */}
+              <div className="relative mb-6">
+                {/* Outer glow ring */}
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.2, 0.5] }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className="absolute inset-0 w-20 h-20 rounded-full bg-koru-purple/20"
+                />
+
+                {/* Spinning ring */}
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                  className="relative w-20 h-20"
+                >
+                  <svg className="w-20 h-20" viewBox="0 0 80 80">
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="34"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                      className="text-neutral-200 dark:text-neutral-700"
+                    />
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="34"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                      strokeDasharray="160"
+                      strokeDashoffset="120"
+                      strokeLinecap="round"
+                      className="text-koru-purple"
+                    />
+                  </svg>
+                </motion.div>
+
+                {/* Center icon */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <motion.div
+                    animate={{ scale: [1, 0.9, 1] }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  >
+                    <CreditCardIcon className="w-8 h-8 text-koru-purple" />
+                  </motion.div>
+                </div>
+              </div>
+
               <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
                 Processing Payment
               </h2>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center">
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center mb-4">
                 Please wait while we process your payment...
               </p>
+
+              {/* Progress dots */}
+              <div className="flex gap-1.5">
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
+                    transition={{
+                      duration: 0.8,
+                      repeat: Infinity,
+                      delay: i * 0.2,
+                      ease: "easeInOut",
+                    }}
+                    className="w-2 h-2 rounded-full bg-koru-purple"
+                  />
+                ))}
+              </div>
             </motion.div>
           )}
 
@@ -695,7 +841,7 @@ export function BookingModal({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className="p-6"
+              className="p-1"
             >
               {/* Success Icon */}
               <div className="flex justify-center mb-6">
@@ -710,7 +856,9 @@ export function BookingModal({
               </div>
 
               <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 text-center mb-2">
-                {selectedSlot.price === 0 ? "Booking Confirmed!" : "Payment Successful!"}
+                {selectedSlot.price === 0
+                  ? "Booking Confirmed!"
+                  : "Payment Successful!"}
               </h2>
               <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center mb-6">
                 Your session with {personName} has been booked
@@ -734,26 +882,46 @@ export function BookingModal({
 
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-neutral-500 dark:text-neutral-400">To</span>
-                    <span className="text-neutral-900 dark:text-neutral-100 font-medium">{personName}</span>
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      To
+                    </span>
+                    <span className="text-neutral-900 dark:text-neutral-100 font-medium">
+                      {personName}
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-neutral-500 dark:text-neutral-400">Session</span>
-                    <span className="text-neutral-900 dark:text-neutral-100">{selectedSlot.name}</span>
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      Session
+                    </span>
+                    <span className="text-neutral-900 dark:text-neutral-100">
+                      {selectedSlot.name}
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-neutral-500 dark:text-neutral-400">Date</span>
-                    <span className="text-neutral-900 dark:text-neutral-100">{receipt.date}</span>
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      Date
+                    </span>
+                    <span className="text-neutral-900 dark:text-neutral-100">
+                      {receipt.date}
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-neutral-500 dark:text-neutral-400">Time</span>
-                    <span className="text-neutral-900 dark:text-neutral-100 font-mono">{receipt.time}</span>
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      Time
+                    </span>
+                    <span className="text-neutral-900 dark:text-neutral-100 font-mono">
+                      {receipt.time}
+                    </span>
                   </div>
                   <div className="h-px bg-neutral-200 dark:bg-neutral-700 my-2" />
                   <div className="flex justify-between">
-                    <span className="text-neutral-500 dark:text-neutral-400">Amount</span>
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      Amount
+                    </span>
                     <span className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
-                      {selectedSlot.price === 0 ? "Free" : `$${selectedSlot.price}`}
+                      {selectedSlot.price === 0
+                        ? "Free"
+                        : `$${selectedSlot.price}`}
                     </span>
                   </div>
                 </div>
@@ -765,8 +933,11 @@ export function BookingModal({
                   <ClockIcon className="w-5 h-5 text-koru-golden flex-shrink-0 mt-0.5" />
                   <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
                     If {personName.split(" ")[0]} doesn&apos;t reply within{" "}
-                    <span className="text-koru-golden font-medium">24 hours</span>,
-                    your payment will be automatically refunded to your wallet.
+                    <span className="text-koru-golden font-medium">
+                      24 hours
+                    </span>
+                    , your payment will be automatically refunded to your
+                    wallet.
                   </p>
                 </div>
               </div>

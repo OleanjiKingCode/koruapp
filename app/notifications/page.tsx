@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
+import { AuthGuard } from "@/components/auth";
 import { cn } from "@/lib/utils";
 
 // Icons
@@ -286,6 +287,7 @@ export default function NotificationsPage() {
   };
 
   return (
+    <AuthGuard>
     <div className="min-h-screen pb-[500px] sm:pb-96">
 
       <main className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
@@ -418,6 +420,7 @@ export default function NotificationsPage() {
       </main>
 
     </div>
+    </AuthGuard>
   );
 }
 

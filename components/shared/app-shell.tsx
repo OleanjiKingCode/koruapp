@@ -5,7 +5,7 @@ import { FloatingNav } from "./floating-nav";
 import { Footer } from "./footer";
 
 // Pages where we don't show the nav/footer
-const EXCLUDED_ROUTES = ["/", "/sign-in"];
+const EXCLUDED_ROUTES = ["/", "/sign-in", "/login"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

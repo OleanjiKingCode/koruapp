@@ -313,7 +313,7 @@ export function UserOverviewModal({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2 }}
-              className="p-6"
+              className="p-1"
             >
               {/* Header */}
               <div className="mb-6">
@@ -478,7 +478,7 @@ export function UserOverviewModal({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.2 }}
-              className="p-6"
+              className="p-1"
             >
               {/* Header with Back */}
               <div className="flex items-center gap-3 mb-6">
