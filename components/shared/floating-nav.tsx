@@ -194,6 +194,9 @@ export function FloatingNav() {
                   const isProtected = PROTECTED_ROUTES.some((route) =>
                     item.href.startsWith(route)
                   );
+                  const isProfileItem = item.iconName === "profile";
+                  const showUserImage =
+                    isProfileItem && isAuthenticated && session?.user?.image;
 
                   return (
                     <Link
@@ -213,7 +216,15 @@ export function FloatingNav() {
                             : "text-neutral-500 hover:text-neutral-900"
                         )}
                       >
-                        <Icon className="w-5 h-5" />
+                        {showUserImage ? (
+                          <img
+                            src={session.user.image}
+                            alt={session.user.name || "Profile"}
+                            className="w-7 h-7 rounded-full object-cover ring-2 ring-neutral-200 dark:ring-neutral-700"
+                          />
+                        ) : (
+                          <Icon className="w-5 h-5" />
+                        )}
                         {/* Unread Badge */}
                         {showBadge && !isActive && (
                           <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 text-[10px] font-bold text-white bg-red-500 rounded-full shadow-lg animate-pulse">
@@ -294,6 +305,9 @@ export function FloatingNav() {
                 const isProtected = PROTECTED_ROUTES.some((route) =>
                   item.href.startsWith(route)
                 );
+                const isProfileItem = item.iconName === "profile";
+                const showUserImage =
+                  isProfileItem && isAuthenticated && session?.user?.image;
 
                 return (
                   <Link
@@ -318,19 +332,28 @@ export function FloatingNav() {
                           : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
                       )}
                     >
-                      <AnimatePresence mode="popLayout">
-                        {(isHovered || isActive) && (
-                          <motion.span
-                            initial={{ width: 0, opacity: 0 }}
-                            animate={{ width: "auto", opacity: 1 }}
-                            exit={{ width: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <Icon className="w-4 h-4" />
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
+                      {/* Show user image for profile when logged in */}
+                      {showUserImage ? (
+                        <img
+                          src={session.user.image}
+                          alt={session.user.name || "Profile"}
+                          className="w-5 h-5 rounded-full object-cover ring-1 ring-neutral-300 dark:ring-neutral-600"
+                        />
+                      ) : (
+                        <AnimatePresence mode="popLayout">
+                          {(isHovered || isActive) && (
+                            <motion.span
+                              initial={{ width: 0, opacity: 0 }}
+                              animate={{ width: "auto", opacity: 1 }}
+                              exit={{ width: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <Icon className="w-4 h-4" />
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
+                      )}
                       <span>{item.name}</span>
                       {/* Unread Badge */}
                       {showBadge && (

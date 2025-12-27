@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -10,14 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { AuthGuard } from "@/components/auth";
 import { cn } from "@/lib/utils";
-import { MOCK_USER_DATA } from "@/lib/data";
 import { CheckIcon, ChevronRightIcon } from "@/components/icons";
 import {
   AvailabilityModal,
   TIMEZONES,
   DURATION_OPTIONS,
 } from "@/components/availability-modal";
-import { useAvailability } from "@/lib/hooks";
+import { useAvailability, useUser } from "@/lib/hooks";
 
 function LinkIcon({ className }: { className?: string }) {
   return (
@@ -100,16 +100,33 @@ function ArrowLeftIcon({ className }: { className?: string }) {
 
 export default function EditProfilePage() {
   const { theme } = useTheme();
+  const router = useRouter();
   const isDark = theme === "dark";
 
-  // Form state - initialized from mock user data
+  // Get real user data
+  const { user, updateUser, isLoading: isUserLoading } = useUser();
+
+  // Form state - initialized from user data
   const [formData, setFormData] = useState({
-    username: MOCK_USER_DATA.username,
-    displayName: MOCK_USER_DATA.displayName,
-    bio: MOCK_USER_DATA.bio,
-    website: MOCK_USER_DATA.website,
-    twitterHandle: MOCK_USER_DATA.twitterHandle,
+    username: "",
+    displayName: "",
+    bio: "",
+    website: "",
+    twitterHandle: "",
   });
+
+  // Initialize form data when user loads
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        username: user.username || "",
+        displayName: user.name || "",
+        bio: user.bio || "",
+        website: "",
+        twitterHandle: user.username || "",
+      });
+    }
+  }, [user]);
 
   // Availability
   const { availability, setAvailability, filledSlots, hasAvailability } =
@@ -133,11 +150,21 @@ export default function EditProfilePage() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSaving(false);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+    try {
+      // Save to database
+      await updateUser({
+        bio: formData.bio,
+      });
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        router.push("/profile");
+      }, 1500);
+    } catch (error) {
+      console.error("Error saving profile:", error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -209,9 +236,20 @@ export default function EditProfilePage() {
 
                 <div className="flex justify-center">
                   <div className="w-32 h-32 rounded-full border-4 border-koru-purple/20 shadow-xl overflow-hidden bg-white dark:bg-neutral-800">
-                    <AvatarGenerator seed={MOCK_USER_DATA.address} size={128} />
+                    {user?.profileImageUrl ? (
+                      <img
+                        src={user.profileImageUrl.replace("_normal", "_400x400")}
+                        alt={user.name || "Profile"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <AvatarGenerator seed={user?.username || "user"} size={128} />
+                    )}
                   </div>
                 </div>
+                <p className="text-xs text-neutral-500 text-center mt-3">
+                  Profile picture is synced from your X account
+                </p>
               </div>
 
               {/* Live Preview Card */}
@@ -234,10 +272,18 @@ export default function EditProfilePage() {
 
                   <div className="flex items-start gap-3 -mt-10 relative z-10">
                     <div className="w-16 h-16 rounded-full border-3 border-white dark:border-neutral-800 shadow-lg overflow-hidden">
-                      <AvatarGenerator
-                        seed={MOCK_USER_DATA.address}
-                        size={64}
-                      />
+                      {user?.profileImageUrl ? (
+                        <img
+                          src={user.profileImageUrl.replace("_normal", "_400x400")}
+                          alt={user.name || "Profile"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <AvatarGenerator
+                          seed={user?.username || "user"}
+                          size={64}
+                        />
+                      )}
                     </div>
                     <div className="pt-8">
                       <h4 className="  font-bold text-neutral-900 dark:text-neutral-100">
@@ -255,14 +301,14 @@ export default function EditProfilePage() {
 
                   {/* Badges preview */}
                   <div className="flex flex-wrap gap-1 mt-3">
-                    {MOCK_USER_DATA.badges.slice(0, 2).map((badge) => (
-                      <span
-                        key={badge}
-                        className="text-[10px] px-2 py-0.5 rounded-full bg-koru-purple/10 text-koru-purple"
-                      >
-                        {badge}
+                    {user?.isVerified && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500">
+                        Verified
                       </span>
-                    ))}
+                    )}
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-koru-purple/10 text-koru-purple">
+                      Early Adopter
+                    </span>
                   </div>
                 </div>
               </div>
@@ -395,7 +441,7 @@ export default function EditProfilePage() {
                     </div>
                     <div className="flex-1">
                       <p className="  font-semibold text-neutral-900 dark:text-neutral-100">
-                        @{MOCK_USER_DATA.username}.eth
+                        @{user?.username || "user"}.eth
                       </p>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400">
                         Your Farcaster account is linked
@@ -513,51 +559,53 @@ export default function EditProfilePage() {
               )}
             </div>
 
-            {/* Wallet Info (Read-only) */}
+            {/* Account Info (Read-only) */}
             <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 md:p-8 shadow-soft">
               <h3 className="  text-xl text-neutral-900 dark:text-neutral-100 mb-6">
-                Wallet Information
+                Account Information
               </h3>
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-koru-purple/5 to-koru-golden/5 border border-koru-purple/10">
                   <div>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
-                      Connected Wallet
+                      Connected X Account
                     </p>
                     <p className="font-mono text-sm text-neutral-900 dark:text-neutral-100">
-                      {MOCK_USER_DATA.address}
+                      @{user?.username || "user"}
                     </p>
                   </div>
-                  <Badge className="bg-koru-lime/20 text-koru-lime border-0">
-                    <CheckIcon className="w-3 h-3 mr-1" />
-                    Verified
-                  </Badge>
+                  {user?.isVerified && (
+                    <Badge className="bg-blue-500/20 text-blue-500 border-0">
+                      <CheckIcon className="w-3 h-3 mr-1" />
+                      Verified
+                    </Badge>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
                   <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 text-center">
                     <p className="text-2xl   text-koru-purple">
-                      {MOCK_USER_DATA.level}
+                      {user?.followersCount?.toLocaleString() || "0"}
                     </p>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                      Level
+                      Followers
                     </p>
                   </div>
                   <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 text-center">
                     <p className="text-2xl   text-koru-golden">
-                      {MOCK_USER_DATA.points.toLocaleString()}
+                      {user?.followingCount?.toLocaleString() || "0"}
                     </p>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                      Points
+                      Following
                     </p>
                   </div>
                   <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 text-center">
                     <p className="text-2xl   text-koru-lime">
-                      {MOCK_USER_DATA.badges.length}
+                      ${user?.totalEarnings?.toFixed(0) || "0"}
                     </p>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                      Badges
+                      Earnings
                     </p>
                   </div>
                 </div>

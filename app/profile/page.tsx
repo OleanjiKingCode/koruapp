@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "next-themes";
-import { useSession } from "next-auth/react";
 import { SiFarcaster } from "react-icons/si";
 import {
   PageHeader,
@@ -24,13 +23,13 @@ import {
   DURATION_OPTIONS,
 } from "@/components/availability-modal";
 import { AuthGuard } from "@/components/auth";
-import { useAvailability, useTransactions } from "@/lib/hooks";
+import { useAvailability, useTransactions, useUser } from "@/lib/hooks";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { cn } from "@/lib/utils";
-import { MOCK_USER_DATA, MOCK_CHATS } from "@/lib/data";
+import { MOCK_CHATS } from "@/lib/data";
 import { MOCK_USER_APPEALS, MOCK_APPEALS } from "@/lib/data/mock-appeals";
 import {
   CheckIcon,
@@ -156,13 +155,18 @@ export default function ProfilePage() {
   const [selectedAppeal, setSelectedAppeal] = useState(MOCK_APPEALS[0]);
   const [isFarcasterConnected, setIsFarcasterConnected] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+
+  // Get real user data
+  const { user, isLoading: isUserLoading } = useUser();
   const [isLoading, setIsLoading] = useState(true);
 
-  // Simulate initial loading
+  // Loading state combines user loading and initial animation
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 700);
-    return () => clearTimeout(timer);
-  }, []);
+    if (!isUserLoading) {
+      const timer = setTimeout(() => setIsLoading(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isUserLoading]);
 
   // Availability
   const { availability, setAvailability, filledSlots, hasAvailability } =
@@ -232,100 +236,105 @@ export default function ProfilePage() {
                     className="relative"
                   >
                     <div className="w-28 h-28 md:w-32 md:h-32 rounded-2xl border-4 border-white dark:border-neutral-900 shadow-xl overflow-hidden bg-white dark:bg-neutral-800">
-                      <AvatarGenerator
-                        seed={MOCK_USER_DATA.address}
-                        size={128}
-                      />
+                      {user?.profileImageUrl ? (
+                        <img
+                          src={user.profileImageUrl.replace(
+                            "_normal",
+                            "_400x400"
+                          )}
+                          alt={user.name || "Profile"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <AvatarGenerator
+                          seed={user?.username || "user"}
+                          size={128}
+                        />
+                      )}
                     </div>
-                    {/* Level Badge */}
-                    <div className="absolute -bottom-2 -right-2 px-3 py-1 rounded-full bg-koru-golden text-neutral-900 text-xs   font-bold shadow-lg">
-                      {MOCK_USER_DATA.level}
-                    </div>
+                    {/* Verified Badge */}
+                    {user?.isVerified && (
+                      <div className="absolute -bottom-2 -right-2 px-3 py-1 rounded-full bg-blue-500 text-white text-xs font-bold shadow-lg flex items-center gap-1">
+                        <CheckIcon className="w-3 h-3" />
+                        Verified
+                      </div>
+                    )}
                   </motion.div>
 
                   {/* Info */}
                   <div className="flex-1 pt-4 md:pt-0">
                     <div className="flex flex-wrap items-center gap-3 mb-1">
-                      <h1 className="text-2xl md:text-3xl   text-neutral-900 dark:text-neutral-100">
-                        {MOCK_USER_DATA.displayName}
+                      <h1 className="text-2xl md:text-3xl text-neutral-900 dark:text-neutral-100">
+                        {user?.name || "User"}
                       </h1>
-                      <Badge className="bg-koru-purple/20 text-koru-purple border-0">
-                        {MOCK_USER_DATA.points.toLocaleString()} pts
-                      </Badge>
+                      {user?.isVerified && (
+                        <Badge className="bg-blue-500/20 text-blue-500 border-0">
+                          <CheckIcon className="w-3 h-3 mr-1" />
+                          Verified
+                        </Badge>
+                      )}
+                      {user?.isCreator && (
+                        <Badge className="bg-koru-purple/20 text-koru-purple border-0">
+                          Creator
+                        </Badge>
+                      )}
                     </div>
 
-                    {/* Username and address */}
+                    {/* Username */}
                     <div className="flex flex-wrap items-center gap-2 mb-3">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-300  ">
-                        @{MOCK_USER_DATA.username}
+                      <span className="text-sm text-neutral-600 dark:text-neutral-300">
+                        @{user?.username || "username"}
                       </span>
-                      <span className="text-neutral-300 dark:text-neutral-600">
-                        •
-                      </span>
-                      <span className="text-sm text-neutral-500 dark:text-neutral-400 font-mono">
-                        {MOCK_USER_DATA.shortAddress}
-                      </span>
+                      {user?.followersCount ? (
+                        <>
+                          <span className="text-neutral-300 dark:text-neutral-600">
+                            •
+                          </span>
+                          <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                            {user.followersCount.toLocaleString()} followers
+                          </span>
+                        </>
+                      ) : null}
                     </div>
 
                     {/* Bio */}
-                    {MOCK_USER_DATA.bio && (
+                    {user?.bio && (
                       <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3 max-w-lg">
-                        {MOCK_USER_DATA.bio}
+                        {user.bio}
                       </p>
                     )}
 
                     {/* Links row */}
                     <div className="flex flex-wrap items-center gap-4 mb-3">
-                      {MOCK_USER_DATA.website && (
-                        <a
-                          href={MOCK_USER_DATA.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 text-sm text-koru-purple hover:text-koru-purple/80 transition-colors group"
-                        >
-                          <GlobeIcon className="w-4 h-4" />
-                          <span className="group-hover:underline">
-                            {MOCK_USER_DATA.website.replace("https://", "")}
-                          </span>
-                        </a>
-                      )}
-                      {MOCK_USER_DATA.twitterHandle && (
-                        <a
-                          href={`https://x.com/${MOCK_USER_DATA.twitterHandle}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors group"
-                        >
-                          <XIcon className="w-4 h-4" />
-                          <span className="group-hover:underline">
-                            @{MOCK_USER_DATA.twitterHandle}
-                          </span>
-                        </a>
-                      )}
+                      <a
+                        href={`https://x.com/${user?.username}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors group"
+                      >
+                        <XIcon className="w-4 h-4" />
+                        <span className="group-hover:underline">
+                          @{user?.username}
+                        </span>
+                      </a>
                     </div>
 
                     {/* Badges */}
                     <div className="flex flex-wrap gap-2">
-                      {MOCK_USER_DATA.badges.map((badge) => (
+                      {user?.isCreator && (
                         <Badge
-                          key={badge}
                           variant="outline"
-                          className={cn(
-                            "text-xs",
-                            badge === "Early Adopter" &&
-                              "border-koru-golden text-koru-golden bg-koru-golden/10",
-                            badge === "Power User" &&
-                              "border-koru-purple text-koru-purple bg-koru-purple/10",
-                            badge === "Verified" &&
-                              "border-koru-lime text-koru-lime bg-koru-lime/10"
-                          )}
+                          className="text-xs border-koru-purple text-koru-purple bg-koru-purple/10"
                         >
-                          {badge === "Verified" && (
-                            <CheckIcon className="w-3 h-3 mr-1" />
-                          )}
-                          {badge}
+                          Creator
                         </Badge>
-                      ))}
+                      )}
+                      <Badge
+                        variant="outline"
+                        className="text-xs border-koru-golden text-koru-golden bg-koru-golden/10"
+                      >
+                        Early Adopter
+                      </Badge>
                     </div>
                   </div>
 
@@ -350,7 +359,11 @@ export default function ProfilePage() {
 
                 {/* Member Since */}
                 <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-4">
-                  Member since {MOCK_USER_DATA.joinDate}
+                  {user?.createdAt &&
+                    `Member since ${new Date(user.createdAt).toLocaleDateString(
+                      "en-US",
+                      { month: "long", year: "numeric" }
+                    )}`}
                 </p>
               </div>
             </motion.div>
@@ -467,10 +480,10 @@ export default function ProfilePage() {
                         </span>
                       </div>
                       <p className="text-3xl   text-neutral-900 dark:text-neutral-100">
-                        {MOCK_USER_DATA.walletBalance.onChain}
+                        $0.00
                       </p>
                       <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-                        ≈ {MOCK_USER_DATA.walletBalance.onChainUSD}
+                        ≈ 0 ETH
                       </p>
                     </div>
                   </div>
@@ -482,18 +495,22 @@ export default function ProfilePage() {
                       <div className="flex items-center gap-2 mb-2">
                         <CoinsIcon className="w-5 h-5 text-koru-golden" />
                         <span className="text-sm text-neutral-500 dark:text-neutral-400  ">
-                          In-App Balance
+                          Total Earnings
                         </span>
                       </div>
                       <p className="text-3xl   text-neutral-900 dark:text-neutral-100">
-                        {MOCK_USER_DATA.walletBalance.inApp}
+                        ${user?.totalEarnings?.toFixed(2) || "0.00"}
                       </p>
                       <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-                        ≈ {MOCK_USER_DATA.walletBalance.inAppUSD}
+                        {user?.isCreator
+                          ? "From sessions"
+                          : "Start earning as a creator"}
                       </p>
-                      <p className="text-xs text-koru-golden mt-2  ">
-                        💰 Available to withdraw
-                      </p>
+                      {user?.isCreator && (
+                        <p className="text-xs text-koru-golden mt-2  ">
+                          💰 Available to withdraw
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -517,27 +534,25 @@ export default function ProfilePage() {
             ) : (
               <>
                 <StatCard
-                  title="Total Spent"
-                  value={MOCK_USER_DATA.stats.totalSpent}
+                  title="Followers"
+                  value={user?.followersCount?.toLocaleString() || "0"}
                   icon={<DollarIcon className="w-5 h-5" />}
                   variant="purple"
                 />
                 <StatCard
-                  title="Total Refunded"
-                  value={MOCK_USER_DATA.stats.totalRefunded}
+                  title="Following"
+                  value={user?.followingCount?.toLocaleString() || "0"}
                   icon={<RefundIcon className="w-5 h-5" />}
-                  trend="down"
-                  trendValue="12%"
                 />
                 <StatCard
                   title="Active Chats"
-                  value={MOCK_USER_DATA.stats.activeChats}
+                  value="0"
                   icon={<ChatIcon className="w-5 h-5" />}
                   variant="golden"
                 />
                 <StatCard
-                  title="Appeals Created"
-                  value={MOCK_USER_DATA.stats.appealsCreated}
+                  title="Response Time"
+                  value={`${user?.responseTimeHours || 24}h`}
                   icon={<BeaconIcon className="w-5 h-5" />}
                   variant="lime"
                 />
@@ -915,7 +930,36 @@ export default function ProfilePage() {
           open={shareModalOpen}
           onOpenChange={setShareModalOpen}
           type={shareType}
-          userData={MOCK_USER_DATA}
+          userData={{
+            displayName: user?.name || "User",
+            username: user?.username || "user",
+            twitterHandle: user?.username || "user",
+            bio: user?.bio || "",
+            address: user?.twitterId || "",
+            shortAddress: user?.twitterId?.slice(0, 8) || "",
+            level: "Lv. 1",
+            points: 0,
+            badges: user?.isVerified ? ["Verified"] : [],
+            website: "",
+            joinDate: user?.createdAt
+              ? new Date(user.createdAt).toLocaleDateString("en-US", {
+                  month: "long",
+                  year: "numeric",
+                })
+              : "2024",
+            walletBalance: {
+              onChain: "$0.00",
+              onChainUSD: "$0.00",
+              inApp: "$0.00",
+              inAppUSD: "$0.00",
+            },
+            stats: {
+              totalSpent: "$0",
+              totalRefunded: "$0",
+              activeChats: 0,
+              appealsCreated: 0,
+            },
+          }}
           appeal={selectedAppeal}
         />
       </div>
