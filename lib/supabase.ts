@@ -162,23 +162,36 @@ export async function upsertUser(user: {
   name: string;
   email?: string | null;
   profile_image_url?: string | null;
+  bio?: string | null;
+  is_verified?: boolean;
+  followers_count?: number;
+  following_count?: number;
 }): Promise<User | null> {
+  // Build the upsert object, only including fields that are provided
+  const upsertData: Record<string, unknown> = {
+    twitter_id: user.twitter_id,
+    username: user.username.toLowerCase(),
+    name: user.name,
+    last_login_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  // Add optional fields if provided
+  if (user.email !== undefined) upsertData.email = user.email;
+  if (user.profile_image_url !== undefined)
+    upsertData.profile_image_url = user.profile_image_url;
+  if (user.bio !== undefined) upsertData.bio = user.bio;
+  if (user.is_verified !== undefined) upsertData.is_verified = user.is_verified;
+  if (user.followers_count !== undefined)
+    upsertData.followers_count = user.followers_count;
+  if (user.following_count !== undefined)
+    upsertData.following_count = user.following_count;
+
   const { data, error } = await supabase
     .from("users")
-    .upsert(
-      {
-        twitter_id: user.twitter_id,
-        username: user.username.toLowerCase(),
-        name: user.name,
-        email: user.email || null,
-        profile_image_url: user.profile_image_url || null,
-        last_login_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        onConflict: "twitter_id",
-      }
-    )
+    .upsert(upsertData, {
+      onConflict: "twitter_id",
+    })
     .select()
     .single();
 

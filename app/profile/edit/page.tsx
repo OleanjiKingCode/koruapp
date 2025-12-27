@@ -329,51 +329,50 @@ export default function EditProfilePage() {
               </h3>
 
               <div className="grid md:grid-cols-2 gap-6">
-                {/* Username */}
+                {/* Username - Read only (synced from X) */}
                 <div className="space-y-2">
                   <label className="block text-sm   font-medium text-neutral-700 dark:text-neutral-300">
                     Username
+                    <span className="text-xs text-neutral-400 ml-2">(from X)</span>
                   </label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 z-10">
                       @
                     </span>
                     <Input
                       value={formData.username}
-                      onChange={(e) =>
-                        handleInputChange("username", e.target.value)
-                      }
-                      className="pl-8 h-12 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border-neutral-200 dark:border-neutral-700 focus:border-koru-purple focus:ring-koru-purple/20"
+                      readOnly
+                      className="pl-8 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 cursor-not-allowed"
                       placeholder="username"
                     />
                   </div>
                 </div>
 
-                {/* Display Name */}
+                {/* Display Name - Read only (synced from X) */}
                 <div className="space-y-2">
                   <label className="block text-sm   font-medium text-neutral-700 dark:text-neutral-300">
                     Display Name
+                    <span className="text-xs text-neutral-400 ml-2">(from X)</span>
                   </label>
                   <Input
                     value={formData.displayName}
-                    onChange={(e) =>
-                      handleInputChange("displayName", e.target.value)
-                    }
-                    className="h-12 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border-neutral-200 dark:border-neutral-700 focus:border-koru-purple focus:ring-koru-purple/20"
+                    readOnly
+                    className="h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 cursor-not-allowed"
                     placeholder="Your display name"
                   />
                 </div>
 
-                {/* Bio - Full width */}
+                {/* Bio - Full width - Editable */}
                 <div className="md:col-span-2 space-y-2">
-                  <label className="block text-sm   font-medium text-neutral-700 dark:text-neutral-300">
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
                     Bio
+                    <span className="text-xs text-koru-purple ml-2">(editable)</span>
                   </label>
                   <textarea
                     value={formData.bio}
                     onChange={(e) => handleInputChange("bio", e.target.value)}
                     rows={4}
-                    className="w-full rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 focus:border-koru-purple focus:ring-1 focus:ring-koru-purple/20 p-4 text-sm resize-none transition-colors  "
+                    className="w-full rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 focus:border-koru-purple focus:ring-2 focus:ring-koru-purple/20 p-4 text-sm resize-none transition-colors text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 outline-none"
                     placeholder="Tell the world about yourself..."
                     maxLength={160}
                   />
@@ -382,19 +381,20 @@ export default function EditProfilePage() {
                   </p>
                 </div>
 
-                {/* Website */}
+                {/* Website - Editable */}
                 <div className="md:col-span-2 space-y-2">
-                  <label className="block text-sm   font-medium text-neutral-700 dark:text-neutral-300">
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
                     Website
+                    <span className="text-xs text-koru-purple ml-2">(editable)</span>
                   </label>
                   <div className="relative">
-                    <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                    <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 z-10 pointer-events-none" />
                     <Input
                       value={formData.website}
                       onChange={(e) =>
                         handleInputChange("website", e.target.value)
                       }
-                      className="pl-11 h-12 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border-neutral-200 dark:border-neutral-700 focus:border-koru-purple focus:ring-koru-purple/20"
+                      className="pl-11 h-12 rounded-xl bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700 focus:border-koru-purple focus:ring-2 focus:ring-koru-purple/20 text-neutral-900 dark:text-neutral-100"
                       placeholder="https://your-website.com"
                     />
                   </div>
