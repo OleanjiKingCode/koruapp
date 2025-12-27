@@ -5,3 +5,4 @@ export * from "./use-local-storage";
 export * from "./use-filter";
 export * from "./use-transactions";
 export * from "./use-unread-count";
+export * from "./use-twitter-search";

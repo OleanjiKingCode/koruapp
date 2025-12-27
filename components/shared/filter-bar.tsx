@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,8 @@ interface FilterBarProps {
   showSearch?: boolean;
   searchPlaceholder?: string;
   className?: string;
+  isSearching?: boolean;
+  minSearchLength?: number;
 }
 
 const defaultCategories = ["All", "Web3", "Tech", "Business", "Medical", "Sports"];
@@ -47,39 +49,66 @@ export function FilterBar({
   showSearch = true,
   searchPlaceholder = "Search X handles...",
   className,
+  isSearching = false,
+  minSearchLength = 2,
 }: FilterBarProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSearch?.(searchQuery);
+  // Debounced search - triggers as user types
+  useEffect(() => {
+    // Clear any existing timeout
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    // Only search if query meets minimum length or is empty (to clear results)
+    if (searchQuery.length >= minSearchLength || searchQuery.length === 0) {
+      debounceRef.current = setTimeout(() => {
+        onSearch?.(searchQuery);
+      }, 400); // 400ms debounce
+    }
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [searchQuery, onSearch, minSearchLength]);
+
+  const handleClear = () => {
+    setSearchQuery("");
+    onSearch?.("");
   };
 
   return (
     <div className={cn("space-y-4", className)}>
       {/* Search Bar */}
       {showSearch && (
-        <form onSubmit={handleSearch} className="relative">
+        <div className="relative">
           <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={searchPlaceholder}
-            className="pl-12 pr-4 h-12 rounded-xl bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 focus:border-koru-purple focus:ring-koru-purple/20"
+            className="pl-12 pr-12 h-12 rounded-xl bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 focus:border-koru-purple focus:ring-koru-purple/20"
           />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearchQuery("");
-                onSearch?.("");
-              }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
-            >
-              <XIcon className="w-4 h-4" />
-            </button>
-          )}
-        </form>
+          {/* Right side: Loading spinner or Clear button */}
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+            {isSearching && searchQuery.length >= minSearchLength && (
+              <LoadingSpinner className="w-4 h-4 text-koru-purple" />
+            )}
+            {searchQuery && !isSearching && (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+              >
+                <XIcon className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Filters Row */}
@@ -193,6 +222,24 @@ function XIcon({ className }: { className?: string }) {
   );
 }
 
+function LoadingSpinner({ className }: { className?: string }) {
+  return (
+    <svg
+      className={cn("animate-spin", className)}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+      <path
+        d="M12 2a10 10 0 0 1 10 10"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 function SortIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -235,5 +282,3 @@ function ListIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-
-

@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Twitter from "next-auth/providers/twitter";
+import { upsertUser } from "./supabase";
 
 // Twitter profile type for OAuth 2.0
 interface TwitterProfile {
@@ -27,6 +28,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.twitterUsername = twitterProfile.data?.username;
         token.twitterName = twitterProfile.data?.name;
         token.twitterImage = twitterProfile.data?.profile_image_url;
+
+        // Save user to Supabase on login
+        if (twitterProfile.data?.id) {
+          try {
+            await upsertUser({
+              twitter_id: twitterProfile.data.id,
+              username: twitterProfile.data.username,
+              name: twitterProfile.data.name,
+              profile_image_url: twitterProfile.data.profile_image_url,
+            });
+          } catch (error) {
+            console.error("Error saving user to database:", error);
+          }
+        }
       }
       return token;
     },

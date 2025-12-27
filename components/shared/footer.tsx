@@ -68,28 +68,22 @@ export function Footer() {
     // Calculate how far from the actual bottom the user is (in pixels)
     const distanceFromBottom = documentHeight - windowHeight - scrollTop;
     
-    // On mobile, require being within 100px of the bottom
-    // On desktop, within 150px
-    const isMobile = window.innerWidth < 768;
-    const pixelThreshold = isMobile ? 100 : 150;
+    // Be very strict - only show when within 30px of bottom
+    const pixelThreshold = 30;
     
-    // Only show footer when user has scrolled close to the actual bottom
-    // Never show if user hasn't scrolled at all and page has content to scroll
+    // Calculate scrollable height
     const scrollableHeight = documentHeight - windowHeight;
-    const hasScrollableContent = scrollableHeight > 200; // More than 200px to scroll
     
-    // Show footer only when:
-    // 1. User is within threshold pixels of the bottom, OR
-    // 2. Page is truly not scrollable (very short page)
+    // Only show footer when:
+    // 1. User is within 30px of the true bottom AND has scrolled significantly
+    // 2. OR page has almost no scrollable content (truly short page)
     const nearBottom = distanceFromBottom <= pixelThreshold;
-    const pageNotScrollable = scrollableHeight <= 100;
-    
-    // Additional check: if page is scrollable, user must have scrolled at least a bit
-    const hasScrolled = scrollTop > 50;
+    const hasScrolledEnough = scrollTop > 150;
+    const pageIsTinyAndNotScrollable = scrollableHeight <= 30;
     
     setIsVisible(
-      (nearBottom && (!hasScrollableContent || hasScrolled)) || 
-      pageNotScrollable
+      (nearBottom && hasScrolledEnough) || 
+      pageIsTinyAndNotScrollable
     );
   }, []);
 
