@@ -115,9 +115,12 @@ export default function EditProfilePage() {
     twitterHandle: "",
   });
 
-  // Initialize form data when user loads
+  // Track if form has been initialized to prevent re-initialization on every render
+  const [isFormInitialized, setIsFormInitialized] = useState(false);
+
+  // Initialize form data ONLY ONCE when user first loads
   useEffect(() => {
-    if (user) {
+    if (user && !isFormInitialized) {
       setFormData({
         username: user.username || "",
         displayName: user.name || "",
@@ -125,8 +128,9 @@ export default function EditProfilePage() {
         website: "",
         twitterHandle: user.username || "",
       });
+      setIsFormInitialized(true);
     }
-  }, [user]);
+  }, [user, isFormInitialized]);
 
   // Availability
   const { availability, setAvailability, filledSlots, hasAvailability } =
@@ -169,487 +173,516 @@ export default function EditProfilePage() {
 
   return (
     <AuthGuard>
-    <div className="min-h-screen">
-
-      {/* Success Toast */}
-      <AnimatePresence>
-        {showSuccess && (
-          <motion.div
-            initial={{ opacity: 0, y: -50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -50, scale: 0.9 }}
-            className="fixed top-24 left-1/2 -translate-x-1/2 z-50"
-          >
-            <div className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-gradient-to-r from-koru-lime/20 to-koru-lime/5 border border-koru-lime/30 shadow-lg shadow-koru-lime/10 backdrop-blur-xl">
-              <div className="w-8 h-8 rounded-full bg-koru-lime/20 flex items-center justify-center">
-                <CheckIcon className="w-5 h-5 text-koru-lime" />
-              </div>
-              <span className="  font-semibold text-koru-lime">
-                Profile updated successfully!
-              </span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <main className="max-w-container mx-auto px-4 sm:px-6 pt-8 pb-48">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <Link
-            href="/profile"
-            className="inline-flex items-center gap-2 text-neutral-500 hover:text-koru-purple transition-colors mb-6 group"
-          >
-            <ArrowLeftIcon className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            <span className=" ">Back to Profile</span>
-          </Link>
-
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-3xl   text-neutral-900 dark:text-neutral-100">
-                Edit Profile
-              </h1>
-              <p className="text-neutral-500 dark:text-neutral-400  ">
-                Customize how others see you on Koru
-              </p>
-            </div>
-          </div>
-        </motion.div>
-
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left Column - Preview (Sticky) */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-            className="lg:col-span-1"
-          >
-            <div className="lg:sticky lg:top-8 space-y-6">
-              {/* Profile Picture */}
-              <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft">
-                <h3 className="  text-lg text-neutral-900 dark:text-neutral-100 mb-4">
-                  Profile Picture
-                </h3>
-
-                <div className="flex justify-center">
-                  <div className="w-32 h-32 rounded-full border-4 border-koru-purple/20 shadow-xl overflow-hidden bg-white dark:bg-neutral-800">
-                    {user?.profileImageUrl ? (
-                      <img
-                        src={user.profileImageUrl.replace("_normal", "_400x400")}
-                        alt={user.name || "Profile"}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <AvatarGenerator seed={user?.username || "user"} size={128} />
-                    )}
-                  </div>
+      <div className="min-h-screen">
+        {/* Success Toast */}
+        <AnimatePresence>
+          {showSuccess && (
+            <motion.div
+              initial={{ opacity: 0, y: -50, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -50, scale: 0.9 }}
+              className="fixed top-24 left-1/2 -translate-x-1/2 z-50"
+            >
+              <div className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-gradient-to-r from-koru-lime/20 to-koru-lime/5 border border-koru-lime/30 shadow-lg shadow-koru-lime/10 backdrop-blur-xl">
+                <div className="w-8 h-8 rounded-full bg-koru-lime/20 flex items-center justify-center">
+                  <CheckIcon className="w-5 h-5 text-koru-lime" />
                 </div>
-                <p className="text-xs text-neutral-500 text-center mt-3">
-                  Profile picture is synced from your X account
+                <span className="  font-semibold text-koru-lime">
+                  Profile updated successfully!
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <main className="max-w-container mx-auto px-4 sm:px-6 pt-8 pb-48">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <Link
+              href="/profile"
+              className="inline-flex items-center gap-2 text-neutral-500 hover:text-koru-purple transition-colors mb-6 group"
+            >
+              <ArrowLeftIcon className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              <span className=" ">Back to Profile</span>
+            </Link>
+
+            <div className="flex items-center gap-4">
+              <div>
+                <h1 className="text-3xl   text-neutral-900 dark:text-neutral-100">
+                  Edit Profile
+                </h1>
+                <p className="text-neutral-500 dark:text-neutral-400  ">
+                  Customize how others see you on Koru
                 </p>
               </div>
+            </div>
+          </motion.div>
 
-              {/* Live Preview Card */}
-              <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="  text-lg text-neutral-900 dark:text-neutral-100">
-                    Live Preview
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Left Column - Preview (Sticky) */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+              className="lg:col-span-1"
+            >
+              <div className="lg:sticky lg:top-8 space-y-6">
+                {/* Profile Picture */}
+                <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft">
+                  <h3 className="  text-lg text-neutral-900 dark:text-neutral-100 mb-4">
+                    Profile Picture
                   </h3>
-                  <span className="text-xs text-koru-purple   font-medium px-2 py-1 rounded-full bg-koru-purple/10">
-                    Real-time
-                  </span>
-                </div>
 
-                {/* Mini Profile Card Preview */}
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-koru-purple/10 via-koru-golden/5 to-koru-lime/10 p-4 border border-neutral-200/50 dark:border-neutral-700/50">
-                  {/* Mini Banner */}
-                  <div className="h-16 -mx-4 -mt-4 mb-4 bg-gradient-to-r from-koru-purple via-koru-golden/50 to-koru-lime/30 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.2),transparent_50%)]" />
-                  </div>
-
-                  <div className="flex items-start gap-3 -mt-10 relative z-10">
-                    <div className="w-16 h-16 rounded-full border-3 border-white dark:border-neutral-800 shadow-lg overflow-hidden">
+                  <div className="flex justify-center">
+                    <div className="w-32 h-32 rounded-full border-4 border-koru-purple/20 shadow-xl overflow-hidden bg-white dark:bg-neutral-800">
                       {user?.profileImageUrl ? (
                         <img
-                          src={user.profileImageUrl.replace("_normal", "_400x400")}
+                          src={user.profileImageUrl.replace(
+                            "_normal",
+                            "_400x400"
+                          )}
                           alt={user.name || "Profile"}
                           className="w-full h-full object-cover"
                         />
                       ) : (
                         <AvatarGenerator
                           seed={user?.username || "user"}
-                          size={64}
+                          size={128}
                         />
                       )}
                     </div>
-                    <div className="pt-8">
-                      <h4 className="  font-bold text-neutral-900 dark:text-neutral-100">
-                        {formData.displayName || "Display Name"}
-                      </h4>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        @{formData.username || "username"}
-                      </p>
-                    </div>
                   </div>
-
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-3 line-clamp-2">
-                    {formData.bio || "Your bio will appear here..."}
-                  </p>
-
-                  {/* Badges preview */}
-                  <div className="flex flex-wrap gap-1 mt-3">
-                    {user?.isVerified && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500">
-                        Verified
-                      </span>
-                    )}
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-koru-purple/10 text-koru-purple">
-                      Early Adopter
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Right Column - Form */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="lg:col-span-2 space-y-6"
-          >
-            {/* Basic Info */}
-            <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 md:p-8 shadow-soft">
-              <h3 className="  text-xl text-neutral-900 dark:text-neutral-100 mb-6">
-                Basic Information
-              </h3>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Username - Read only (synced from X) */}
-                <div className="space-y-2">
-                  <label className="block text-sm   font-medium text-neutral-700 dark:text-neutral-300">
-                    Username
-                    <span className="text-xs text-neutral-400 ml-2">(from X)</span>
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 z-10">
-                      @
-                    </span>
-                    <Input
-                      value={formData.username}
-                      readOnly
-                      className="pl-8 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 cursor-not-allowed"
-                      placeholder="username"
-                    />
-                  </div>
-                </div>
-
-                {/* Display Name - Read only (synced from X) */}
-                <div className="space-y-2">
-                  <label className="block text-sm   font-medium text-neutral-700 dark:text-neutral-300">
-                    Display Name
-                    <span className="text-xs text-neutral-400 ml-2">(from X)</span>
-                  </label>
-                  <Input
-                    value={formData.displayName}
-                    readOnly
-                    className="h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 cursor-not-allowed"
-                    placeholder="Your display name"
-                  />
-                </div>
-
-                {/* Bio - Full width - Editable */}
-                <div className="md:col-span-2 space-y-2">
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                    Bio
-                    <span className="text-xs text-koru-purple ml-2">(editable)</span>
-                  </label>
-                  <textarea
-                    value={formData.bio}
-                    onChange={(e) => handleInputChange("bio", e.target.value)}
-                    rows={4}
-                    className="w-full rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 focus:border-koru-purple focus:ring-2 focus:ring-koru-purple/20 p-4 text-sm resize-none transition-colors text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 outline-none"
-                    placeholder="Tell the world about yourself..."
-                    maxLength={160}
-                  />
-                  <p className="text-xs text-neutral-400 text-right">
-                    {formData.bio.length}/160 characters
+                  <p className="text-xs text-neutral-500 text-center mt-3">
+                    Profile picture is synced from your X account
                   </p>
                 </div>
 
-                {/* Website - Editable */}
-                <div className="md:col-span-2 space-y-2">
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                    Website
-                    <span className="text-xs text-koru-purple ml-2">(editable)</span>
-                  </label>
-                  <div className="relative">
-                    <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 z-10 pointer-events-none" />
-                    <Input
-                      value={formData.website}
-                      onChange={(e) =>
-                        handleInputChange("website", e.target.value)
-                      }
-                      className="pl-11 h-12 rounded-xl bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700 focus:border-koru-purple focus:ring-2 focus:ring-koru-purple/20 text-neutral-900 dark:text-neutral-100"
-                      placeholder="https://your-website.com"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Connect Farcaster */}
-            <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 md:p-8 shadow-soft overflow-hidden relative">
-              {/* Farcaster branding background */}
-              <div className="absolute -right-20 -top-20 w-64 h-64 bg-gradient-to-br from-purple-100 dark:from-purple-900/20 to-transparent rounded-full opacity-50" />
-              <div className="absolute -right-10 -top-10 w-40 h-40 flex items-center justify-center opacity-5">
-                <FarcasterIcon className="w-32 h-32" />
-              </div>
-
-              <div className="relative z-10">
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center">
-                      <FarcasterIcon className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="  text-xl text-neutral-900 dark:text-neutral-100">
-                        Connect Farcaster
-                      </h3>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400  ">
-                        Link your Farcaster account for extra reach
-                      </p>
-                    </div>
+                {/* Live Preview Card */}
+                <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="  text-lg text-neutral-900 dark:text-neutral-100">
+                      Live Preview
+                    </h3>
+                    <span className="text-xs text-koru-purple   font-medium px-2 py-1 rounded-full bg-koru-purple/10">
+                      Real-time
+                    </span>
                   </div>
 
-                  {isFarcasterConnected && (
-                    <Badge className="bg-purple-500/20 text-purple-500 border-0">
-                      <CheckIcon className="w-3 h-3 mr-1" />
-                      Connected
-                    </Badge>
-                  )}
-                </div>
+                  {/* Mini Profile Card Preview */}
+                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-koru-purple/10 via-koru-golden/5 to-koru-lime/10 p-4 border border-neutral-200/50 dark:border-neutral-700/50">
+                    {/* Mini Banner */}
+                    <div className="h-16 -mx-4 -mt-4 mb-4 bg-gradient-to-r from-koru-purple via-koru-golden/50 to-koru-lime/30 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.2),transparent_50%)]" />
+                    </div>
 
-                {isFarcasterConnected ? (
-                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800/30">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center">
-                      <FarcasterIcon className="w-5 h-5 text-white" />
+                    <div className="flex items-start gap-3 -mt-10 relative z-10">
+                      <div className="w-16 h-16 rounded-full border-3 border-white dark:border-neutral-800 shadow-lg overflow-hidden">
+                        {user?.profileImageUrl ? (
+                          <img
+                            src={user.profileImageUrl.replace(
+                              "_normal",
+                              "_400x400"
+                            )}
+                            alt={user.name || "Profile"}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <AvatarGenerator
+                            seed={user?.username || "user"}
+                            size={64}
+                          />
+                        )}
+                      </div>
+                      <div className="pt-8">
+                        <h4 className="  font-bold text-neutral-900 dark:text-neutral-100">
+                          {formData.displayName || "Display Name"}
+                        </h4>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                          @{formData.username || "username"}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="  font-semibold text-neutral-900 dark:text-neutral-100">
-                        @{user?.username || "user"}.eth
-                      </p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        Your Farcaster account is linked
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsFarcasterConnected(false)}
-                      className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                    >
-                      Disconnect
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400  ">
-                      Connect your Farcaster account to expand your reach and
-                      share your profile as casts to the Farcaster community.
+
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-3 line-clamp-2">
+                      {formData.bio || "Your bio will appear here..."}
                     </p>
 
-                    <Button
-                      onClick={handleConnectFarcaster}
-                      className="w-full h-14 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-2xl   font-semibold text-base group"
+                    {/* Badges preview */}
+                    <div className="flex flex-wrap gap-1 mt-3">
+                      {user?.isVerified && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500">
+                          Verified
+                        </span>
+                      )}
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-koru-purple/10 text-koru-purple">
+                        Early Adopter
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Right Column - Form */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="lg:col-span-2 space-y-6"
+            >
+              {/* Basic Info */}
+              <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 md:p-8 shadow-soft">
+                <h3 className="  text-xl text-neutral-900 dark:text-neutral-100 mb-6">
+                  Basic Information
+                </h3>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Username - Read only (synced from X) */}
+                  <div className="space-y-2">
+                    <label className="block text-sm   font-medium text-neutral-700 dark:text-neutral-300">
+                      Username
+                      <span className="text-xs text-neutral-400 ml-2">
+                        (from X)
+                      </span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 z-10">
+                        @
+                      </span>
+                      <Input
+                        value={formData.username}
+                        readOnly
+                        className="pl-8 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 cursor-not-allowed"
+                        placeholder="username"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Display Name - Read only (synced from X) */}
+                  <div className="space-y-2">
+                    <label className="block text-sm   font-medium text-neutral-700 dark:text-neutral-300">
+                      Display Name
+                      <span className="text-xs text-neutral-400 ml-2">
+                        (from X)
+                      </span>
+                    </label>
+                    <Input
+                      value={formData.displayName}
+                      readOnly
+                      className="h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 cursor-not-allowed"
+                      placeholder="Your display name"
+                    />
+                  </div>
+
+                  {/* Bio - Full width - Editable */}
+                  <div className="md:col-span-2 space-y-2">
+                    <label
+                      htmlFor="bio-input"
+                      className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                     >
-                      <FarcasterIcon className="w-5 h-5 mr-3" />
-                      Connect Farcaster
-                      <ChevronRightIcon className="w-5 h-5 ml-auto group-hover:translate-x-1 transition-transform" />
-                    </Button>
+                      Bio
+                      <span className="text-xs text-koru-purple ml-2">
+                        (editable)
+                      </span>
+                    </label>
+                    <textarea
+                      id="bio-input"
+                      name="bio"
+                      value={formData.bio}
+                      onChange={(e) => handleInputChange("bio", e.target.value)}
+                      onFocus={(e) => e.target.select()}
+                      rows={4}
+                      autoComplete="off"
+                      spellCheck="true"
+                      className="w-full rounded-xl bg-white dark:bg-neutral-800 border-2 border-neutral-200 dark:border-neutral-700 focus:border-koru-purple focus:outline-none focus:ring-2 focus:ring-koru-purple/30 p-4 text-sm resize-none transition-all text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
+                      placeholder="Tell the world about yourself..."
+                      maxLength={160}
+                    />
+                    <p className="text-xs text-neutral-400 text-right">
+                      {formData.bio.length}/160 characters
+                    </p>
+                  </div>
+
+                  {/* Website - Editable */}
+                  <div className="md:col-span-2 space-y-2">
+                    <label
+                      htmlFor="website-input"
+                      className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                    >
+                      Website
+                      <span className="text-xs text-koru-purple ml-2">
+                        (editable)
+                      </span>
+                    </label>
+                    <div className="relative">
+                      <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 z-10 pointer-events-none" />
+                      <Input
+                        id="website-input"
+                        name="website"
+                        value={formData.website}
+                        onChange={(e) =>
+                          handleInputChange("website", e.target.value)
+                        }
+                        autoComplete="url"
+                        className="pl-11 h-12 rounded-xl bg-white dark:bg-neutral-800 border-2 border-neutral-200 dark:border-neutral-700 focus:border-koru-purple focus:ring-2 focus:ring-koru-purple/30 text-neutral-900 dark:text-neutral-100"
+                        placeholder="https://your-website.com"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Connect Farcaster */}
+              <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 md:p-8 shadow-soft overflow-hidden relative">
+                {/* Farcaster branding background */}
+                <div className="absolute -right-20 -top-20 w-64 h-64 bg-gradient-to-br from-purple-100 dark:from-purple-900/20 to-transparent rounded-full opacity-50" />
+                <div className="absolute -right-10 -top-10 w-40 h-40 flex items-center justify-center opacity-5">
+                  <FarcasterIcon className="w-32 h-32" />
+                </div>
+
+                <div className="relative z-10">
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center">
+                        <FarcasterIcon className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="  text-xl text-neutral-900 dark:text-neutral-100">
+                          Connect Farcaster
+                        </h3>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400  ">
+                          Link your Farcaster account for extra reach
+                        </p>
+                      </div>
+                    </div>
+
+                    {isFarcasterConnected && (
+                      <Badge className="bg-purple-500/20 text-purple-500 border-0">
+                        <CheckIcon className="w-3 h-3 mr-1" />
+                        Connected
+                      </Badge>
+                    )}
+                  </div>
+
+                  {isFarcasterConnected ? (
+                    <div className="flex items-center gap-4 p-4 rounded-2xl bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800/30">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center">
+                        <FarcasterIcon className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="  font-semibold text-neutral-900 dark:text-neutral-100">
+                          @{user?.username || "user"}.eth
+                        </p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                          Your Farcaster account is linked
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsFarcasterConnected(false)}
+                        className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                      >
+                        Disconnect
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400  ">
+                        Connect your Farcaster account to expand your reach and
+                        share your profile as casts to the Farcaster community.
+                      </p>
+
+                      <Button
+                        onClick={handleConnectFarcaster}
+                        className="w-full h-14 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-2xl   font-semibold text-base group"
+                      >
+                        <FarcasterIcon className="w-5 h-5 mr-3" />
+                        Connect Farcaster
+                        <ChevronRightIcon className="w-5 h-5 ml-auto group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Availability Settings */}
+              <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 md:p-8 shadow-soft">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-koru-lime/10 flex items-center justify-center">
+                      <CalendarIcon className="w-6 h-6 text-koru-lime" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl text-neutral-900 dark:text-neutral-100">
+                        Availability
+                      </h3>
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                        {selectedTimezone.label} ({selectedTimezone.offset})
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => setAvailabilityModalOpen(true)}
+                    className="bg-koru-purple hover:bg-koru-purple/90"
+                  >
+                    {hasAvailability ? "Edit times" : "Set times"}
+                  </Button>
+                </div>
+
+                {/* Configured Slots */}
+                {hasAvailability ? (
+                  <div className="space-y-3">
+                    {filledSlots.map((slot) => {
+                      const durationLabel =
+                        DURATION_OPTIONS.find((d) => d.value === slot.duration)
+                          ?.label || `${slot.duration} min`;
+                      return (
+                        <div
+                          key={slot.id}
+                          className="flex items-center gap-3 p-4 rounded-xl bg-koru-lime/5 border border-koru-lime/20"
+                        >
+                          <div className="w-10 h-10 rounded-full bg-koru-lime/20 flex items-center justify-center">
+                            <ClockIcon className="w-5 h-5 text-koru-lime" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                              {slot.name}
+                            </p>
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                              {durationLabel} · {slot.times.length} time slot
+                              {slot.times.length !== 1 ? "s" : ""}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5 max-w-[220px]">
+                            {slot.times.slice(0, 4).map((time) => (
+                              <span
+                                key={time}
+                                className="text-xs font-mono px-2 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
+                              >
+                                {time}
+                              </span>
+                            ))}
+                            {slot.times.length > 4 && (
+                              <span className="text-xs px-2 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500">
+                                +{slot.times.length - 4} more
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-3 p-8 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border-2 border-dashed border-neutral-200 dark:border-neutral-700">
+                    <ClockIcon className="w-8 h-8 text-neutral-300 dark:text-neutral-600" />
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                        No availability set yet
+                      </p>
+                      <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
+                        Click &quot;Set times&quot; to configure your available
+                        slots
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
-            </div>
 
-            {/* Availability Settings */}
-            <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 md:p-8 shadow-soft">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-koru-lime/10 flex items-center justify-center">
-                    <CalendarIcon className="w-6 h-6 text-koru-lime" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl text-neutral-900 dark:text-neutral-100">
-                      Availability
-                    </h3>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      {selectedTimezone.label} ({selectedTimezone.offset})
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  onClick={() => setAvailabilityModalOpen(true)}
-                  className="bg-koru-purple hover:bg-koru-purple/90"
-                >
-                  {hasAvailability ? "Edit times" : "Set times"}
-                </Button>
-              </div>
+              {/* Account Info (Read-only) */}
+              <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 md:p-8 shadow-soft">
+                <h3 className="  text-xl text-neutral-900 dark:text-neutral-100 mb-6">
+                  Account Information
+                </h3>
 
-              {/* Configured Slots */}
-              {hasAvailability ? (
-                <div className="space-y-3">
-                  {filledSlots.map((slot) => {
-                    const durationLabel =
-                      DURATION_OPTIONS.find((d) => d.value === slot.duration)
-                        ?.label || `${slot.duration} min`;
-                    return (
-                      <div
-                        key={slot.id}
-                        className="flex items-center gap-3 p-4 rounded-xl bg-koru-lime/5 border border-koru-lime/20"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-koru-lime/20 flex items-center justify-center">
-                          <ClockIcon className="w-5 h-5 text-koru-lime" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                            {slot.name}
-                          </p>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                            {durationLabel} · {slot.times.length} time slot
-                            {slot.times.length !== 1 ? "s" : ""}
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap gap-1.5 max-w-[220px]">
-                          {slot.times.slice(0, 4).map((time) => (
-                            <span
-                              key={time}
-                              className="text-xs font-mono px-2 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
-                            >
-                              {time}
-                            </span>
-                          ))}
-                          {slot.times.length > 4 && (
-                            <span className="text-xs px-2 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500">
-                              +{slot.times.length - 4} more
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-3 p-8 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border-2 border-dashed border-neutral-200 dark:border-neutral-700">
-                  <ClockIcon className="w-8 h-8 text-neutral-300 dark:text-neutral-600" />
-                  <div className="text-center">
-                    <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                      No availability set yet
-                    </p>
-                    <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
-                      Click &quot;Set times&quot; to configure your available
-                      slots
-                    </p>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-koru-purple/5 to-koru-golden/5 border border-koru-purple/10">
+                    <div>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                        Connected X Account
+                      </p>
+                      <p className="font-mono text-sm text-neutral-900 dark:text-neutral-100">
+                        @{user?.username || "user"}
+                      </p>
+                    </div>
+                    {user?.isVerified && (
+                      <Badge className="bg-blue-500/20 text-blue-500 border-0">
+                        <CheckIcon className="w-3 h-3 mr-1" />
+                        Verified
+                      </Badge>
+                    )}
                   </div>
-                </div>
-              )}
-            </div>
 
-            {/* Account Info (Read-only) */}
-            <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 md:p-8 shadow-soft">
-              <h3 className="  text-xl text-neutral-900 dark:text-neutral-100 mb-6">
-                Account Information
-              </h3>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-koru-purple/5 to-koru-golden/5 border border-koru-purple/10">
-                  <div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
-                      Connected X Account
-                    </p>
-                    <p className="font-mono text-sm text-neutral-900 dark:text-neutral-100">
-                      @{user?.username || "user"}
-                    </p>
-                  </div>
-                  {user?.isVerified && (
-                    <Badge className="bg-blue-500/20 text-blue-500 border-0">
-                      <CheckIcon className="w-3 h-3 mr-1" />
-                      Verified
-                    </Badge>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 text-center">
-                    <p className="text-2xl   text-koru-purple">
-                      {user?.followersCount?.toLocaleString() || "0"}
-                    </p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                      Followers
-                    </p>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 text-center">
-                    <p className="text-2xl   text-koru-golden">
-                      {user?.followingCount?.toLocaleString() || "0"}
-                    </p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                      Following
-                    </p>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 text-center">
-                    <p className="text-2xl   text-koru-lime">
-                      ${user?.totalEarnings?.toFixed(0) || "0"}
-                    </p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                      Earnings
-                    </p>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 text-center">
+                      <p className="text-2xl   text-koru-purple">
+                        {user?.followersCount?.toLocaleString() || "0"}
+                      </p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                        Followers
+                      </p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 text-center">
+                      <p className="text-2xl   text-koru-golden">
+                        {user?.followingCount?.toLocaleString() || "0"}
+                      </p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                        Following
+                      </p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 text-center">
+                      <p className="text-2xl   text-koru-lime">
+                        ${user?.totalEarnings?.toFixed(0) || "0"}
+                      </p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                        Earnings
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Save Button */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="flex justify-end gap-4 pt-4"
-            >
-              <Link href="/profile">
-                <Button variant="outline" size="lg" className="px-8">
-                  Cancel
-                </Button>
-              </Link>
-              <Button
-                size="lg"
-                className="px-10 bg-gradient-to-r from-koru-purple to-koru-purple/80 hover:from-koru-purple/90 hover:to-koru-purple/70"
-                onClick={handleSave}
-                isLoading={isSaving}
+              {/* Save Button */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="flex justify-end gap-4 pt-4"
               >
-                {!isSaving && <CheckIcon className="w-4 h-4 mr-2" />}
-                Save Changes
-              </Button>
+                <Link href="/profile">
+                  <Button variant="outline" size="lg" className="px-8">
+                    Cancel
+                  </Button>
+                </Link>
+                <Button
+                  size="lg"
+                  className="px-10 bg-gradient-to-r from-koru-purple to-koru-purple/80 hover:from-koru-purple/90 hover:to-koru-purple/70"
+                  onClick={handleSave}
+                  isLoading={isSaving}
+                >
+                  {!isSaving && <CheckIcon className="w-4 h-4 mr-2" />}
+                  Save Changes
+                </Button>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        </div>
-      </main>
+          </div>
+        </main>
 
-      {/* Spacer before footer */}
-      <div className="h-32" />
+        {/* Spacer before footer */}
+        <div className="h-32" />
 
-      {/* Availability Modal */}
-      <AvailabilityModal
-        open={availabilityModalOpen}
-        onOpenChange={setAvailabilityModalOpen}
-        initialData={availability}
-        onSave={setAvailability}
-      />
-
-    </div>
+        {/* Availability Modal */}
+        <AvailabilityModal
+          open={availabilityModalOpen}
+          onOpenChange={setAvailabilityModalOpen}
+          initialData={availability}
+          onSave={setAvailability}
+        />
+      </div>
     </AuthGuard>
   );
 }

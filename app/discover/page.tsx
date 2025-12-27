@@ -149,8 +149,12 @@ export default function DiscoverPage() {
   };
 
   const handleViewTwitterProfile = (profile: TwitterProfile) => {
-    // For now, open Twitter profile in new tab
-    window.open(`https://twitter.com/${profile.username}`, "_blank");
+    // Open Twitter/X profile in new tab
+    window.open(
+      `https://x.com/${profile.username}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
   };
 
   // Determine what to show - show search results when query is 2+ chars
@@ -397,7 +401,7 @@ export default function DiscoverPage() {
                                   handleViewTwitterProfile(profile)
                                 }
                               >
-                                View
+                                View on X
                               </Button>
                             </td>
                           </motion.tr>
@@ -698,14 +702,22 @@ function TwitterProfileCard({
           )}
         </div>
 
-        {/* CTA Button */}
+        {/* CTA Button - Opens Twitter profile */}
         <Button
-          onClick={onView}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            window.open(
+              `https://x.com/${profile.username}`,
+              "_blank",
+              "noopener,noreferrer"
+            );
+          }}
           variant="outline"
           size="sm"
           className="mt-2 group-hover:bg-koru-purple group-hover:text-white group-hover:border-koru-purple transition-all"
         >
-          View
+          View on X
           <ArrowRightIcon className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
         </Button>
       </div>
