@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Quicksand, Tenor_Sans, Caveat } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/components/providers/auth-provider";
+import { AppShell } from "@/components/shared";
 import "./globals.css";
 
 const quicksand = Quicksand({
@@ -27,8 +30,23 @@ const lemonTuesday = Caveat({
 export const metadata: Metadata = {
   title: "Koru",
   description: "Koru - Pay for access. Earn for time.",
+  metadataBase: new URL("https://koruapp.xyz"),
   icons: {
     icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
+  openGraph: {
+    title: "Koru",
+    description: "Pay for access. Earn for time.",
+    url: "https://koruapp.xyz",
+    siteName: "Koru",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Koru",
+    description: "Pay for access. Earn for time.",
   },
 };
 
@@ -42,14 +60,17 @@ export default function RootLayout({
       <body
         className={`${quicksand.variable} ${tenorSans.variable} ${lemonTuesday.variable} antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange={false}
-        >
-          {children}
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange={false}
+          >
+            <AppShell>{children}</AppShell>
+          </ThemeProvider>
+        </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );

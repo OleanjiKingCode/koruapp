@@ -1,0 +1,115 @@
+import { NextRequest, NextResponse } from "next/server";
+import {
+  parseTwitterSearchResponse,
+  profileToSupabaseFormat,
+  type TwitterProfile,
+  type TwitterSearchResponse,
+} from "@/lib/types/twitter";
+import {
+  getCachedProfilesByQuery,
+  upsertManyTwitterProfiles,
+} from "@/lib/supabase";
+
+const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
+const RAPIDAPI_HOST = "twitter241.p.rapidapi.com";
+
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const query = searchParams.get("query");
+  const type = searchParams.get("type") || "People";
+  const count = searchParams.get("count") || "20";
+  const useCache = searchParams.get("cache") !== "false";
+
+  if (!query) {
+    return NextResponse.json(
+      { error: "Query parameter is required" },
+      { status: 400 }
+    );
+  }
+
+  try {
+    // First, check Supabase cache for matching profiles
+    if (useCache) {
+      const cachedProfiles = await getCachedProfilesByQuery(query);
+      if (cachedProfiles.length >= 3) {
+        // Only use cache if we have at least 3 results
+        // Transform cached profiles to the app format
+        const profiles: TwitterProfile[] = cachedProfiles.map((cached) => ({
+          id: cached.twitter_id,
+          twitterId: cached.twitter_id,
+          username: cached.username,
+          name: cached.name,
+          bio: cached.bio || "",
+          profileImageUrl: cached.profile_image_url || "",
+          followersCount: cached.followers_count,
+          followingCount: cached.following_count,
+          verified: cached.verified,
+        }));
+
+        return NextResponse.json({
+          profiles,
+          source: "cache",
+          count: profiles.length,
+        });
+      }
+    }
+
+    // If no cache or cache miss, fetch from RapidAPI
+    if (!RAPIDAPI_KEY) {
+      return NextResponse.json(
+        { error: "API key not configured" },
+        { status: 500 }
+      );
+    }
+
+    const response = await fetch(
+      `https://${RAPIDAPI_HOST}/search?` +
+        new URLSearchParams({
+          type,
+          count,
+          query,
+        }),
+      {
+        method: "GET",
+        headers: {
+          "x-rapidapi-key": RAPIDAPI_KEY,
+          "x-rapidapi-host": RAPIDAPI_HOST,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("RapidAPI error:", errorText);
+      return NextResponse.json(
+        { error: "Failed to fetch from Twitter API" },
+        { status: response.status }
+      );
+    }
+
+    const data: TwitterSearchResponse = await response.json();
+    const profiles = parseTwitterSearchResponse(data);
+
+    // Cache profiles in Supabase for future searches
+    if (profiles.length > 0) {
+      const profilesToCache = profiles.map(profileToSupabaseFormat);
+
+      // Don't await - fire and forget to not slow down response
+      upsertManyTwitterProfiles(profilesToCache).catch((err) =>
+        console.error("Cache write error:", err)
+      );
+    }
+
+    return NextResponse.json({
+      profiles,
+      source: "api",
+      count: profiles.length,
+    });
+  } catch (error) {
+    console.error("Twitter search error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
