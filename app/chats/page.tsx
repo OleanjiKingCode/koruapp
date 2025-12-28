@@ -226,13 +226,7 @@ export default function ChatsPage() {
   const [receivedSubTab, setReceivedSubTab] = useState<
     "pending" | "active" | "completed"
   >("pending");
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Simulate initial loading
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Filter chats by type
   const sentChats = useMemo(

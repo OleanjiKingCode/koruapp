@@ -52,13 +52,7 @@ export default function AppealsPage() {
   const [selectedTime, setSelectedTime] = useState("24H");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Simulate initial loading
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 600);
-    return () => clearTimeout(timer);
-  }, []);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Share modal state
   const [shareModalOpen, setShareModalOpen] = useState(false);
