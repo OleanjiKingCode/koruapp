@@ -67,7 +67,6 @@ export function useDebouncedTwitterSearch(
 ) {
   const { debounceMs = 500, ...searchOptions } = options;
 
-  // Simple debounce using SWR's built-in dedupe
   const shouldFetch = query.length >= 2; // Only search if query is at least 2 chars
 
   return useTwitterSearch(query, {

@@ -29,7 +29,14 @@ interface FilterBarProps {
   minSearchLength?: number;
 }
 
-const defaultCategories = ["All", "Web3", "Tech", "Business", "Medical", "Sports"];
+const defaultCategories = [
+  "All",
+  "Web3",
+  "Tech",
+  "Business",
+  "Medical",
+  "Sports",
+];
 const sortOptions = [
   { value: "highest_earned", label: "Highest Earned" },
   { value: "lowest_price", label: "Lowest Price" },
@@ -132,7 +139,9 @@ export function FilterBar({
                     // Toggle this category
                     if (selectedCategories.includes(category)) {
                       // Remove it
-                      onCategoryChange?.(selectedCategories.filter((c) => c !== category));
+                      onCategoryChange?.(
+                        selectedCategories.filter((c) => c !== category)
+                      );
                     } else {
                       // Add it
                       onCategoryChange?.([...selectedCategories, category]);
@@ -171,7 +180,8 @@ export function FilterBar({
               <Button variant="outline" size="sm" className="gap-2 rounded-lg">
                 <SortIcon className="w-4 h-4" />
                 <span className="hidden sm:inline">
-                  {sortOptions.find((o) => o.value === currentSort)?.label || "Sort"}
+                  {sortOptions.find((o) => o.value === currentSort)?.label ||
+                    "Sort"}
                 </span>
                 <ChevronDownIcon className="w-4 h-4" />
               </Button>
@@ -183,7 +193,8 @@ export function FilterBar({
                   onClick={() => onSortChange?.(option.value)}
                   className={cn(
                     "cursor-pointer",
-                    currentSort === option.value && "bg-koru-purple/10 text-koru-purple"
+                    currentSort === option.value &&
+                      "bg-koru-purple/10 text-koru-purple"
                   )}
                 >
                   {option.label}
@@ -226,7 +237,13 @@ export function FilterBar({
 // Icons
 function SearchIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <circle cx="11" cy="11" r="8" />
       <path d="m21 21-4.3-4.3" />
     </svg>
@@ -235,14 +252,20 @@ function SearchIcon({ className }: { className?: string }) {
 
 function XIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <line x1="18" y1="6" x2="6" y2="18" />
       <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   );
 }
 
-function LoadingSpinner({ className }: { className?: string }) {
+export function LoadingSpinner({ className }: { className?: string }) {
   return (
     <svg
       className={cn("animate-spin", className)}
@@ -252,17 +275,20 @@ function LoadingSpinner({ className }: { className?: string }) {
       strokeWidth="2"
     >
       <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
-      <path
-        d="M12 2a10 10 0 0 1 10 10"
-        strokeLinecap="round"
-      />
+      <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
     </svg>
   );
 }
 
 function SortIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <path d="m3 16 4 4 4-4" />
       <path d="M7 20V4" />
       <path d="m21 8-4-4-4 4" />
@@ -273,7 +299,13 @@ function SortIcon({ className }: { className?: string }) {
 
 function ChevronDownIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <path d="m6 9 6 6 6-6" />
     </svg>
   );
@@ -281,7 +313,13 @@ function ChevronDownIcon({ className }: { className?: string }) {
 
 function GridIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <rect width="7" height="7" x="3" y="3" rx="1" />
       <rect width="7" height="7" x="14" y="3" rx="1" />
       <rect width="7" height="7" x="14" y="14" rx="1" />
@@ -292,7 +330,13 @@ function GridIcon({ className }: { className?: string }) {
 
 function ListIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <line x1="8" x2="21" y1="6" y2="6" />
       <line x1="8" x2="21" y1="12" y2="12" />
       <line x1="8" x2="21" y1="18" y2="18" />

@@ -386,7 +386,7 @@ export default function ViewProfilePage() {
       id: profileData.handle,
       name: profileData.name,
       handle: profileData.handle,
-      bio: profileData.bio || "No bio available",
+      bio: profileData.bio || "",
       avatar: profileData.profileImageUrl || "",
       banner: profileData.bannerUrl || "",
       verified: profileData.isVerified || false,
@@ -621,12 +621,9 @@ export default function ViewProfilePage() {
                 </div>
 
                 {/* Action Button - Only Talk to button */}
-                <div className="flex items-center gap-3">
+                <div className="hidden items-center gap-3 md:flex">
                   <Button
-                    size="lg"
                     onClick={() => {
-                      // If user is on Koru and has availability, open booking modal
-                      // Otherwise, show summon modal explaining they need to be summoned
                       if (profile.isOnKoru && hasAvailability) {
                         setBookingModalOpen(true);
                       } else {
@@ -639,13 +636,12 @@ export default function ViewProfilePage() {
                     <span className="hidden sm:inline">
                       Talk to {profile.name.split(" ")[0]}
                     </span>
-                    <span className="sm:hidden">Talk</span>
                   </Button>
                 </div>
               </div>
 
               {/* Bio - with clickable URLs and @mentions */}
-              <p className="text-neutral-600 dark:text-neutral-400 mt-4 max-w-2xl">
+              <p className="text-neutral-600 dark:text-neutral-400 mt-4 max-w-2xl text-sm  md:text-base">
                 <ParsedBio text={profile.bio} />
               </p>
 
@@ -688,6 +684,22 @@ export default function ViewProfilePage() {
                     </Badge>
                   );
                 })}
+              </div>
+
+              <div className="flex items-center gap-3 md:hidden mt-4 justify-end">
+                <Button
+                  onClick={() => {
+                    if (profile.isOnKoru && hasAvailability) {
+                      setBookingModalOpen(true);
+                    } else {
+                      setSummonModalOpen(true);
+                    }
+                  }}
+                  className="bg-koru-purple hover:bg-koru-purple/90 text-white font-semibold px-4 sm:px-8 text-sm sm:text-base"
+                >
+                  <ChatIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                  <span className="">Talk to {profile.name.split(" ")[0]}</span>
+                </Button>
               </div>
             </div>
           </div>

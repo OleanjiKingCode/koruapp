@@ -31,20 +31,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Create summon directly using Supabase client
+    // Map to correct column names: summons table uses target_handle, target_image, request, amount
     const { data: summon, error: summonError } = await supabase
-      .from("appeals")
+      .from("summons")
       .insert({
         creator_id: session.user.dbId,
         target_twitter_id: target_twitter_id || target_username,
-        target_username,
-        target_name,
-        target_profile_image: target_profile_image || null,
-        message,
-        pledged_amount: parseFloat(pledged_amount),
-        goal_amount: goal_amount ? parseFloat(goal_amount) : null,
+        target_handle: target_username,
+        target_name: target_name || null,
+        target_image: target_profile_image || null,
+        request: message,
+        amount: parseFloat(pledged_amount),
         expires_at: expires_at || null,
         status: "active",
         backers_count: 1, // Creator counts as first backer
+        total_backed: parseFloat(pledged_amount), // Initialize with pledged amount
       })
       .select()
       .single();
@@ -52,7 +53,10 @@ export async function POST(request: NextRequest) {
     if (summonError) {
       console.error("Error creating summon:", summonError);
       return NextResponse.json(
-        { error: "Failed to create summon" },
+        {
+          error: "Failed to create summon",
+          details: summonError.message,
+        },
         { status: 500 }
       );
     }

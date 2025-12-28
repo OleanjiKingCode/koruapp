@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
@@ -149,11 +149,12 @@ export default function EditProfilePage() {
   // Tags state
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState("");
+  const tagsInitializedRef = useRef(false);
 
   // Track if form has been initialized to prevent re-initialization on every render
   const [isFormInitialized, setIsFormInitialized] = useState(false);
 
-  // Initialize form data ONLY ONCE when user first loads
+  // Initialize form data when user first loads
   useEffect(() => {
     if (user && !isFormInitialized) {
       setFormData({
@@ -163,13 +164,19 @@ export default function EditProfilePage() {
         website: "",
         twitterHandle: user.username || "",
       });
-      // Initialize tags from user data if available
-      if (user.tags && Array.isArray(user.tags)) {
-        setSelectedTags(user.tags);
-      }
       setIsFormInitialized(true);
     }
   }, [user, isFormInitialized]);
+
+  // Initialize tags from user data - only once when user first loads
+  useEffect(() => {
+    if (user && !tagsInitializedRef.current) {
+      // Get tags from user - handle both array and null/undefined cases
+      const userTags = Array.isArray(user.tags) ? user.tags : [];
+      setSelectedTags(userTags);
+      tagsInitializedRef.current = true;
+    }
+  }, [user]); // Only run when user object changes
 
   // Toggle a tag
   const handleToggleTag = (tag: string) => {
@@ -223,14 +230,14 @@ export default function EditProfilePage() {
         bio: formData.bio,
         tags: selectedTags,
       });
-      
+
       if (!result) {
         throw new Error("Failed to save profile");
       }
-      
+
       // Refresh user data to show updated values
       await refresh();
-      
+
       setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);
@@ -239,7 +246,11 @@ export default function EditProfilePage() {
     } catch (error) {
       console.error("Error saving profile:", error);
       // Show error message to user
-      alert(error instanceof Error ? error.message : "Failed to save profile. Please try again.");
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to save profile. Please try again."
+      );
     } finally {
       setIsSaving(false);
     }

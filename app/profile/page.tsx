@@ -50,6 +50,49 @@ import {
   LinkIcon,
 } from "@/components/icons";
 
+// Tag color configurations
+const TAG_COLORS = [
+  {
+    bg: "bg-koru-purple/10",
+    text: "text-koru-purple",
+    border: "border-koru-purple/20",
+  },
+  {
+    bg: "bg-koru-lime/10",
+    text: "text-koru-lime",
+    border: "border-koru-lime/20",
+  },
+  {
+    bg: "bg-koru-golden/10",
+    text: "text-koru-golden",
+    border: "border-koru-golden/20",
+  },
+  { bg: "bg-blue-500/10", text: "text-blue-500", border: "border-blue-500/20" },
+  { bg: "bg-pink-500/10", text: "text-pink-500", border: "border-pink-500/20" },
+  { bg: "bg-cyan-500/10", text: "text-cyan-500", border: "border-cyan-500/20" },
+  {
+    bg: "bg-orange-500/10",
+    text: "text-orange-500",
+    border: "border-orange-500/20",
+  },
+  {
+    bg: "bg-emerald-500/10",
+    text: "text-emerald-500",
+    border: "border-emerald-500/20",
+  },
+];
+
+// Get consistent color for a tag based on its name
+function getTagColor(tag: string) {
+  // Simple hash function to get consistent color
+  let hash = 0;
+  for (let i = 0; i < tag.length; i++) {
+    hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % TAG_COLORS.length;
+  return TAG_COLORS[index];
+}
+
 // Link Icon (for website)
 function GlobeIcon({ className }: { className?: string }) {
   return (
@@ -323,6 +366,30 @@ export default function ProfilePage() {
                       <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3 max-w-lg">
                         {user.bio}
                       </p>
+                    )}
+
+                    {/* Tags */}
+                    {user?.tags && user.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {user.tags.map((tag: string) => {
+                          const color = getTagColor(tag);
+                          return (
+                            <Badge
+                              key={tag}
+                              variant="secondary"
+                              className={cn(
+                                color.bg,
+                                color.text,
+                                "border",
+                                color.border,
+                                "font-medium"
+                              )}
+                            >
+                              {tag}
+                            </Badge>
+                          );
+                        })}
+                      </div>
                     )}
 
                     {/* Links row */}
