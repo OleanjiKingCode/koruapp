@@ -596,37 +596,39 @@ function FeaturedProfilesTable({
                   {formatFollowerCount(profile.followers_count)}
                 </td>
                 <td className="p-4">
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-1 max-w-[350px]">
                     {/* Show category first */}
                     {profile.category &&
                       (() => {
                         const color = getTagColor(profile.category);
                         return (
                           <span
-                            className={`px-2 py-0.5 ${color.bg} ${color.text} text-xs rounded-full font-medium border ${color.border}`}
+                            className={`px-1.5 py-0.5 ${color.bg} ${color.text} text-xs rounded font-normal border ${color.border}`}
                           >
                             {profile.category}
                           </span>
                         );
                       })()}
-                    {/* Show up to 2 tags */}
-                    {deduplicateTags(profile.tags || []).map((tag) => {
-                      const color = getTagColor(tag);
-                      return (
-                        <span
-                          key={tag}
-                          className={`px-2 py-0.5 ${color.bg} ${color.text} text-xs rounded-full border ${color.border}`}
-                        >
-                          {tag}
-                        </span>
-                      );
-                    })}
+                    {/* Show up to 5 tags */}
+                    {deduplicateTags(profile.tags || [])
+                      .slice(0, 5)
+                      .map((tag) => {
+                        const color = getTagColor(tag);
+                        return (
+                          <span
+                            key={tag}
+                            className={`px-1.5 py-0.5 ${color.bg} ${color.text} text-xs rounded font-normal border ${color.border}`}
+                          >
+                            {tag}
+                          </span>
+                        );
+                      })}
                     {/* Show +N more if there are more tags */}
-                    {/* {(profile.tags?.length || 0) > 2 && (
-                      <span className="px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 text-xs rounded-full">
-                        +{(profile.tags?.length || 0) - 2}
+                    {(profile.tags?.length || 0) > 5 && (
+                      <span className="px-1.5 py-0.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 text-xs rounded font-normal">
+                        +{(profile.tags?.length || 0) - 5}
                       </span>
-                    )} */}
+                    )}
                   </div>
                 </td>
                 <td className="p-4">
