@@ -6,7 +6,7 @@ import { toPng } from "html-to-image";
 import { ProfileShareCard } from "./profile-share-card";
 import { AppealShareCard } from "./appeal-share-card";
 import { CheckIcon, TwitterIcon } from "@/components/icons";
-import type { UserData, Appeal } from "@/lib/types";
+import type { UserData, Summon, Appeal } from "@/lib/types";
 
 // Custom icons
 function DownloadIcon({ className }: { className?: string }) {
@@ -61,7 +61,7 @@ function CloseIcon({ className }: { className?: string }) {
   );
 }
 
-type CardType = "profile" | "appeal";
+type CardType = "profile" | "summon" | "appeal"; // appeal for backwards compatibility
 type CardVariant =
   | "default"
   | "minimal"
@@ -77,7 +77,8 @@ interface ShareModalProps {
   onOpenChange: (open: boolean) => void;
   type: CardType;
   userData?: UserData;
-  appeal?: Appeal;
+  summon?: Summon;
+  appeal?: Appeal; // Backwards compatibility alias
 }
 
 export function ShareModal({
@@ -85,7 +86,8 @@ export function ShareModal({
   onOpenChange,
   type,
   userData,
-  appeal,
+  summon,
+  appeal, // Backwards compatibility
 }: ShareModalProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [selectedVariant, setSelectedVariant] =
@@ -94,6 +96,9 @@ export function ShareModal({
   const [copied, setCopied] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
 
+  // Use summon or appeal (for backwards compatibility)
+  const activeSummon = summon || appeal;
+
   const profileVariants: CardVariant[] = [
     "default",
     "minimal",
@@ -101,13 +106,13 @@ export function ShareModal({
     "neon",
     "ticket",
   ];
-  const appealVariants: CardVariant[] = [
+  const summonVariants: CardVariant[] = [
     "default",
     "compact",
     "vibrant",
     "dark",
   ];
-  const variants = type === "profile" ? profileVariants : appealVariants;
+  const variants = type === "profile" ? profileVariants : summonVariants;
 
   const variantLabels: Record<CardVariant, string> = {
     default: "Premium",
@@ -322,10 +327,10 @@ export function ShareModal({
                         }
                       />
                     )}
-                    {type === "appeal" && appeal && (
+                    {(type === "summon" || type === "appeal") && activeSummon && (
                       <AppealShareCard
                         ref={cardRef}
-                        appeal={appeal}
+                        appeal={activeSummon}
                         variant={
                           selectedVariant as
                             | "default"

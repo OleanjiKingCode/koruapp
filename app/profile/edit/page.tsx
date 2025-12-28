@@ -98,6 +98,37 @@ function ArrowLeftIcon({ className }: { className?: string }) {
   );
 }
 
+// Preset tags that users can select
+const PRESET_TAGS = [
+  "Web3",
+  "Tech",
+  "AI",
+  "Finance",
+  "Sports",
+  "Gaming",
+  "Business",
+  "Healthcare",
+  "Politics",
+  "Entertainment",
+  "Music",
+  "Art",
+  "Fashion",
+  "Food",
+  "Travel",
+  "Education",
+  "Science",
+  "Fitness",
+  "Lifestyle",
+  "Creator",
+  "Developer",
+  "Investor",
+  "Founder",
+  "Meme",
+  "NFT",
+  "DeFi",
+  "DAO",
+];
+
 export default function EditProfilePage() {
   const { theme } = useTheme();
   const router = useRouter();
@@ -115,6 +146,10 @@ export default function EditProfilePage() {
     twitterHandle: "",
   });
 
+  // Tags state
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [customTag, setCustomTag] = useState("");
+
   // Track if form has been initialized to prevent re-initialization on every render
   const [isFormInitialized, setIsFormInitialized] = useState(false);
 
@@ -128,9 +163,37 @@ export default function EditProfilePage() {
         website: "",
         twitterHandle: user.username || "",
       });
+      // Initialize tags from user data if available
+      if (user.tags && Array.isArray(user.tags)) {
+        setSelectedTags(user.tags);
+      }
       setIsFormInitialized(true);
     }
   }, [user, isFormInitialized]);
+
+  // Toggle a tag
+  const handleToggleTag = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag)
+        ? prev.filter((t) => t !== tag)
+        : prev.length < 5
+        ? [...prev, tag]
+        : prev
+    );
+  };
+
+  // Add a custom tag
+  const handleAddCustomTag = () => {
+    const trimmedTag = customTag.trim();
+    if (
+      trimmedTag &&
+      !selectedTags.includes(trimmedTag) &&
+      selectedTags.length < 5
+    ) {
+      setSelectedTags((prev) => [...prev, trimmedTag]);
+      setCustomTag("");
+    }
+  };
 
   // Availability
   const { availability, setAvailability, filledSlots, hasAvailability } =
@@ -158,6 +221,7 @@ export default function EditProfilePage() {
       // Save to database
       await updateUser({
         bio: formData.bio,
+        tags: selectedTags,
       });
       setShowSuccess(true);
       setTimeout(() => {
@@ -432,6 +496,99 @@ export default function EditProfilePage() {
                         placeholder="https://your-website.com"
                       />
                     </div>
+                  </div>
+
+                  {/* Tags Section */}
+                  <div className="md:col-span-2 space-y-4">
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      Tags
+                      <span className="text-xs text-koru-purple ml-2">
+                        (select up to 5)
+                      </span>
+                    </label>
+
+                    {/* Selected Tags */}
+                    {selectedTags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {selectedTags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-koru-purple text-white text-sm rounded-full"
+                          >
+                            {tag}
+                            <button
+                              onClick={() => handleToggleTag(tag)}
+                              className="w-4 h-4 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+                            >
+                              <svg
+                                className="w-2.5 h-2.5"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="3"
+                              >
+                                <path
+                                  d="M18 6L6 18M6 6l12 12"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Preset Tags */}
+                    <div className="flex flex-wrap gap-2">
+                      {PRESET_TAGS.map((tag) => (
+                        <button
+                          key={tag}
+                          onClick={() => handleToggleTag(tag)}
+                          disabled={
+                            selectedTags.length >= 5 &&
+                            !selectedTags.includes(tag)
+                          }
+                          className={cn(
+                            "px-3 py-1.5 text-sm rounded-full border transition-all",
+                            selectedTags.includes(tag)
+                              ? "bg-koru-purple text-white border-koru-purple"
+                              : "bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700 hover:border-koru-purple hover:text-koru-purple",
+                            selectedTags.length >= 5 &&
+                              !selectedTags.includes(tag) &&
+                              "opacity-50 cursor-not-allowed"
+                          )}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Custom Tag Input */}
+                    <div className="flex gap-2 mt-4">
+                      <Input
+                        value={customTag}
+                        onChange={(e) => setCustomTag(e.target.value)}
+                        onKeyDown={(e) =>
+                          e.key === "Enter" && handleAddCustomTag()
+                        }
+                        placeholder="Add a custom tag..."
+                        maxLength={20}
+                        disabled={selectedTags.length >= 5}
+                        className="h-10 rounded-xl bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100"
+                      />
+                      <Button
+                        onClick={handleAddCustomTag}
+                        disabled={!customTag.trim() || selectedTags.length >= 5}
+                        variant="outline"
+                        className="shrink-0"
+                      >
+                        Add
+                      </Button>
+                    </div>
+                    <p className="text-xs text-neutral-400">
+                      {selectedTags.length}/5 tags selected
+                    </p>
                   </div>
                 </div>
               </div>

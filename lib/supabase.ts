@@ -122,6 +122,7 @@ export interface User {
   price_per_message: number;
   total_earnings: number;
   response_time_hours: number;
+  tags: string[] | null;
   last_login_at: string;
   created_at: string;
   updated_at: string;

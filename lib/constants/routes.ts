@@ -2,7 +2,7 @@
 export const ROUTES = {
   HOME: "/",
   DISCOVER: "/discover",
-  APPEALS: "/appeals",
+  SUMMONS: "/summons",
   PROFILE: "/profile",
   PROFILE_VIEW: (id: string) => `/profile/${id}`,
   HOW_IT_WORKS: "/how-it-works",

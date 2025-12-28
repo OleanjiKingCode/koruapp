@@ -45,6 +45,7 @@ export function useUser() {
         totalEarnings: dbUser?.total_earnings || 0,
         responseTimeHours: dbUser?.response_time_hours || 24,
         email: dbUser?.email || null,
+        tags: dbUser?.tags || [],
         createdAt: dbUser?.created_at,
         lastLoginAt: dbUser?.last_login_at,
       }
@@ -58,6 +59,7 @@ export function useUser() {
       price_per_message: number;
       response_time_hours: number;
       email: string;
+      tags: string[];
     }>
   ) => {
     if (!twitterId) return null;

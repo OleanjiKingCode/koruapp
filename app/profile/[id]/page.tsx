@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useRouter, notFound } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
@@ -11,6 +11,7 @@ import { BookingModal } from "@/components/booking-modal";
 import { cn } from "@/lib/utils";
 import { MOCK_PROFILES } from "@/lib/data";
 import { ROUTES } from "@/lib/constants";
+import { getCachedProfile, getUserByUsername } from "@/lib/supabase";
 import type {
   AvailabilityData,
   AvailabilitySlot,
@@ -219,16 +220,132 @@ export default function ViewProfilePage() {
   const router = useRouter();
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [appealModalOpen, setAppealModalOpen] = useState(false);
+  const [twitterProfile, setTwitterProfile] = useState<{
+    name: string;
+    handle: string;
+    bio?: string;
+    profileImageUrl?: string;
+    followersCount?: number;
+    followingCount?: number;
+    isVerified?: boolean;
+    category?: string;
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Find the profile by ID
-  const profile = useMemo(() => {
-    return MOCK_PROFILES.find((p) => p.id === params.id);
+  // Find the profile by ID or handle
+  const mockProfile = useMemo(() => {
+    const id = params.id as string;
+    // Check by ID first
+    let found = MOCK_PROFILES.find((p) => p.id === id);
+    // If not found, check by handle (for Twitter profile redirects)
+    if (!found) {
+      found = MOCK_PROFILES.find((p) => p.handle.toLowerCase() === id.toLowerCase());
+    }
+    return found;
   }, [params.id]);
 
-  // If profile not found, show 404
-  if (!profile) {
+  // Fetch Twitter profile from database if not found in mock profiles
+  useEffect(() => {
+    async function fetchTwitterProfile() {
+      if (mockProfile) {
+        setIsLoading(false);
+        return;
+      }
+
+      const handle = params.id as string;
+      
+      try {
+        // First check if user is registered on Koru
+        const koruUser = await getUserByUsername(handle);
+        if (koruUser) {
+          setTwitterProfile({
+            name: koruUser.name,
+            handle: koruUser.username,
+            bio: koruUser.bio || undefined,
+            profileImageUrl: koruUser.profile_image_url || undefined,
+            followersCount: koruUser.followers_count || undefined,
+            followingCount: koruUser.following_count || undefined,
+            isVerified: koruUser.is_verified,
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        // Then check cached Twitter profile
+        const cached = await getCachedProfile(handle);
+        if (cached) {
+          setTwitterProfile({
+            name: cached.name,
+            handle: cached.username,
+            bio: cached.bio || undefined,
+            profileImageUrl: cached.profile_image_url || undefined,
+            followersCount: cached.followers_count || undefined,
+            followingCount: cached.following_count || undefined,
+            isVerified: cached.verified,
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        // Not found anywhere
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        setIsLoading(false);
+      }
+    }
+
+    fetchTwitterProfile();
+  }, [params.id, mockProfile]);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 border-3 border-koru-purple border-t-transparent rounded-full animate-spin" />
+          <span className="text-neutral-500">Loading profile...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // If no profile found anywhere, show 404
+  if (!mockProfile && !twitterProfile) {
     notFound();
   }
+
+  // Format follower count to string like "1.2M" or "500K"
+  const formatFollowers = (count: number): string => {
+    if (count >= 1000000) {
+      return `${(count / 1000000).toFixed(1).replace(/\.0$/, "")}M`;
+    }
+    if (count >= 1000) {
+      return `${(count / 1000).toFixed(1).replace(/\.0$/, "")}K`;
+    }
+    return count.toString();
+  };
+
+  // Use mock profile data if available, otherwise use Twitter profile
+  const profile = mockProfile || {
+    id: twitterProfile!.handle,
+    name: twitterProfile!.name,
+    handle: twitterProfile!.handle,
+    bio: twitterProfile!.bio || "No bio available",
+    avatar: twitterProfile!.profileImageUrl || "",
+    verified: twitterProfile!.isVerified || false,
+    rating: 0,
+    reviews: 0,
+    price: 0,
+    followers: formatFollowers(twitterProfile!.followersCount || 0),
+    responseTime: 0,
+    earnings: 0,
+    badge: "Rising Star" as const,
+    badges: [],
+    categories: twitterProfile!.category ? [twitterProfile!.category] : [],
+    availability: null,
+    isOnline: false,
+  };
 
   // Convert profile availability to AvailabilityData format for the modal
   const mockAvailabilityData: AvailabilityData = useMemo(() => {
@@ -403,7 +520,7 @@ export default function ViewProfilePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+          className="grid grid-cols-3 gap-4 mb-8"
         >
           <StatCard
             icon={<UsersIcon className="w-5 h-5" />}
@@ -422,12 +539,6 @@ export default function ViewProfilePage() {
             label="Avg Response"
             value={`${profile.responseTime}h`}
             color="lime"
-          />
-          <StatCard
-            icon={<DollarIcon className="w-5 h-5" />}
-            label="Total Earned"
-            value={`$${profile.earnings.toLocaleString()}`}
-            color="purple"
           />
         </motion.div>
 
@@ -585,28 +696,28 @@ export default function ViewProfilePage() {
         onOpenChange={setAppealModalOpen}
         personName={profile.name}
         personHandle={profile.handle}
-        onCreateAppeal={() => {
+        onCreateSummon={() => {
           setAppealModalOpen(false);
-          router.push(`${ROUTES.APPEALS}/new?to=${profile.handle}`);
+          router.push(`${ROUTES.SUMMONS}/new?to=${profile.handle}`);
         }}
       />
     </div>
   );
 }
 
-// Appeal Modal Component
+// Summon Modal Component
 function AppealModal({
   open,
   onOpenChange,
   personName,
   personHandle,
-  onCreateAppeal,
+  onCreateSummon,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   personName: string;
   personHandle: string;
-  onCreateAppeal: () => void;
+  onCreateSummon: () => void;
 }) {
   return (
     <AnimatePresence>
@@ -713,7 +824,7 @@ function AppealModal({
                 {/* CTA */}
                 <div className="flex flex-col gap-3 pt-2">
                   <Button
-                    onClick={onCreateAppeal}
+                    onClick={onCreateSummon}
                     className="w-full bg-gradient-to-r from-koru-golden to-koru-golden/80 hover:from-koru-golden/90 hover:to-koru-golden/70 text-neutral-900 font-semibold"
                   >
                     <MegaphoneIcon className="w-4 h-4 mr-2" />

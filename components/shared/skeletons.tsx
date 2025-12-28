@@ -75,8 +75,8 @@ export function ChatCardSkeleton({ className }: { className?: string }) {
   );
 }
 
-// Appeal Card Skeleton (for list view)
-export function AppealCardSkeleton({ className }: { className?: string }) {
+// Summon Card Skeleton (for list view)
+export function SummonCardSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
@@ -106,6 +106,9 @@ export function AppealCardSkeleton({ className }: { className?: string }) {
     </div>
   );
 }
+
+// Alias for backwards compatibility
+export const AppealCardSkeleton = SummonCardSkeleton;
 
 // Stats Card Skeleton
 export function StatCardSkeleton({ className }: { className?: string }) {

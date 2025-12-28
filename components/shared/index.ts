@@ -10,7 +10,8 @@ export { StatCard } from "./stat-card";
 export {
   Skeleton,
   ChatCardSkeleton,
-  AppealCardSkeleton,
+  SummonCardSkeleton,
+  AppealCardSkeleton, // Alias for backwards compatibility
   StatCardSkeleton,
   TableRowSkeleton,
   ProfileHeaderSkeleton,

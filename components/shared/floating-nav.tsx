@@ -15,12 +15,13 @@ import {
   useUnreadCount,
   formatUnreadCount,
 } from "@/lib/hooks";
+import { useModalContext } from "@/lib/contexts/modal-context";
 import { LoginModal } from "@/components/auth";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import {
   HomeIcon,
   DiscoverIcon,
-  AppealsIcon,
+  SummonsIcon,
   ProfileIcon,
   SettingsIcon,
   SunIcon,
@@ -42,7 +43,7 @@ const iconMap = {
   home: HomeIcon,
   discover: DiscoverIcon,
   chats: ChatIcon,
-  appeals: AppealsIcon,
+  summons: SummonsIcon,
   profile: ProfileIcon,
 };
 
@@ -62,8 +63,14 @@ export function FloatingNav() {
   const { isNearBottom } = useScrollPosition({ bottomThreshold: 90 });
   const { font: selectedFont, applyFont } = useFontPreference();
   const unreadCounts = useUnreadCount();
+  const { isModalOpen } = useModalContext();
 
   const isAuthenticated = status === "authenticated";
+
+  // Hide nav when modal/drawer is open on mobile
+  if (isModalOpen) {
+    return null;
+  }
 
   // Filter nav items based on auth status
   const visibleNavItems = NAV_ITEMS.filter((item) => {

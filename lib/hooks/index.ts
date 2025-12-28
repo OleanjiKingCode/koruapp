@@ -7,3 +7,4 @@ export * from "./use-transactions";
 export * from "./use-unread-count";
 export * from "./use-twitter-search";
 export * from "./use-user";
+export * from "./use-media-query";

@@ -113,10 +113,14 @@ CREATE TABLE IF NOT EXISTS users (
   price_per_message DECIMAL(10, 2) DEFAULT 0,
   total_earnings DECIMAL(12, 2) DEFAULT 0,
   response_time_hours INTEGER DEFAULT 24,
+  tags TEXT[] DEFAULT '{}',
   last_login_at TIMESTAMPTZ DEFAULT NOW(),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- If table already exists, add tags column
+ALTER TABLE users ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}';
 
 -- Indexes for users
 CREATE INDEX IF NOT EXISTS idx_users_twitter_id ON users(twitter_id);

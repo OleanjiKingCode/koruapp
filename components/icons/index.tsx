@@ -35,7 +35,7 @@ export function DiscoverIcon({ className }: IconProps) {
   );
 }
 
-export function AppealsIcon({ className }: IconProps) {
+export function SummonsIcon({ className }: IconProps) {
   return (
     <svg
       className={className}
@@ -56,6 +56,9 @@ export function AppealsIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+// Alias for backwards compatibility
+export const AppealsIcon = SummonsIcon;
 
 export function ProfileIcon({ className }: IconProps) {
   return (
@@ -652,7 +655,8 @@ export function GithubIcon({ className }: IconProps) {
 export const ICON_MAP = {
   home: HomeIcon,
   discover: DiscoverIcon,
-  appeals: AppealsIcon,
+  summons: SummonsIcon,
+  appeals: AppealsIcon, // Backwards compatibility
   profile: ProfileIcon,
   search: SearchIcon,
   plus: PlusIcon,
