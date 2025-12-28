@@ -2,12 +2,18 @@
 
 import { useSession } from "next-auth/react";
 import useSWR from "swr";
-import { User, getUserByTwitterId, updateUser } from "@/lib/supabase";
+import { User } from "@/lib/supabase";
+import { API_ROUTES } from "@/lib/constants/routes";
 
 // Fetcher for SWR
 const fetcher = async (twitterId: string): Promise<User | null> => {
   if (!twitterId) return null;
-  return getUserByTwitterId(twitterId);
+  const response = await fetch(API_ROUTES.USER);
+  if (!response.ok) {
+    throw new Error("Failed to fetch user");
+  }
+  const data = await response.json();
+  return data.user;
 };
 
 export function useUser() {
@@ -35,11 +41,12 @@ export function useUser() {
         username: session.user.username,
         name: session.user.name,
         profileImageUrl: session.user.image,
+        // From session (Twitter data) - use these as fallback
+        bio: dbUser?.bio || session.user.bio || null,
+        followersCount: dbUser?.followers_count || session.user.followers || 0,
+        followingCount: dbUser?.following_count || session.user.following || 0,
+        isVerified: dbUser?.is_verified || session.user.verified || false,
         // From DB (persisted data)
-        bio: dbUser?.bio || null,
-        followersCount: dbUser?.followers_count || 0,
-        followingCount: dbUser?.following_count || 0,
-        isVerified: dbUser?.is_verified || false,
         isCreator: dbUser?.is_creator || false,
         pricePerMessage: dbUser?.price_per_message || 0,
         totalEarnings: dbUser?.total_earnings || 0,
@@ -69,12 +76,30 @@ export function useUser() {
   ) => {
     if (!twitterId) return null;
 
-    const updated = await updateUser(twitterId, updates);
-    if (updated) {
+    try {
+      const response = await fetch(API_ROUTES.USER_UPDATE, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updates),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update user");
+      }
+
+      const data = await response.json();
+
       // Revalidate the SWR cache
       mutate();
+
+      return data.user;
+    } catch (error) {
+      console.error("Error updating user:", error);
+      throw error;
     }
-    return updated;
   };
 
   return {

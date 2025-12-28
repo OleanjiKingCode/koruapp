@@ -135,7 +135,7 @@ export default function EditProfilePage() {
   const isDark = theme === "dark";
 
   // Get real user data
-  const { user, updateUser, isLoading: isUserLoading } = useUser();
+  const { user, updateUser, isLoading: isUserLoading, refresh } = useUser();
 
   // Form state - initialized from user data
   const [formData, setFormData] = useState({
@@ -219,10 +219,18 @@ export default function EditProfilePage() {
     setIsSaving(true);
     try {
       // Save to database
-      await updateUser({
+      const result = await updateUser({
         bio: formData.bio,
         tags: selectedTags,
       });
+      
+      if (!result) {
+        throw new Error("Failed to save profile");
+      }
+      
+      // Refresh user data to show updated values
+      await refresh();
+      
       setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);
@@ -230,6 +238,8 @@ export default function EditProfilePage() {
       }, 1500);
     } catch (error) {
       console.error("Error saving profile:", error);
+      // Show error message to user
+      alert(error instanceof Error ? error.message : "Failed to save profile. Please try again.");
     } finally {
       setIsSaving(false);
     }

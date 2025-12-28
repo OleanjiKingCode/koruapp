@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { updateUser } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -39,16 +39,33 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const updatedUser = await updateUser(session.user.id, updates);
+    // Update user directly using Supabase client
+    const { data, error } = await supabase
+      .from("users")
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("twitter_id", session.user.id)
+      .select()
+      .single();
 
-    if (!updatedUser) {
+    if (error) {
+      console.error("Error updating user:", error);
       return NextResponse.json(
         { error: "Failed to update user" },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ user: updatedUser });
+    if (!data) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ user: data });
   } catch (error) {
     console.error("Error updating user:", error);
     return NextResponse.json(
