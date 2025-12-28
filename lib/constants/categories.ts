@@ -23,3 +23,4 @@ export const VIEW_MODES = ["grid", "list", "treemap"] as const;
 export type Category = (typeof CATEGORIES)[number];
 export type TimeFilter = (typeof TIME_FILTERS)[number];
 export type ViewMode = (typeof VIEW_MODES)[number];
+

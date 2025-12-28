@@ -35,3 +35,4 @@ export function RankBadge({ rank }: RankBadgeProps) {
   );
 }
 
+

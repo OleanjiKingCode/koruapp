@@ -32,15 +32,16 @@ import {
 } from "@/lib/hooks";
 
 // Utils, Constants & Types
-import { cn, parseFollowerCount } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { formatFollowerCount } from "@/lib/utils/format";
-import { MOCK_PROFILES } from "@/lib/data";
+import { getTagColor, deduplicateTags } from "@/lib/utils/tags";
 import { ROUTES, type TabValue, MIN_SEARCH_LENGTH } from "@/lib/constants";
+import type { FeaturedProfile } from "@/lib/supabase";
 import {
   formatFollowerCount as formatTwitterFollowers,
   type TwitterProfile,
 } from "@/lib/types/twitter";
-import type { SortField, Profile } from "@/lib/types";
+import type { SortField } from "@/lib/types";
 
 export default function DiscoverPage() {
   const router = useRouter();
@@ -106,73 +107,35 @@ export default function DiscoverPage() {
     });
   }, [twitterProfiles, viewMode, tableSortDirection]);
 
-  // Filter mock profiles (backwards compatibility for table view)
-  const filteredMockProfiles = useMemo(() => {
-    let profiles = [...MOCK_PROFILES];
+  // Sort featured profiles for table view
+  const sortedFeaturedProfiles = useMemo(() => {
+    if (!featuredProfiles.length) return [];
 
-    if (selectedCategories.length > 0) {
-      profiles = profiles.filter((p) =>
-        selectedCategories.some((cat) => p.categories.includes(cat))
-      );
-    }
+    const profiles = [...featuredProfiles];
 
     if (viewMode === "list") {
       profiles.sort((a, b) => {
         let aVal: number, bVal: number;
         switch (tableSortField) {
-          case "earnings":
-            aVal = a.earnings;
-            bVal = b.earnings;
-            break;
-          case "price":
-            aVal = a.price;
-            bVal = b.price;
-            break;
-          case "responseTime":
-            aVal = a.responseTime;
-            bVal = b.responseTime;
-            break;
           case "followers":
-            aVal = parseFollowerCount(a.followers);
-            bVal = parseFollowerCount(b.followers);
+            aVal = a.followers_count;
+            bVal = b.followers_count;
             break;
           default:
-            return 0;
+            // Default sort by followers
+            aVal = a.followers_count;
+            bVal = b.followers_count;
         }
         return tableSortDirection === "desc" ? bVal - aVal : aVal - bVal;
       });
-    } else {
-      switch (sortBy) {
-        case "most_followers":
-          profiles.sort(
-            (a, b) =>
-              parseFollowerCount(b.followers) - parseFollowerCount(a.followers)
-          );
-          break;
-        case "lowest_price":
-          profiles.sort((a, b) => a.price - b.price);
-          break;
-        case "fastest_replies":
-          profiles.sort((a, b) => a.responseTime - b.responseTime);
-          break;
-        default:
-          profiles.sort((a, b) => b.earnings - a.earnings);
-          break;
-      }
     }
 
     return profiles;
-  }, [
-    selectedCategories,
-    sortBy,
-    viewMode,
-    tableSortField,
-    tableSortDirection,
-  ]);
+  }, [featuredProfiles, viewMode, tableSortField, tableSortDirection]);
 
   // Handlers
-  const handleViewProfile = (profile: Profile) => {
-    router.push(ROUTES.PROFILE_VIEW(profile.id));
+  const handleViewFeaturedProfile = (profile: FeaturedProfile) => {
+    router.push(`/profile/${profile.username}`);
   };
 
   const handleViewTwitterProfile = (profile: TwitterProfile) => {
@@ -292,12 +255,12 @@ export default function DiscoverPage() {
                 }
               />
             ) : (
-              <MockProfilesTable
-                profiles={filteredMockProfiles}
+              <FeaturedProfilesTable
+                profiles={sortedFeaturedProfiles}
                 sortField={tableSortField}
                 sortDirection={tableSortDirection}
                 onSort={handleTableSort}
-                onView={handleViewProfile}
+                onView={handleViewFeaturedProfile}
               />
             )
           ) : (
@@ -550,18 +513,18 @@ function FeaturedProfilesGrid({
   );
 }
 
-function MockProfilesTable({
+function FeaturedProfilesTable({
   profiles,
   sortField,
   sortDirection,
   onSort,
   onView,
 }: {
-  profiles: Profile[];
+  profiles: FeaturedProfile[];
   sortField: SortField;
   sortDirection: "asc" | "desc";
   onSort: (field: SortField) => void;
-  onView: (profile: Profile) => void;
+  onView: (profile: FeaturedProfile) => void;
 }) {
   return (
     <motion.div
@@ -571,17 +534,17 @@ function MockProfilesTable({
       exit={{ opacity: 0 }}
       className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden"
     >
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto pb-10">
         <table className="w-full">
           <thead>
             <tr className="border-b border-neutral-200 dark:border-neutral-800">
-              <th className="text-left p-4 font-semibold text-neutral-600 dark:text-neutral-400">
+              <th className="text-left text-sm font-medium p-4 text-neutral-600 dark:text-neutral-400">
                 Rank
               </th>
-              <th className="text-left p-4 font-semibold text-neutral-600 dark:text-neutral-400">
+              <th className="text-left text-sm font-medium p-4 text-neutral-600 dark:text-neutral-400">
                 Profile
               </th>
-              <th className="text-left p-4 font-semibold text-neutral-600 dark:text-neutral-400">
+              <th className="text-left text-sm font-medium p-4 text-neutral-600 dark:text-neutral-400">
                 <SortableHeader
                   label="Followers"
                   field="followers"
@@ -590,32 +553,8 @@ function MockProfilesTable({
                   onClick={() => onSort("followers")}
                 />
               </th>
-              <th className="text-left p-4 font-semibold text-neutral-600 dark:text-neutral-400">
-                <SortableHeader
-                  label="Earnings"
-                  field="earnings"
-                  currentField={sortField}
-                  direction={sortDirection}
-                  onClick={() => onSort("earnings")}
-                />
-              </th>
-              <th className="text-left p-4 font-semibold text-neutral-600 dark:text-neutral-400">
-                <SortableHeader
-                  label="Min Price"
-                  field="price"
-                  currentField={sortField}
-                  direction={sortDirection}
-                  onClick={() => onSort("price")}
-                />
-              </th>
-              <th className="text-left p-4 font-semibold text-neutral-600 dark:text-neutral-400">
-                <SortableHeader
-                  label="Response"
-                  field="responseTime"
-                  currentField={sortField}
-                  direction={sortDirection}
-                  onClick={() => onSort("responseTime")}
-                />
+              <th className="text-left text-sm font-medium p-4 text-neutral-600 dark:text-neutral-400">
+                Categories & Tags
               </th>
               <th className="p-4"></th>
             </tr>
@@ -634,28 +573,61 @@ function MockProfilesTable({
                 </td>
                 <td className="p-4">
                   <div className="flex items-center gap-3">
-                    <AvatarGenerator seed={profile.handle} size={40} />
+                    {profile.profile_image_url ? (
+                      <img
+                        src={profile.profile_image_url}
+                        alt={profile.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <AvatarGenerator seed={profile.username} size={40} />
+                    )}
                     <div>
                       <p className="font-semibold text-neutral-900 dark:text-neutral-100">
                         {profile.name}
                       </p>
                       <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                        @{profile.handle}
+                        @{profile.username}
                       </p>
                     </div>
                   </div>
                 </td>
                 <td className="p-4 text-neutral-700 dark:text-neutral-300">
-                  {profile.followers}
+                  {formatFollowerCount(profile.followers_count)}
                 </td>
-                <td className="p-4 text-koru-golden font-semibold">
-                  ${profile.earnings.toLocaleString()}
-                </td>
-                <td className="p-4 text-neutral-700 dark:text-neutral-300">
-                  ${profile.price}
-                </td>
-                <td className="p-4 text-neutral-700 dark:text-neutral-300">
-                  {profile.responseTime}h avg
+                <td className="p-4">
+                  <div className="flex flex-wrap gap-1.5">
+                    {/* Show category first */}
+                    {profile.category &&
+                      (() => {
+                        const color = getTagColor(profile.category);
+                        return (
+                          <span
+                            className={`px-2 py-0.5 ${color.bg} ${color.text} text-xs rounded-full font-medium border ${color.border}`}
+                          >
+                            {profile.category}
+                          </span>
+                        );
+                      })()}
+                    {/* Show up to 2 tags */}
+                    {deduplicateTags(profile.tags || []).map((tag) => {
+                      const color = getTagColor(tag);
+                      return (
+                        <span
+                          key={tag}
+                          className={`px-2 py-0.5 ${color.bg} ${color.text} text-xs rounded-full border ${color.border}`}
+                        >
+                          {tag}
+                        </span>
+                      );
+                    })}
+                    {/* Show +N more if there are more tags */}
+                    {/* {(profile.tags?.length || 0) > 2 && (
+                      <span className="px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 text-xs rounded-full">
+                        +{(profile.tags?.length || 0) - 2}
+                      </span>
+                    )} */}
+                  </div>
                 </td>
                 <td className="p-4">
                   <Button size="sm" onClick={() => onView(profile)}>

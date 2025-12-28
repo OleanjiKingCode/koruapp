@@ -350,3 +350,4 @@ export function searchFeaturedProfiles(query: string): FeaturedProfile[] {
   );
 }
 
+

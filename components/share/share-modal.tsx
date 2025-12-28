@@ -6,6 +6,7 @@ import { toPng } from "html-to-image";
 import { ProfileShareCard } from "./profile-share-card";
 import { AppealShareCard } from "./appeal-share-card";
 import { CheckIcon, TwitterIcon } from "@/components/icons";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import type { UserData, Summon, Appeal } from "@/lib/types";
 
 // Custom icons
@@ -95,6 +96,7 @@ export function ShareModal({
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
+  const isDesktop = useMediaQuery("(min-width: 640px)");
 
   // Use summon or appeal (for backwards compatibility)
   const activeSummon = summon || appeal;
@@ -253,6 +255,20 @@ export function ShareModal({
     },
   ];
 
+  // Mobile bottom drawer animation variants
+  const mobileDrawerVariants = {
+    hidden: { y: "100%", opacity: 1 },
+    visible: { y: 0, opacity: 1 },
+    exit: { y: "100%", opacity: 1 },
+  };
+
+  // Desktop centered modal animation variants
+  const desktopModalVariants = {
+    hidden: { opacity: 0, scale: 0.95 },
+    visible: { opacity: 1, scale: 1 },
+    exit: { opacity: 0, scale: 0.95 },
+  };
+
   return (
     <AnimatePresence>
       {open && (
@@ -267,43 +283,63 @@ export function ShareModal({
             onClick={() => onOpenChange(false)}
           />
 
-          {/* Floating Container */}
-          <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center p-4">
-            <div className="pointer-events-auto flex flex-col items-center gap-4 max-h-[90vh] overflow-y-auto">
+          {/* Modal Container - Bottom drawer on mobile, centered on desktop */}
+          <motion.div
+            initial={isDesktop ? desktopModalVariants.hidden : mobileDrawerVariants.hidden}
+            animate={isDesktop ? desktopModalVariants.visible : mobileDrawerVariants.visible}
+            exit={isDesktop ? desktopModalVariants.exit : mobileDrawerVariants.exit}
+            transition={{ 
+              type: isDesktop ? "spring" : "spring",
+              damping: 25,
+              stiffness: 300,
+            }}
+            className={`
+              fixed z-50 bg-white dark:bg-neutral-900 
+              ${isDesktop 
+                ? "inset-0 m-auto w-fit h-fit max-w-[90vw] max-h-[90vh] rounded-3xl shadow-2xl" 
+                : "bottom-0 left-0 right-0 rounded-t-3xl shadow-2xl max-h-[90vh]"
+              }
+            `}
+          >
+            {/* Drawer handle for mobile */}
+            {!isDesktop && (
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-10 h-1 bg-neutral-300 dark:bg-neutral-700 rounded-full" />
+              </div>
+            )}
+
+            <div className={`flex flex-col items-center gap-4 overflow-y-auto ${isDesktop ? 'p-6' : 'px-4 pb-8 pt-2'}`}>
+              {/* Close Button - Top right on desktop */}
+              {isDesktop && (
+                <motion.button
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  onClick={() => onOpenChange(false)}
+                  className="absolute top-4 right-4 w-10 h-10 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
+                >
+                  <CloseIcon className="w-5 h-5" />
+                </motion.button>
+              )}
+
               {/* Style Selector Pills */}
-              <motion.div
-                initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 20, scale: 0.9 }}
-                transition={{ duration: 0.3, delay: 0.05 }}
-                className="flex items-center gap-2 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl rounded-full p-1.5 shadow-2xl shadow-black/20"
-              >
-                {variants.map((v, index) => (
-                  <motion.button
+              <div className="flex items-center gap-2 bg-neutral-100 dark:bg-neutral-800 rounded-full p-1.5">
+                {variants.map((v) => (
+                  <button
                     key={v}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.1 + index * 0.03 }}
                     onClick={() => setSelectedVariant(v)}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                       selectedVariant === v
                         ? "bg-koru-purple text-white shadow-lg shadow-koru-purple/30"
-                        : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                        : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"
                     }`}
                   >
                     {variantLabels[v]}
-                  </motion.button>
+                  </button>
                 ))}
-              </motion.div>
+              </div>
 
               {/* Card Preview */}
-              <motion.div
-                initial={{ opacity: 0, y: 30, scale: 0.9 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 30, scale: 0.9 }}
-                transition={{ duration: 0.35, delay: 0.1 }}
-                className="relative"
-              >
+              <div className="relative">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={selectedVariant}
@@ -311,7 +347,7 @@ export function ShareModal({
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
-                    className="shadow-2xl shadow-black/30 rounded-3xl overflow-hidden"
+                    className="shadow-2xl shadow-black/20 rounded-2xl overflow-hidden"
                   >
                     {type === "profile" && userData && (
                       <ProfileShareCard
@@ -342,17 +378,11 @@ export function ShareModal({
                     )}
                   </motion.div>
                 </AnimatePresence>
-              </motion.div>
+              </div>
 
               {/* Action Buttons */}
-              <motion.div
-                initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 20, scale: 0.9 }}
-                transition={{ duration: 0.3, delay: 0.15 }}
-                className="flex items-center gap-3"
-              >
-                {actionButtons.map((button, index) => {
+              <div className="flex items-center gap-3 flex-wrap justify-center">
+                {actionButtons.map((button) => {
                   const Icon =
                     button.isActive && button.activeIcon
                       ? button.activeIcon
@@ -363,16 +393,13 @@ export function ShareModal({
                       : button.label;
 
                   return (
-                    <motion.button
+                    <button
                       key={button.id}
-                      initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      transition={{ delay: 0.2 + index * 0.05 }}
                       onClick={button.onClick}
                       disabled={isGenerating}
                       className={`
                         flex items-center gap-2 px-5 py-3 rounded-full font-medium
-                        shadow-xl shadow-black/10 transition-all
+                        shadow-lg shadow-black/5 transition-all
                         disabled:opacity-50 disabled:cursor-not-allowed
                         ${button.className}
                         ${
@@ -384,22 +411,20 @@ export function ShareModal({
                     >
                       <Icon className="w-5 h-5" />
                       <span className="text-sm">{label}</span>
-                    </motion.button>
+                    </button>
                   );
                 })}
-              </motion.div>
+              </div>
 
-              {/* Close Button */}
-              <motion.button
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ delay: 0.3 }}
-                onClick={() => onOpenChange(false)}
-                className="w-12 h-12 rounded-full bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl shadow-xl shadow-black/10 flex items-center justify-center text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
-              >
-                <CloseIcon className="w-5 h-5" />
-              </motion.button>
+              {/* Close Button for mobile */}
+              {!isDesktop && (
+                <button
+                  onClick={() => onOpenChange(false)}
+                  className="w-full py-3 text-neutral-500 font-medium hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
+                >
+                  Cancel
+                </button>
+              )}
 
               {/* Loading Indicator */}
               <AnimatePresence>
@@ -408,9 +433,9 @@ export function ShareModal({
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
-                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none bg-white/80 dark:bg-neutral-900/80 rounded-3xl"
                   >
-                    <div className="bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl rounded-2xl px-6 py-4 shadow-2xl flex items-center gap-3">
+                    <div className="bg-white dark:bg-neutral-800 rounded-2xl px-6 py-4 shadow-2xl flex items-center gap-3">
                       <div className="w-6 h-6 rounded-full border-2 border-koru-purple/20 border-t-koru-purple animate-spin" />
                       <span className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
                         Generating...
@@ -420,7 +445,7 @@ export function ShareModal({
                 )}
               </AnimatePresence>
             </div>
-          </div>
+          </motion.div>
         </>
       )}
     </AnimatePresence>

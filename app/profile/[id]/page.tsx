@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import useSWR from "swr";
 import { useParams, useRouter, notFound } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
@@ -124,12 +125,7 @@ function ParsedBio({ text }: { text: string }) {
     </>
   );
 }
-import {
-  getProfileByUsername,
-  getUserByUsername,
-  createSummon,
-  getSummonByTarget,
-} from "@/lib/supabase";
+import { API_ROUTES } from "@/lib/constants/routes";
 import { useSession } from "next-auth/react";
 import type {
   AvailabilityData,
@@ -339,75 +335,37 @@ export default function ViewProfilePage() {
   const router = useRouter();
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [summonModalOpen, setSummonModalOpen] = useState(false);
-  const [profileData, setProfileData] = useState<{
-    name: string;
-    handle: string;
-    bio?: string;
-    profileImageUrl?: string;
-    bannerUrl?: string;
-    followersCount?: number;
-    followingCount?: number;
-    isVerified?: boolean;
-    category?: string;
-    tags?: string[];
-    isOnKoru: boolean;
-  } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch profile from database only - no mock data
-  useEffect(() => {
-    async function fetchProfile() {
-      const handle = params.id as string;
+  const handle = params.id as string;
 
-      try {
-        // First check if user is registered on Koru
-        const koruUser = await getUserByUsername(handle);
-        if (koruUser) {
-          setProfileData({
-            name: koruUser.name,
-            handle: koruUser.username,
-            bio: koruUser.bio || undefined,
-            profileImageUrl: koruUser.profile_image_url || undefined,
-            followersCount: koruUser.followers_count || undefined,
-            followingCount: koruUser.following_count || undefined,
-            isVerified: koruUser.is_verified,
-            tags: koruUser.tags || undefined,
-            isOnKoru: true,
-          });
-          setIsLoading(false);
-          return;
-        }
+  // Fetcher function for useSWR
+  const fetcher = async (url: string) => {
+    const response = await fetch(url);
 
-        // Check featured profiles or search cache
-        const cached = await getProfileByUsername(handle);
-        if (cached) {
-          setProfileData({
-            name: cached.name,
-            handle: cached.username,
-            bio: cached.bio || undefined,
-            profileImageUrl: cached.profile_image_url || undefined,
-            bannerUrl: cached.banner_url || undefined,
-            followersCount: cached.followers_count || undefined,
-            followingCount: cached.following_count || undefined,
-            isVerified: cached.verified,
-            category: cached.category || undefined,
-            tags: cached.tags || undefined,
-            isOnKoru: false,
-          });
-          setIsLoading(false);
-          return;
-        }
-
-        // Not found anywhere
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-        setIsLoading(false);
-      }
+    if (response.status === 404) {
+      return null;
     }
 
-    fetchProfile();
-  }, [params.id]);
+    if (!response.ok) {
+      throw new Error("Failed to fetch profile");
+    }
+
+    const data = await response.json();
+    return data.profile;
+  };
+
+  // Fetch profile using useSWR for caching and automatic revalidation
+  const {
+    data: profileData,
+    error,
+    isLoading,
+    mutate: refreshProfile,
+  } = useSWR(handle ? API_ROUTES.PROFILE(handle) : null, fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true,
+    dedupingInterval: 60000, // Cache for 1 minute
+    errorRetryCount: 2,
+  });
 
   // Format follower count to string like "1.2M" or "500K"
   const formatFollowers = (count: number): string => {
@@ -435,17 +393,24 @@ export default function ViewProfilePage() {
       followers: formatFollowers(profileData.followersCount || 0),
       category: profileData.category,
       // Deduplicate tags by normalizing case (e.g., "AI" and "Ai" become one)
-      tags: profileData.tags?.reduce<string[]>((acc, tag) => {
+      tags: profileData.tags?.reduce((acc: string[], tag: string) => {
         const normalizedTag = tag.trim();
         const upperTag = normalizedTag.toUpperCase();
-        if (!acc.some((t) => t.toUpperCase() === upperTag)) {
+        if (!acc.some((t: string) => t.toUpperCase() === upperTag)) {
           acc.push(normalizedTag);
         }
         return acc;
-      }, []),
+      }, [] as string[]),
       isOnKoru: profileData.isOnKoru,
     };
   }, [profileData]);
+
+  // Handle error state
+  if (error && !isLoading) {
+    console.error("Error fetching profile:", error);
+    // You could show an error message here or call notFound()
+    notFound();
+  }
 
   // Availability data - only users on Koru can have availability
   // For now, return empty availability since we're fetching from DB
@@ -703,7 +668,7 @@ export default function ViewProfilePage() {
                     );
                   })()}
                 {/* Show tags */}
-                {profile.tags?.map((tag) => {
+                {profile.tags?.map((tag: string) => {
                   const color = getTagColor(tag);
                   return (
                     <Badge
@@ -931,17 +896,28 @@ function SummonModal({
     setError(null);
 
     try {
-      const summon = await createSummon({
-        creator_id: session.user.id,
-        target_twitter_id: personHandle,
-        target_username: personHandle,
-        target_name: personName,
-        target_profile_image: personImage || null,
-        message: message.trim(),
-        pledged_amount: amount,
+      const response = await fetch(API_ROUTES.SUMMONS_CREATE, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          target_twitter_id: personHandle,
+          target_username: personHandle,
+          target_name: personName,
+          target_profile_image: personImage || null,
+          message: message.trim(),
+          pledged_amount: amount,
+        }),
       });
 
-      if (summon) {
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create summon");
+      }
+
+      const data = await response.json();
+      if (data.summon) {
         onSuccess();
         onOpenChange(false);
       } else {
@@ -949,7 +925,11 @@ function SummonModal({
       }
     } catch (err) {
       console.error("Error creating summon:", err);
-      setError("An error occurred. Please try again.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "An error occurred. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
     }

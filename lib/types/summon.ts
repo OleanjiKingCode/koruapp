@@ -43,3 +43,4 @@ export interface TreemapItem {
 export type Appeal = Summon;
 export type UserAppeal = UserSummon;
 
+

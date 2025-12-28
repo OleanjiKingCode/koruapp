@@ -3,20 +3,13 @@
 import useSWR from "swr";
 import { useSession } from "next-auth/react";
 import {
-  getUserChats,
-  getUserSummons,
-  getUserBackedSummons,
-  getRecentTransactions,
-  getUserWallets,
-  getUserAvailabilitySlots,
-  getUserStats,
   Chat,
   Summon,
   Transaction,
   Wallet,
   AvailabilitySlot,
-  getUserByTwitterId,
 } from "@/lib/supabase";
+import { API_ROUTES } from "@/lib/constants/routes";
 
 // Hook to fetch user's chats
 export function useUserChats() {
@@ -25,7 +18,13 @@ export function useUserChats() {
 
   const { data, error, isLoading, mutate } = useSWR(
     userId ? `user-chats-${userId}` : null,
-    () => (userId ? getUserChats(userId) : Promise.resolve([])),
+    async () => {
+      if (!userId) return [];
+      const response = await fetch(API_ROUTES.USER_CHATS);
+      if (!response.ok) throw new Error("Failed to fetch chats");
+      const result = await response.json();
+      return result.chats;
+    },
     {
       revalidateOnFocus: false,
       dedupingInterval: 60000, // 1 minute
@@ -45,23 +44,22 @@ export function useUserSummons() {
   const { data: session } = useSession();
   const userId = session?.user?.dbId;
 
-  const { data: created, error: createdError, isLoading: isLoadingCreated } = useSWR(
-    userId ? `user-summons-created-${userId}` : null,
-    () => (userId ? getUserSummons(userId) : Promise.resolve([])),
-    { revalidateOnFocus: false, dedupingInterval: 60000 }
-  );
-
-  const { data: backed, error: backedError, isLoading: isLoadingBacked } = useSWR(
-    userId ? `user-summons-backed-${userId}` : null,
-    () => (userId ? getUserBackedSummons(userId) : Promise.resolve([])),
+  const { data, error, isLoading } = useSWR(
+    userId ? `user-summons-${userId}` : null,
+    async () => {
+      if (!userId) return { createdSummons: [], backedSummons: [] };
+      const response = await fetch(API_ROUTES.USER_SUMMONS);
+      if (!response.ok) throw new Error("Failed to fetch summons");
+      return await response.json();
+    },
     { revalidateOnFocus: false, dedupingInterval: 60000 }
   );
 
   return {
-    createdSummons: created || [],
-    backedSummons: backed || [],
-    isLoading: isLoadingCreated || isLoadingBacked,
-    error: createdError || backedError,
+    createdSummons: data?.createdSummons || [],
+    backedSummons: data?.backedSummons || [],
+    isLoading,
+    error,
   };
 }
 
@@ -72,7 +70,13 @@ export function useUserTransactions(limit = 10) {
 
   const { data, error, isLoading, mutate } = useSWR(
     userId ? `user-transactions-${userId}-${limit}` : null,
-    () => (userId ? getRecentTransactions(userId, limit) : Promise.resolve([])),
+    async () => {
+      if (!userId) return [];
+      const response = await fetch(`${API_ROUTES.USER_TRANSACTIONS}?limit=${limit}`);
+      if (!response.ok) throw new Error("Failed to fetch transactions");
+      const result = await response.json();
+      return result.transactions;
+    },
     {
       revalidateOnFocus: false,
       dedupingInterval: 30000, // 30 seconds for transactions
@@ -94,7 +98,13 @@ export function useUserWallets() {
 
   const { data, error, isLoading, mutate } = useSWR(
     userId ? `user-wallets-${userId}` : null,
-    () => (userId ? getUserWallets(userId) : Promise.resolve([])),
+    async () => {
+      if (!userId) return [];
+      const response = await fetch(API_ROUTES.USER_WALLETS);
+      if (!response.ok) throw new Error("Failed to fetch wallets");
+      const result = await response.json();
+      return result.wallets;
+    },
     {
       revalidateOnFocus: false,
       dedupingInterval: 60000,
@@ -117,7 +127,13 @@ export function useUserAvailability() {
 
   const { data, error, isLoading, mutate } = useSWR(
     userId ? `user-availability-${userId}` : null,
-    () => (userId ? getUserAvailabilitySlots(userId) : Promise.resolve([])),
+    async () => {
+      if (!userId) return [];
+      const response = await fetch(API_ROUTES.USER_AVAILABILITY);
+      if (!response.ok) throw new Error("Failed to fetch availability");
+      const result = await response.json();
+      return result.slots;
+    },
     {
       revalidateOnFocus: false,
       dedupingInterval: 60000,
@@ -139,7 +155,13 @@ export function useUserStats() {
 
   const { data, error, isLoading, mutate } = useSWR(
     userId ? `user-stats-${userId}` : null,
-    () => (userId ? getUserStats(userId) : Promise.resolve(null)),
+    async () => {
+      if (!userId) return null;
+      const response = await fetch(API_ROUTES.USER_STATS);
+      if (!response.ok) throw new Error("Failed to fetch stats");
+      const result = await response.json();
+      return result.stats;
+    },
     {
       revalidateOnFocus: false,
       dedupingInterval: 60000,

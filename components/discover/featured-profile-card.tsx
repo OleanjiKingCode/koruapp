@@ -112,3 +112,4 @@ export function FeaturedProfileCard({ profile, onView }: FeaturedProfileCardProp
   );
 }
 
+
