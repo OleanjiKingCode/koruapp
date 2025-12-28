@@ -405,6 +405,17 @@ export default function ProfilePage() {
                           @{user?.username}
                         </span>
                       </a>
+                      {(user as any)?.website && (
+                        <a
+                          href={(user as any).website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors group"
+                        >
+                          <LinkIcon className="w-4 h-4" />
+                          <span className="group-hover:underline">Website</span>
+                        </a>
+                      )}
                     </div>
 
                     {/* Badges */}

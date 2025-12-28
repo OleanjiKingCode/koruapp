@@ -7,21 +7,19 @@ export async function PATCH(request: NextRequest) {
     const session = await auth();
 
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
 
     const allowedFields = [
-      'bio',
-      'is_creator',
-      'price_per_message',
-      'response_time_hours',
-      'email',
-      'tags'
+      "bio",
+      "is_creator",
+      "price_per_message",
+      "response_time_hours",
+      "email",
+      "tags",
+      "website",
     ];
 
     // Filter out any fields that aren't allowed
@@ -59,10 +57,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (!data) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     return NextResponse.json({ user: data });
@@ -74,5 +69,3 @@ export async function PATCH(request: NextRequest) {
     );
   }
 }
-
-

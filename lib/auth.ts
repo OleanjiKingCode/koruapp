@@ -57,7 +57,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               profileKeys: Object.keys(twitterProfile || {}),
               profileType: typeof profile,
             });
-            // Don't throw - let NextAuth handle it, but log for debugging
+            
             return token;
           }
 

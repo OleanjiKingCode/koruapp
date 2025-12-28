@@ -263,7 +263,6 @@ export default function SummonsPage() {
           />
 
           <Button
-            size="lg"
             className="w-full sm:w-auto gap-2"
             onClick={() => setIsModalOpen(true)}
           >

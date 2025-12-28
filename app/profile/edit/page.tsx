@@ -161,7 +161,7 @@ export default function EditProfilePage() {
         username: user.username || "",
         displayName: user.name || "",
         bio: user.bio || "",
-        website: "",
+        website: (user as any).website || "",
         twitterHandle: user.username || "",
       });
       setIsFormInitialized(true);
@@ -229,6 +229,7 @@ export default function EditProfilePage() {
       const result = await updateUser({
         bio: formData.bio,
         tags: selectedTags,
+        website: formData.website || undefined,
       });
 
       if (!result) {

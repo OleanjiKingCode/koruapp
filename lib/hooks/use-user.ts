@@ -53,6 +53,7 @@ export function useUser() {
         responseTimeHours: dbUser?.response_time_hours || 24,
         email: dbUser?.email || null,
         tags: dbUser?.tags || [],
+        website: (dbUser as any)?.website || null,
         // Balance info
         balance: dbUser?.balance || 0,
         pendingBalance: dbUser?.pending_balance || 0,
@@ -72,6 +73,7 @@ export function useUser() {
       response_time_hours: number;
       email: string;
       tags: string[];
+      website: string;
     }>
   ) => {
     if (!twitterId) return null;
@@ -113,4 +115,3 @@ export function useUser() {
     refresh: mutate,
   };
 }
-
