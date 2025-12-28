@@ -146,7 +146,7 @@ export interface FeaturedProfile {
 export async function getFeaturedProfiles(
   page: number = 0,
   limit: number = 50,
-  category?: string
+  categories?: string[]
 ): Promise<{
   profiles: FeaturedProfile[];
   total: number;
@@ -157,8 +157,8 @@ export async function getFeaturedProfiles(
     .select("*", { count: "exact" })
     .eq("is_active", true);
 
-  if (category && category !== "All") {
-    query = query.eq("category", category);
+  if (categories && categories.length > 0) {
+    query = query.in("category", categories);
   }
 
   const { data, error, count } = await query

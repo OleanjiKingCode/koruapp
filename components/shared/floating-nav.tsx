@@ -561,14 +561,6 @@ export function FloatingNav() {
                   </Link>
                 </div>
 
-                {/* Divider */}
-                <div
-                  className={cn(
-                    "h-px mb-3",
-                    isDark ? "bg-neutral-800" : "bg-neutral-200"
-                  )}
-                />
-
                 {/* How it Works Link */}
                 <Link
                   href="/how-it-works"
@@ -584,6 +576,9 @@ export function FloatingNav() {
                   How Kōru Works
                   <ChevronRightIcon className="w-4 h-4 ml-auto" />
                 </Link>
+
+                {/* Spacer before auth section */}
+                <div className="mt-6" />
 
                 {/* Auth Section */}
                 {isAuthenticated && session?.user ? (

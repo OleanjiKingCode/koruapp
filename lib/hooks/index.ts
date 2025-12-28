@@ -9,3 +9,6 @@ export * from "./use-twitter-search";
 export * from "./use-user";
 export * from "./use-media-query";
 export * from "./use-profile-data";
+export * from "./use-featured-profiles";
+export * from "./use-infinite-scroll";
+export * from "./use-table-sort";

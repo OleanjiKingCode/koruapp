@@ -434,7 +434,15 @@ export default function ViewProfilePage() {
       verified: profileData.isVerified || false,
       followers: formatFollowers(profileData.followersCount || 0),
       category: profileData.category,
-      tags: profileData.tags,
+      // Deduplicate tags by normalizing case (e.g., "AI" and "Ai" become one)
+      tags: profileData.tags?.reduce<string[]>((acc, tag) => {
+        const normalizedTag = tag.trim();
+        const upperTag = normalizedTag.toUpperCase();
+        if (!acc.some((t) => t.toUpperCase() === upperTag)) {
+          acc.push(normalizedTag);
+        }
+        return acc;
+      }, []),
       isOnKoru: profileData.isOnKoru,
     };
   }, [profileData]);
