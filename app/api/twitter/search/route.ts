@@ -8,6 +8,8 @@ import {
 import {
   getCachedProfilesByQuery,
   upsertManyTwitterProfiles,
+  getUserByUsername,
+  upsertUser,
 } from "@/lib/supabase";
 
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
@@ -98,6 +100,30 @@ export async function GET(request: NextRequest) {
       upsertManyTwitterProfiles(profilesToCache).catch((err) =>
         console.error("Cache write error:", err)
       );
+
+      // Also upsert to users table if username doesn't exist
+      // Don't await - fire and forget to not slow down response
+      Promise.all(
+        profiles.map(async (profile) => {
+          try {
+            const existingUser = await getUserByUsername(profile.username);
+            if (!existingUser) {
+              await upsertUser({
+                twitter_id: profile.twitterId,
+                username: profile.username,
+                name: profile.name,
+                profile_image_url: profile.profileImageUrl || null,
+                bio: profile.bio || null,
+                is_verified: profile.verified,
+                followers_count: profile.followersCount,
+                following_count: profile.followingCount,
+              });
+            }
+          } catch (err) {
+            console.error(`Error upserting user ${profile.username}:`, err);
+          }
+        })
+      ).catch((err) => console.error("Error upserting users:", err));
     }
 
     return NextResponse.json({

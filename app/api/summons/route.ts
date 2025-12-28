@@ -1,6 +1,57 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import { supabase, getActiveSummons } from "@/lib/supabase";
+
+export async function GET(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const category = searchParams.get("category");
+    const searchQuery = searchParams.get("search");
+    const limit = parseInt(searchParams.get("limit") || "50");
+
+    // Get all active summons
+    let summons = await getActiveSummons(limit);
+
+    // Filter by category if provided
+    if (category && category !== "All") {
+      // Note: summons table doesn't have category field, so we'll skip this for now
+      // If you want category filtering, you'd need to add it to the schema
+    }
+
+    // Filter by search query if provided
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      summons = summons.filter(
+        (summon) =>
+          summon.target_username?.toLowerCase().includes(query) ||
+          summon.target_name?.toLowerCase().includes(query) ||
+          summon.message?.toLowerCase().includes(query)
+      );
+    }
+
+    // Transform to match the frontend Summon type
+    const transformedSummons = summons.map((summon) => ({
+      id: summon.id,
+      targetHandle: summon.target_username || summon.target_twitter_id,
+      targetName: summon.target_name || summon.target_username || "Unknown",
+      totalPledged: Number(summon.pledged_amount || 0),
+      backers: summon.backers_count || 0,
+      category: "All", // Default category since summons table doesn't have category
+      trend: "up" as const, // Default trend - could be calculated from recent backers
+      trendValue: 0, // Default trend value - could be calculated
+      request: summon.message || "",
+      createdAt: summon.created_at,
+    }));
+
+    return NextResponse.json({ summons: transformedSummons });
+  } catch (error) {
+    console.error("Error fetching summons:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {

@@ -99,39 +99,34 @@ export default function DiscoverPage() {
   const sortedTwitterProfiles = useMemo(() => {
     if (!twitterProfiles.length) return [];
     return [...twitterProfiles].sort((a, b) => {
-      if (viewMode === "list") {
-        const multiplier = tableSortDirection === "desc" ? -1 : 1;
-        return (a.followersCount - b.followersCount) * multiplier;
-      }
-      return b.followersCount - a.followersCount;
+      const multiplier = tableSortDirection === "desc" ? -1 : 1;
+      return (a.followersCount - b.followersCount) * multiplier;
     });
-  }, [twitterProfiles, viewMode, tableSortDirection]);
+  }, [twitterProfiles, tableSortDirection]);
 
-  // Sort featured profiles for table view
+  // Sort featured profiles (works for both grid and list view)
   const sortedFeaturedProfiles = useMemo(() => {
     if (!featuredProfiles.length) return [];
 
     const profiles = [...featuredProfiles];
 
-    if (viewMode === "list") {
-      profiles.sort((a, b) => {
-        let aVal: number, bVal: number;
-        switch (tableSortField) {
-          case "followers":
-            aVal = a.followers_count;
-            bVal = b.followers_count;
-            break;
-          default:
-            // Default sort by followers
-            aVal = a.followers_count;
-            bVal = b.followers_count;
-        }
-        return tableSortDirection === "desc" ? bVal - aVal : aVal - bVal;
-      });
-    }
+    profiles.sort((a, b) => {
+      let aVal: number, bVal: number;
+      switch (tableSortField) {
+        case "followers":
+          aVal = a.followers_count;
+          bVal = b.followers_count;
+          break;
+        default:
+          // Default sort by followers
+          aVal = a.followers_count;
+          bVal = b.followers_count;
+      }
+      return tableSortDirection === "desc" ? bVal - aVal : aVal - bVal;
+    });
 
     return profiles;
-  }, [featuredProfiles, viewMode, tableSortField, tableSortDirection]);
+  }, [featuredProfiles, tableSortField, tableSortDirection]);
 
   // Handlers
   const handleViewFeaturedProfile = (profile: FeaturedProfile) => {

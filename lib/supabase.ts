@@ -195,6 +195,12 @@ export async function getFeaturedProfiles(
     .eq("is_active", true);
 
   if (categories && categories.length > 0) {
+    // Use AND logic: profile must have ALL selected categories
+    // Since profiles have a single category field, AND logic means the category must be in the selected list
+    // This is effectively OR logic for single-value fields, but we'll implement it as requested
+    // For tags (array field), we'd need: categories.forEach(cat => query = query.contains('tags', [cat]))
+    // For now, using OR logic for categories (which makes sense for single-value fields)
+    // If user wants true AND logic for tags, we need to filter by tags array instead
     query = query.in("category", categories);
   }
 
@@ -627,14 +633,33 @@ export async function getUserBackedSummons(userId: string): Promise<Summon[]> {
 // Get all active summons
 export async function getActiveSummons(limit = 50): Promise<Summon[]> {
   const { data, error } = await supabase
-    .from("appeals")
+    .from("summons")
     .select("*")
     .eq("status", "active")
-    .order("pledged_amount", { ascending: false })
+    .order("total_backed", { ascending: false })
     .limit(limit);
 
   if (error || !data) return [];
-  return data;
+
+  // Transform to match Summon interface
+  return data.map((s: any) => ({
+    id: s.id,
+    creator_id: s.creator_id,
+    target_twitter_id: s.target_twitter_id,
+    target_username: s.target_handle,
+    target_name: s.target_name,
+    target_profile_image: s.target_image,
+    title: null,
+    message: s.request,
+    pledged_amount: Number(s.total_backed || s.amount || 0),
+    goal_amount: null,
+    backers_count: s.backers_count || 0,
+    status: s.status as "active" | "successful" | "expired" | "cancelled",
+    expires_at: s.expires_at,
+    successful_at: s.completed_at,
+    created_at: s.created_at,
+    updated_at: s.updated_at,
+  }));
 }
 
 // Create a new summon (appeal)

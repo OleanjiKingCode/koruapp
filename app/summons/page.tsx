@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useSession } from "next-auth/react";
+import useSWR from "swr";
 import {
   PageHeader,
   EmptyState,
@@ -16,7 +17,6 @@ import { Badge } from "@/components/ui/badge";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { cn, calculateTreemapLayout, formatCurrency } from "@/lib/utils";
 import { CATEGORIES, TIME_FILTERS, API_ROUTES } from "@/lib/constants";
-import { MOCK_SUMMONS } from "@/lib/data";
 import type { Summon, TreemapRect } from "@/lib/types";
 import { useDebouncedTwitterSearch } from "@/lib/hooks/use-twitter-search";
 import type { TwitterProfile } from "@/lib/types/twitter";
@@ -76,13 +76,38 @@ export default function SummonsPage() {
   const [selectedTime, setSelectedTime] = useState("24H");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [isLoading, setIsLoading] = useState(true);
+  const [sortBy, setSortBy] = useState<
+    "totalPledged" | "backers" | "createdAt"
+  >("totalPledged");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
-  // Simulate initial loading
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 600);
-    return () => clearTimeout(timer);
-  }, []);
+  // Fetch summons from API
+  const fetcher = async (url: string) => {
+    const res = await fetch(url);
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || "Failed to fetch");
+    }
+    return res.json();
+  };
+
+  const {
+    data,
+    error: fetchError,
+    isLoading,
+    mutate,
+  } = useSWR<{
+    summons: Summon[];
+  }>(
+    `/api/summons?category=${selectedCategory}&search=${searchQuery}`,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
+
+  const allSummons = data?.summons || [];
 
   // Share modal state
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -146,18 +171,28 @@ export default function SummonsPage() {
   };
 
   const filteredSummons = useMemo(() => {
-    return MOCK_SUMMONS.filter(
-      (summon) =>
-        selectedCategory === "All" || summon.category === selectedCategory
-    )
-      .filter(
-        (summon) =>
-          !searchQuery ||
-          summon.targetName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          summon.targetHandle.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-      .sort((a, b) => b.totalPledged - a.totalPledged);
-  }, [selectedCategory, searchQuery]);
+    // Filtering is done on the server, but we can do additional client-side filtering if needed
+    const sorted = [...allSummons].sort((a, b) => {
+      let aVal: number, bVal: number;
+      switch (sortBy) {
+        case "backers":
+          aVal = a.backers;
+          bVal = b.backers;
+          break;
+        case "createdAt":
+          aVal = new Date(a.createdAt).getTime();
+          bVal = new Date(b.createdAt).getTime();
+          break;
+        case "totalPledged":
+        default:
+          aVal = a.totalPledged;
+          bVal = b.totalPledged;
+          break;
+      }
+      return sortDirection === "desc" ? bVal - aVal : aVal - bVal;
+    });
+    return sorted;
+  }, [allSummons, sortBy, sortDirection]);
 
   const totalPledged = filteredSummons.reduce(
     (sum, a) => sum + a.totalPledged,
@@ -235,8 +270,8 @@ export default function SummonsPage() {
       const data = await response.json();
       if (data.summon) {
         setIsModalOpen(false);
-        // Refresh the page or update the summons list
-        window.location.reload();
+        // Refresh the summons list
+        mutate();
       } else {
         setError("Failed to create summon. Please try again.");
       }
@@ -646,7 +681,28 @@ export default function SummonsPage() {
                 {cat}
               </button>
             ))}
+            {/* Clear filter button */}
+            {selectedCategory !== "All" && (
+              <button
+                onClick={() => setSelectedCategory("All")}
+                className="px-3 py-1.5 rounded-lg text-sm font-medium text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-all"
+                title="Clear category filter"
+              >
+                ✕
+              </button>
+            )}
           </div>
+
+          {/* Clear search button */}
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="px-3 py-1.5 rounded-lg text-sm font-medium text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-all bg-neutral-100 dark:bg-neutral-800"
+              title="Clear search"
+            >
+              Clear Search
+            </button>
+          )}
 
           {/* Time Filter */}
           <div className="flex items-center gap-1 ml-auto">
@@ -664,6 +720,34 @@ export default function SummonsPage() {
                 {time}
               </button>
             ))}
+          </div>
+
+          {/* Sort Options */}
+          <div className="flex items-center gap-2">
+            <select
+              value={sortBy}
+              onChange={(e) =>
+                setSortBy(
+                  e.target.value as "totalPledged" | "backers" | "createdAt"
+                )
+              }
+              className="px-3 py-1.5 rounded-lg text-sm font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700 focus:outline-none focus:ring-2 focus:ring-koru-purple/50"
+            >
+              <option value="totalPledged">Total Pledged</option>
+              <option value="backers">Backers</option>
+              <option value="createdAt">Newest</option>
+            </select>
+            <button
+              onClick={() =>
+                setSortDirection(sortDirection === "desc" ? "asc" : "desc")
+              }
+              className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-400 transition-all"
+              title={`Sort ${
+                sortDirection === "desc" ? "Ascending" : "Descending"
+              }`}
+            >
+              {sortDirection === "desc" ? "↓" : "↑"}
+            </button>
           </div>
 
           {/* View Toggle */}

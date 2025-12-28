@@ -332,6 +332,7 @@ export function profileToSupabaseFormat(profile: TwitterProfile) {
     name: profile.name,
     bio: profile.bio,
     profile_image_url: profile.profileImageUrl,
+    banner_url: profile.bannerUrl || null,
     followers_count: profile.followersCount,
     following_count: profile.followingCount,
     verified: profile.verified,
