@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -14,16 +14,123 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { cn, parseFollowerCount } from "@/lib/utils";
-import {
-  MOCK_PROFILES,
-  FEATURED_PROFILES,
-  ALL_CATEGORIES,
-  type FeaturedProfile,
-} from "@/lib/data";
+import { MOCK_PROFILES } from "@/lib/data";
 import { ROUTES } from "@/lib/constants";
 import { useTwitterSearch } from "@/lib/hooks";
 import { formatFollowerCount, type TwitterProfile } from "@/lib/types/twitter";
+import {
+  getFeaturedProfiles,
+  getFeaturedCategories,
+  type FeaturedProfile,
+} from "@/lib/supabase";
 import type { SortField, SortDirection, Profile } from "@/lib/types";
+
+// Tag color configurations
+const TAG_COLORS = [
+  {
+    bg: "bg-koru-purple/10",
+    text: "text-koru-purple",
+    border: "border-koru-purple/20",
+  },
+  {
+    bg: "bg-koru-lime/10",
+    text: "text-koru-lime",
+    border: "border-koru-lime/20",
+  },
+  {
+    bg: "bg-koru-golden/10",
+    text: "text-koru-golden",
+    border: "border-koru-golden/20",
+  },
+  { bg: "bg-blue-500/10", text: "text-blue-500", border: "border-blue-500/20" },
+  { bg: "bg-pink-500/10", text: "text-pink-500", border: "border-pink-500/20" },
+  { bg: "bg-cyan-500/10", text: "text-cyan-500", border: "border-cyan-500/20" },
+  {
+    bg: "bg-orange-500/10",
+    text: "text-orange-500",
+    border: "border-orange-500/20",
+  },
+  {
+    bg: "bg-emerald-500/10",
+    text: "text-emerald-500",
+    border: "border-emerald-500/20",
+  },
+];
+
+// Get consistent color for a tag based on its name
+function getTagColor(tag: string) {
+  let hash = 0;
+  for (let i = 0; i < tag.length; i++) {
+    hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % TAG_COLORS.length;
+  return TAG_COLORS[index];
+}
+
+// Helper function to parse bio text and make URLs and @mentions clickable
+function ParsedBioCompact({ text }: { text: string }) {
+  if (!text) return null;
+
+  // Regex patterns
+  const combinedPattern = /(https?:\/\/[^\s]+)|(@[a-zA-Z0-9_]+)/g;
+  const parts: { type: "text" | "url" | "mention"; value: string }[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = combinedPattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ type: "text", value: text.slice(lastIndex, match.index) });
+    }
+    if (match[1]) {
+      parts.push({ type: "url", value: match[1] });
+    } else if (match[2]) {
+      parts.push({ type: "mention", value: match[2] });
+    }
+    lastIndex = combinedPattern.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push({ type: "text", value: text.slice(lastIndex) });
+  }
+
+  return (
+    <>
+      {parts.map((part, index) => {
+        if (part.type === "url") {
+          return (
+            <a
+              key={index}
+              href={part.value}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-koru-purple hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {part.value}
+            </a>
+          );
+        }
+        if (part.type === "mention") {
+          const username = part.value.slice(1);
+          return (
+            <a
+              key={index}
+              href={`https://x.com/${username}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-koru-purple hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {part.value}
+            </a>
+          );
+        }
+        return <span key={index}>{part.value}</span>;
+      })}
+    </>
+  );
+}
+
 import {
   CrownIcon,
   ChevronUpIcon,
@@ -32,6 +139,8 @@ import {
 } from "@/components/icons";
 
 type TabValue = "hot" | "daily" | "weekly";
+
+const PROFILES_PER_PAGE = 50;
 
 export default function DiscoverPage() {
   const router = useRouter();
@@ -45,6 +154,91 @@ export default function DiscoverPage() {
   const [tableSortField, setTableSortField] = useState<SortField>("earnings");
   const [tableSortDirection, setTableSortDirection] =
     useState<SortDirection>("desc");
+
+  // Featured profiles state (from DB)
+  const [featuredProfiles, setFeaturedProfiles] = useState<FeaturedProfile[]>(
+    []
+  );
+  const [categories, setCategories] = useState<string[]>([]);
+  const [isLoadingFeatured, setIsLoadingFeatured] = useState(true);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [totalProfiles, setTotalProfiles] = useState(0);
+
+  // Fetch featured profiles from DB
+  const loadFeaturedProfiles = useCallback(
+    async (pageNum: number, reset: boolean = false) => {
+      setIsLoadingFeatured(true);
+      try {
+        const result = await getFeaturedProfiles(
+          pageNum,
+          PROFILES_PER_PAGE,
+          selectedCategory || undefined
+        );
+
+        if (reset) {
+          setFeaturedProfiles(result.profiles);
+        } else {
+          setFeaturedProfiles((prev) => [...prev, ...result.profiles]);
+        }
+        setHasMore(result.hasMore);
+        setTotalProfiles(result.total);
+      } catch (error) {
+        console.error("Error loading featured profiles:", error);
+      } finally {
+        setIsLoadingFeatured(false);
+      }
+    },
+    [selectedCategory]
+  );
+
+  // Load categories
+  useEffect(() => {
+    async function loadCategories() {
+      const cats = await getFeaturedCategories();
+      setCategories(cats);
+    }
+    loadCategories();
+  }, []);
+
+  // Load initial profiles
+  useEffect(() => {
+    setPage(0);
+    loadFeaturedProfiles(0, true);
+  }, [selectedCategory, loadFeaturedProfiles]);
+
+  // Load more profiles when scrolling
+  const loadMore = useCallback(() => {
+    if (!isLoadingFeatured && hasMore) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      loadFeaturedProfiles(nextPage, false);
+    }
+  }, [isLoadingFeatured, hasMore, page, loadFeaturedProfiles]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          hasMore &&
+          !isLoadingFeatured &&
+          !searchQuery
+        ) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const sentinel = document.getElementById("scroll-sentinel");
+    if (sentinel) {
+      observer.observe(sentinel);
+    }
+
+    return () => observer.disconnect();
+  }, [hasMore, isLoadingFeatured, loadMore, searchQuery]);
 
   // Twitter search with SWR - only search when query >= 2 chars
   const {
@@ -64,23 +258,11 @@ export default function DiscoverPage() {
     setSearchQuery(query);
   };
 
-  // Filter and sort featured profiles (shown when no search)
+  // Featured profiles are now loaded from DB
   const filteredFeaturedProfiles = useMemo(() => {
-    let profiles = [...FEATURED_PROFILES];
-
-    // Filter by category
-    if (selectedCategory) {
-      profiles = profiles.filter(
-        (p) =>
-          p.category === selectedCategory || p.tags.includes(selectedCategory)
-      );
-    }
-
-    // Sort by followers by default
-    profiles.sort((a, b) => b.followersCount - a.followersCount);
-
-    return profiles;
-  }, [selectedCategory]);
+    // Profiles are already filtered by category in the DB query
+    return featuredProfiles;
+  }, [featuredProfiles]);
 
   // Also filter mock profiles for backwards compatibility
   const filteredMockProfiles = useMemo(() => {
@@ -183,7 +365,7 @@ export default function DiscoverPage() {
   const isActivelySearching = isSearching || isValidating;
 
   return (
-    <div className="min-h-[calc(100vh+400px)] pb-32">
+    <div className="min-h-[calc(100vh+400px)] pb-64">
       <main className="max-w-container mx-auto px-4 sm:px-6 py-8">
         {/* Page Header */}
         <PageHeader
@@ -238,6 +420,7 @@ export default function DiscoverPage() {
             onCategoryChange={setSelectedCategory}
             onSortChange={setSortBy}
             onViewChange={setViewMode}
+            categories={["All", ...categories]}
             selectedCategory={selectedCategory}
             currentSort={sortBy}
             currentView={viewMode}
@@ -281,8 +464,11 @@ export default function DiscoverPage() {
 
         {/* Results */}
         <AnimatePresence mode="wait">
-          {isActivelySearching && isShowingSearchResults ? (
-            // Loading State
+          {/* Loading State - for both search and initial load */}
+          {(isActivelySearching && isShowingSearchResults) ||
+          (isLoadingFeatured &&
+            !isShowingSearchResults &&
+            featuredProfiles.length === 0) ? (
             <motion.div
               key="loading"
               initial={{ opacity: 0 }}
@@ -477,10 +663,10 @@ export default function DiscoverPage() {
               >
                 {filteredFeaturedProfiles.map((profile, index) => (
                   <motion.div
-                    key={profile.username}
+                    key={profile.id || profile.username}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
+                    transition={{ delay: Math.min(index * 0.05, 0.5) }}
                   >
                     <FeaturedProfileCard
                       profile={profile}
@@ -488,6 +674,19 @@ export default function DiscoverPage() {
                     />
                   </motion.div>
                 ))}
+
+                {/* Scroll sentinel for infinite scroll */}
+                <div id="scroll-sentinel" className="col-span-full h-20" />
+
+                {/* Loading indicator for infinite scroll */}
+                {isLoadingFeatured && (
+                  <div className="col-span-full flex justify-center py-8">
+                    <div className="flex items-center gap-3">
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-koru-purple border-t-transparent" />
+                      <span className="text-neutral-500">Loading...</span>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             ) : (
               // Table/List View
@@ -694,25 +893,37 @@ function TwitterProfileCard({
           </div>
         </div>
 
-        {/* Bio */}
+        {/* Bio - with clickable URLs and @mentions */}
         {profile.bio && (
           <p className="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2">
-            {profile.bio}
+            <ParsedBioCompact text={profile.bio} />
           </p>
         )}
 
-        {/* Categories/Tags */}
+        {/* Categories/Tags - with colors */}
         <div className="flex flex-wrap gap-2">
-          {profile.category && (
-            <span className="px-2 py-1 bg-koru-purple/10 text-koru-purple text-xs rounded-full">
-              {profile.category}
-            </span>
-          )}
-          {profile.professionalType && (
-            <span className="px-2 py-1 bg-koru-purple/10 text-koru-purple text-xs rounded-full">
-              {profile.professionalType}
-            </span>
-          )}
+          {profile.category &&
+            (() => {
+              const color = getTagColor(profile.category);
+              return (
+                <span
+                  className={`px-2.5 py-1 ${color.bg} ${color.text} text-xs rounded-full font-medium border ${color.border}`}
+                >
+                  {profile.category}
+                </span>
+              );
+            })()}
+          {profile.professionalType &&
+            (() => {
+              const color = getTagColor(profile.professionalType);
+              return (
+                <span
+                  className={`px-2.5 py-1 ${color.bg} ${color.text} text-xs rounded-full border ${color.border}`}
+                >
+                  {profile.professionalType}
+                </span>
+              );
+            })()}
         </div>
 
         {/* CTA Button - Opens profile preview modal */}
@@ -866,7 +1077,7 @@ function formatFeaturedFollowers(count: number): string {
   return count.toString();
 }
 
-// Featured Profile Card Component
+// Featured Profile Card Component - now uses DB profile
 function FeaturedProfileCard({
   profile,
   onView,
@@ -874,6 +1085,8 @@ function FeaturedProfileCard({
   profile: FeaturedProfile;
   onView: () => void;
 }) {
+  const tags = profile.tags || [];
+
   return (
     <motion.div
       whileHover={{ y: -4 }}
@@ -889,9 +1102,9 @@ function FeaturedProfileCard({
         <div className="flex items-start gap-4">
           {/* Avatar */}
           <div className="relative shrink-0">
-            {profile.profileImageUrl ? (
+            {profile.profile_image_url ? (
               <img
-                src={profile.profileImageUrl}
+                src={profile.profile_image_url}
                 alt={profile.name}
                 className="w-14 h-14 rounded-full object-cover border-2 border-neutral-200 dark:border-neutral-700"
               />
@@ -916,27 +1129,41 @@ function FeaturedProfileCard({
           {/* Followers Badge */}
           <div className="shrink-0 flex items-center gap-1 px-2.5 py-1 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full text-sm text-neutral-600 dark:text-neutral-400">
             <UsersIcon className="w-3 h-3" />
-            {formatFeaturedFollowers(profile.followersCount)}
+            {formatFeaturedFollowers(profile.followers_count)}
           </div>
         </div>
 
-        {/* Bio */}
+        {/* Bio - with clickable URLs and @mentions */}
         {profile.bio && (
           <p className="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2">
-            {profile.bio}
+            <ParsedBioCompact text={profile.bio} />
           </p>
         )}
 
-        {/* Tags */}
+        {/* Category & Tags - with colors */}
         <div className="flex flex-wrap gap-2">
-          {profile.tags.slice(0, 3).map((tag) => (
-            <span
-              key={tag}
-              className="px-2 py-1 bg-koru-purple/10 text-koru-purple text-xs rounded-full"
-            >
-              {tag}
-            </span>
-          ))}
+          {profile.category &&
+            (() => {
+              const color = getTagColor(profile.category);
+              return (
+                <span
+                  className={`px-2.5 py-1 ${color.bg} ${color.text} text-xs rounded-full font-medium border ${color.border}`}
+                >
+                  {profile.category}
+                </span>
+              );
+            })()}
+          {tags.slice(0, 2).map((tag) => {
+            const color = getTagColor(tag);
+            return (
+              <span
+                key={tag}
+                className={`px-2.5 py-1 ${color.bg} ${color.text} text-xs rounded-full border ${color.border}`}
+              >
+                {tag}
+              </span>
+            );
+          })}
         </div>
 
         {/* CTA Button */}

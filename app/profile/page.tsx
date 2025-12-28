@@ -23,14 +23,19 @@ import {
   DURATION_OPTIONS,
 } from "@/components/availability-modal";
 import { AuthGuard } from "@/components/auth";
-import { useAvailability, useTransactions, useUser } from "@/lib/hooks";
+import {
+  useAvailability,
+  useTransactions,
+  useUser,
+  useUserChats,
+  useUserSummons,
+  useUserStats,
+} from "@/lib/hooks";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { cn } from "@/lib/utils";
-import { MOCK_CHATS } from "@/lib/data";
-import { MOCK_USER_APPEALS, MOCK_APPEALS } from "@/lib/data/mock-appeals";
 import {
   CheckIcon,
   ShareIcon,
@@ -151,14 +156,31 @@ function XIcon({ className }: { className?: string }) {
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("chats");
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [shareType, setShareType] = useState<"profile" | "appeal">("profile");
-  const [selectedAppeal, setSelectedAppeal] = useState(MOCK_APPEALS[0]);
+  const [shareType, setShareType] = useState<"profile" | "summon">("profile");
+  const [selectedSummon, setSelectedSummon] = useState<{
+    id: string;
+    targetHandle: string;
+    targetName: string;
+    pledgedAmount: string;
+    backers: number;
+    status: string;
+    date: string;
+  } | null>(null);
   const [isFarcasterConnected, setIsFarcasterConnected] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
 
   // Get real user data
   const { user, isLoading: isUserLoading } = useUser();
   const [isLoading, setIsLoading] = useState(true);
+
+  // Get real profile data
+  const { chats, isLoading: isLoadingChats } = useUserChats();
+  const {
+    createdSummons,
+    backedSummons,
+    isLoading: isLoadingSummons,
+  } = useUserSummons();
+  const { stats, isLoading: isLoadingStats } = useUserStats();
 
   // Loading state combines user loading and initial animation
   useEffect(() => {
@@ -183,11 +205,9 @@ export default function ProfilePage() {
     setShareModalOpen(true);
   };
 
-  const handleShareAppeal = (appealId: string) => {
-    const appeal =
-      MOCK_APPEALS.find((a) => a.id === appealId) || MOCK_APPEALS[0];
-    setSelectedAppeal(appeal);
-    setShareType("appeal");
+  const handleShareSummon = (summon: typeof selectedSummon) => {
+    setSelectedSummon(summon);
+    setShareType("summon");
     setShareModalOpen(true);
   };
 
@@ -469,26 +489,26 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4">
-                  {/* Wallet Balance */}
+                  {/* Available Balance (Withdrawable) */}
                   <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-koru-purple/10 via-koru-purple/5 to-transparent border border-koru-purple/20 p-5">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-koru-purple/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
                     <div className="relative">
                       <div className="flex items-center gap-2 mb-2">
                         <WalletIcon className="w-5 h-5 text-koru-purple" />
                         <span className="text-sm text-neutral-500 dark:text-neutral-400  ">
-                          Wallet Balance
+                          Available Balance
                         </span>
                       </div>
                       <p className="text-3xl   text-neutral-900 dark:text-neutral-100">
-                        $0.00
+                        ${(user?.balance || 0).toFixed(2)}
                       </p>
                       <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-                        ≈ 0 ETH
+                        Ready to withdraw
                       </p>
                     </div>
                   </div>
 
-                  {/* In-App Balance */}
+                  {/* Total Earnings */}
                   <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-koru-golden/10 via-koru-golden/5 to-transparent border border-koru-golden/20 p-5">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-koru-golden/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
                     <div className="relative">
@@ -499,16 +519,16 @@ export default function ProfilePage() {
                         </span>
                       </div>
                       <p className="text-3xl   text-neutral-900 dark:text-neutral-100">
-                        ${user?.totalEarnings?.toFixed(2) || "0.00"}
+                        ${(user?.totalEarnings || 0).toFixed(2)}
                       </p>
                       <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
                         {user?.isCreator
                           ? "From sessions"
                           : "Start earning as a creator"}
                       </p>
-                      {user?.isCreator && (
+                      {(user?.pendingBalance || 0) > 0 && (
                         <p className="text-xs text-koru-golden mt-2  ">
-                          💰 Available to withdraw
+                          💰 ${(user?.pendingBalance || 0).toFixed(2)} pending
                         </p>
                       )}
                     </div>
@@ -546,7 +566,7 @@ export default function ProfilePage() {
                 />
                 <StatCard
                   title="Active Chats"
-                  value="0"
+                  value={stats.activeChats.toString()}
                   icon={<ChatIcon className="w-5 h-5" />}
                   variant="golden"
                 />
@@ -657,13 +677,13 @@ export default function ProfilePage() {
                 value="chats"
                 className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700 data-[state=active]:shadow-sm"
               >
-                💬 Chats ({MOCK_CHATS.length})
+                💬 Chats ({chats.length})
               </TabsTrigger>
               <TabsTrigger
-                value="appeals"
+                value="summons"
                 className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700 data-[state=active]:shadow-sm"
               >
-                🔔 Appeals ({MOCK_USER_APPEALS.length})
+                🔔 Summons ({createdSummons.length + backedSummons.length})
               </TabsTrigger>
               <TabsTrigger
                 value="transactions"
@@ -675,8 +695,14 @@ export default function ProfilePage() {
 
             {/* Chats Tab */}
             <TabsContent value="chats" className="space-y-4">
-              {MOCK_CHATS.length > 0 ? (
-                MOCK_CHATS.map((chat, index) => (
+              {isLoadingChats ? (
+                <>
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <ChatCardSkeleton key={i} />
+                  ))}
+                </>
+              ) : chats.length > 0 ? (
+                chats.map((chat, index) => (
                   <motion.a
                     href={`/chat/${chat.id}`}
                     key={chat.id}
@@ -689,22 +715,19 @@ export default function ProfilePage() {
                       {/* Left */}
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-koru-purple/20 to-koru-golden/20 flex items-center justify-center">
-                          <span className="text-sm   font-medium text-koru-purple">
-                            {chat.otherParty
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </span>
+                          <ChatIcon className="w-5 h-5 text-koru-purple" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
                             <h3 className="  font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-koru-purple transition-colors">
-                              {chat.otherParty}
+                              {chat.slot_name || "Chat Session"}
                             </h3>
                             <StatusPill status={chat.status} />
                           </div>
                           <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                            @{chat.handle}
+                            {chat.slot_duration
+                              ? `${chat.slot_duration} min`
+                              : "Chat"}
                           </p>
                         </div>
                       </div>
@@ -712,26 +735,31 @@ export default function ProfilePage() {
                       {/* Right */}
                       <div className="text-right shrink-0">
                         <p className="  font-semibold text-neutral-900 dark:text-neutral-100">
-                          {chat.amount}
+                          ${chat.amount.toFixed(2)}
                         </p>
                         <p
                           className={cn(
                             "text-xs",
-                            chat.deadline.includes("left")
+                            chat.status === "active"
                               ? "text-koru-golden"
-                              : chat.deadline === "Completed"
+                              : chat.status === "completed"
                               ? "text-koru-lime"
                               : "text-neutral-400"
                           )}
                         >
-                          {chat.deadline}
+                          {chat.status === "active" && chat.deadline_at
+                            ? `Due ${new Date(
+                                chat.deadline_at
+                              ).toLocaleDateString()}`
+                            : chat.status.charAt(0).toUpperCase() +
+                              chat.status.slice(1)}
                         </p>
                       </div>
                     </div>
 
-                    {/* Last message preview */}
-                    <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-400 line-clamp-1">
-                      {chat.lastMessage}
+                    {/* Date */}
+                    <p className="mt-3 text-xs text-neutral-400 dark:text-neutral-500">
+                      Created {new Date(chat.created_at).toLocaleDateString()}
                     </p>
                   </motion.a>
                 ))
@@ -744,71 +772,146 @@ export default function ProfilePage() {
               )}
             </TabsContent>
 
-            {/* Appeals Tab */}
-            <TabsContent value="appeals" className="space-y-4">
-              {MOCK_USER_APPEALS.length > 0 ? (
-                MOCK_USER_APPEALS.map((appeal, index) => (
-                  <motion.div
-                    key={appeal.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-5 hover:border-koru-golden/30 dark:hover:border-koru-golden/30 transition-all group hover:shadow-lg"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      {/* Left */}
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-koru-golden/20 to-koru-lime/20 flex items-center justify-center">
-                          <BeaconIcon className="w-5 h-5 text-koru-golden" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="  font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-koru-golden transition-colors">
-                              @{appeal.targetHandle}
-                            </h3>
-                            <StatusPill status={appeal.status} />
+            {/* Summons Tab */}
+            <TabsContent value="summons" className="space-y-4">
+              {isLoadingSummons ? (
+                <>
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="animate-pulse bg-neutral-100 dark:bg-neutral-800 rounded-2xl h-24"
+                    />
+                  ))}
+                </>
+              ) : createdSummons.length > 0 || backedSummons.length > 0 ? (
+                <>
+                  {/* Created Summons */}
+                  {createdSummons.map((summon, index) => (
+                    <motion.div
+                      key={summon.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-5 hover:border-koru-golden/30 dark:hover:border-koru-golden/30 transition-all group hover:shadow-lg"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        {/* Left */}
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-koru-golden/20 to-koru-lime/20 flex items-center justify-center">
+                            <BeaconIcon className="w-5 h-5 text-koru-golden" />
                           </div>
-                          <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                            {appeal.targetName}
-                          </p>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="  font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-koru-golden transition-colors">
+                                @{summon.target_username}
+                              </h3>
+                              <StatusPill status={summon.status} />
+                            </div>
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                              {summon.target_name}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Right */}
+                        <div className="flex items-center gap-3">
+                          <div className="text-right shrink-0">
+                            <p className="  font-semibold text-koru-golden">
+                              ${summon.pledged_amount.toFixed(2)}
+                            </p>
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                              {summon.backers_count} backers
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleShareSummon({
+                                id: summon.id,
+                                targetHandle: summon.target_username,
+                                targetName: summon.target_name,
+                                pledgedAmount: `$${summon.pledged_amount.toFixed(
+                                  2
+                                )}`,
+                                backers: summon.backers_count,
+                                status: summon.status,
+                                date: new Date(
+                                  summon.created_at
+                                ).toLocaleDateString(),
+                              });
+                            }}
+                            className="text-neutral-400 hover:text-koru-golden"
+                          >
+                            <ShareIcon className="w-4 h-4" />
+                          </Button>
                         </div>
                       </div>
 
-                      {/* Right */}
-                      <div className="flex items-center gap-3">
-                        <div className="text-right shrink-0">
-                          <p className="  font-semibold text-koru-golden">
-                            {appeal.pledgedAmount}
-                          </p>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                            {appeal.backers} backers
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleShareAppeal(appeal.id);
-                          }}
-                          className="text-neutral-400 hover:text-koru-golden"
+                      {/* Date */}
+                      <p className="mt-3 text-xs text-neutral-400 dark:text-neutral-500">
+                        Created{" "}
+                        {new Date(summon.created_at).toLocaleDateString()}
+                      </p>
+                    </motion.div>
+                  ))}
+
+                  {/* Backed Summons */}
+                  {backedSummons.length > 0 && (
+                    <>
+                      <div className="pt-4 pb-2">
+                        <h4 className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                          Summons You Backed
+                        </h4>
+                      </div>
+                      {backedSummons.map((summon, index) => (
+                        <motion.div
+                          key={summon.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-5 hover:border-koru-purple/30 dark:hover:border-koru-purple/30 transition-all group hover:shadow-lg"
                         >
-                          <ShareIcon className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Date */}
-                    <p className="mt-3 text-xs text-neutral-400 dark:text-neutral-500">
-                      Created {appeal.date}
-                    </p>
-                  </motion.div>
-                ))
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-koru-purple/20 to-koru-golden/20 flex items-center justify-center">
+                                <BeaconIcon className="w-5 h-5 text-koru-purple" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h3 className="  font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-koru-purple transition-colors">
+                                    @{summon.target_username}
+                                  </h3>
+                                  <StatusPill status={summon.status} />
+                                  <Badge className="bg-koru-purple/10 text-koru-purple border-0 text-xs">
+                                    Backed
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                  {summon.target_name}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="  font-semibold text-koru-golden">
+                                ${summon.pledged_amount.toFixed(2)}
+                              </p>
+                              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                {summon.backers_count} backers
+                              </p>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </>
+                  )}
+                </>
               ) : (
                 <EmptyState
                   icon="beacon"
-                  title="No appeals yet"
-                  description="Create an appeal to attract attention to someone you want to reach."
+                  title="No summons yet"
+                  description="Create a summon to attract attention to someone you want to reach."
                 />
               )}
             </TabsContent>
@@ -948,19 +1051,37 @@ export default function ProfilePage() {
                 })
               : "2024",
             walletBalance: {
-              onChain: "$0.00",
-              onChainUSD: "$0.00",
-              inApp: "$0.00",
-              inAppUSD: "$0.00",
+              onChain: `$${(user?.balance || 0).toFixed(2)}`,
+              onChainUSD: `$${(user?.balance || 0).toFixed(2)}`,
+              inApp: `$${(user?.pendingBalance || 0).toFixed(2)}`,
+              inAppUSD: `$${(user?.pendingBalance || 0).toFixed(2)}`,
             },
             stats: {
-              totalSpent: "$0",
+              totalSpent: `$${(user?.totalEarnings || 0).toFixed(2)}`,
               totalRefunded: "$0",
-              activeChats: 0,
-              appealsCreated: 0,
+              activeChats: stats.activeChats,
+              appealsCreated: stats.totalSummons,
             },
           }}
-          appeal={selectedAppeal}
+          summon={
+            selectedSummon
+              ? {
+                  id: selectedSummon.id,
+                  targetHandle: selectedSummon.targetHandle,
+                  targetName: selectedSummon.targetName,
+                  totalPledged:
+                    parseFloat(
+                      selectedSummon.pledgedAmount.replace(/[^0-9.]/g, "")
+                    ) || 0,
+                  backers: selectedSummon.backers,
+                  category: "Summon",
+                  trend: "up" as const,
+                  trendValue: 0,
+                  request: "",
+                  createdAt: selectedSummon.date,
+                }
+              : undefined
+          }
         />
       </div>
     </AuthGuard>

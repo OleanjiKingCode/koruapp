@@ -62,7 +62,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // Save user to Supabase on login with extended fields
         if (data?.id) {
           try {
-            await upsertUser({
+            const dbUser = await upsertUser({
               twitter_id: data.id,
               username: data.username,
               name: data.name,
@@ -72,6 +72,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               followers_count: data.public_metrics?.followers_count,
               following_count: data.public_metrics?.following_count,
             });
+            // Store the database user ID
+            if (dbUser) {
+              token.dbUserId = dbUser.id;
+            }
           } catch (error) {
             console.error("Error saving user to database:", error);
           }
@@ -83,6 +87,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // Send Twitter data to the client including bio and verification
       if (session.user) {
         session.user.id = token.twitterId as string;
+        session.user.dbId = token.dbUserId as string | undefined;
         session.user.username = token.twitterUsername as string;
         session.user.name = token.twitterName as string;
         session.user.image = token.twitterImage as string;
@@ -109,6 +114,7 @@ declare module "next-auth" {
   interface Session {
     user: {
       id: string;
+      dbId?: string; // Database UUID
       username: string;
       name: string;
       image: string;

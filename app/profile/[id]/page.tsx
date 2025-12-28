@@ -9,9 +9,128 @@ import { Badge } from "@/components/ui/badge";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { BookingModal } from "@/components/booking-modal";
 import { cn } from "@/lib/utils";
-import { MOCK_PROFILES } from "@/lib/data";
 import { ROUTES } from "@/lib/constants";
-import { getCachedProfile, getUserByUsername } from "@/lib/supabase";
+
+// Tag color configurations
+const TAG_COLORS = [
+  {
+    bg: "bg-koru-purple/10",
+    text: "text-koru-purple",
+    border: "border-koru-purple/20",
+  },
+  {
+    bg: "bg-koru-lime/10",
+    text: "text-koru-lime",
+    border: "border-koru-lime/20",
+  },
+  {
+    bg: "bg-koru-golden/10",
+    text: "text-koru-golden",
+    border: "border-koru-golden/20",
+  },
+  { bg: "bg-blue-500/10", text: "text-blue-500", border: "border-blue-500/20" },
+  { bg: "bg-pink-500/10", text: "text-pink-500", border: "border-pink-500/20" },
+  { bg: "bg-cyan-500/10", text: "text-cyan-500", border: "border-cyan-500/20" },
+  {
+    bg: "bg-orange-500/10",
+    text: "text-orange-500",
+    border: "border-orange-500/20",
+  },
+  {
+    bg: "bg-emerald-500/10",
+    text: "text-emerald-500",
+    border: "border-emerald-500/20",
+  },
+];
+
+// Get consistent color for a tag based on its name
+function getTagColor(tag: string) {
+  // Simple hash function to get consistent color
+  let hash = 0;
+  for (let i = 0; i < tag.length; i++) {
+    hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % TAG_COLORS.length;
+  return TAG_COLORS[index];
+}
+
+// Helper function to parse bio text and make URLs and @mentions clickable
+function ParsedBio({ text }: { text: string }) {
+  if (!text) return null;
+
+  // Regex patterns
+  const urlPattern = /(https?:\/\/[^\s]+)/g;
+  const mentionPattern = /@([a-zA-Z0-9_]+)/g;
+
+  // Split text by URLs and mentions, keeping the delimiters
+  const parts: { type: "text" | "url" | "mention"; value: string }[] = [];
+  let lastIndex = 0;
+  const combinedPattern = /(https?:\/\/[^\s]+)|(@[a-zA-Z0-9_]+)/g;
+  let match;
+
+  while ((match = combinedPattern.exec(text)) !== null) {
+    // Add text before the match
+    if (match.index > lastIndex) {
+      parts.push({ type: "text", value: text.slice(lastIndex, match.index) });
+    }
+
+    // Determine if it's a URL or mention
+    if (match[1]) {
+      parts.push({ type: "url", value: match[1] });
+    } else if (match[2]) {
+      parts.push({ type: "mention", value: match[2] });
+    }
+
+    lastIndex = combinedPattern.lastIndex;
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push({ type: "text", value: text.slice(lastIndex) });
+  }
+
+  return (
+    <>
+      {parts.map((part, index) => {
+        if (part.type === "url") {
+          return (
+            <a
+              key={index}
+              href={part.value}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-koru-purple hover:underline"
+            >
+              {part.value}
+            </a>
+          );
+        }
+        if (part.type === "mention") {
+          const username = part.value.slice(1); // Remove @ symbol
+          return (
+            <a
+              key={index}
+              href={`https://x.com/${username}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-koru-purple hover:underline"
+            >
+              {part.value}
+            </a>
+          );
+        }
+        return <span key={index}>{part.value}</span>;
+      })}
+    </>
+  );
+}
+import {
+  getProfileByUsername,
+  getUserByUsername,
+  createSummon,
+  getSummonByTarget,
+} from "@/lib/supabase";
+import { useSession } from "next-auth/react";
 import type {
   AvailabilityData,
   AvailabilitySlot,
@@ -219,46 +338,32 @@ export default function ViewProfilePage() {
   const params = useParams();
   const router = useRouter();
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
-  const [appealModalOpen, setAppealModalOpen] = useState(false);
-  const [twitterProfile, setTwitterProfile] = useState<{
+  const [summonModalOpen, setSummonModalOpen] = useState(false);
+  const [profileData, setProfileData] = useState<{
     name: string;
     handle: string;
     bio?: string;
     profileImageUrl?: string;
+    bannerUrl?: string;
     followersCount?: number;
     followingCount?: number;
     isVerified?: boolean;
     category?: string;
+    tags?: string[];
+    isOnKoru: boolean;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Find the profile by ID or handle
-  const mockProfile = useMemo(() => {
-    const id = params.id as string;
-    // Check by ID first
-    let found = MOCK_PROFILES.find((p) => p.id === id);
-    // If not found, check by handle (for Twitter profile redirects)
-    if (!found) {
-      found = MOCK_PROFILES.find((p) => p.handle.toLowerCase() === id.toLowerCase());
-    }
-    return found;
-  }, [params.id]);
-
-  // Fetch Twitter profile from database if not found in mock profiles
+  // Fetch profile from database only - no mock data
   useEffect(() => {
-    async function fetchTwitterProfile() {
-      if (mockProfile) {
-        setIsLoading(false);
-        return;
-      }
-
+    async function fetchProfile() {
       const handle = params.id as string;
-      
+
       try {
         // First check if user is registered on Koru
         const koruUser = await getUserByUsername(handle);
         if (koruUser) {
-          setTwitterProfile({
+          setProfileData({
             name: koruUser.name,
             handle: koruUser.username,
             bio: koruUser.bio || undefined,
@@ -266,22 +371,28 @@ export default function ViewProfilePage() {
             followersCount: koruUser.followers_count || undefined,
             followingCount: koruUser.following_count || undefined,
             isVerified: koruUser.is_verified,
+            tags: koruUser.tags || undefined,
+            isOnKoru: true,
           });
           setIsLoading(false);
           return;
         }
 
-        // Then check cached Twitter profile
-        const cached = await getCachedProfile(handle);
+        // Check featured profiles or search cache
+        const cached = await getProfileByUsername(handle);
         if (cached) {
-          setTwitterProfile({
+          setProfileData({
             name: cached.name,
             handle: cached.username,
             bio: cached.bio || undefined,
             profileImageUrl: cached.profile_image_url || undefined,
+            bannerUrl: cached.banner_url || undefined,
             followersCount: cached.followers_count || undefined,
             followingCount: cached.following_count || undefined,
             isVerified: cached.verified,
+            category: cached.category || undefined,
+            tags: cached.tags || undefined,
+            isOnKoru: false,
           });
           setIsLoading(false);
           return;
@@ -295,25 +406,8 @@ export default function ViewProfilePage() {
       }
     }
 
-    fetchTwitterProfile();
-  }, [params.id, mockProfile]);
-
-  // Show loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 border-3 border-koru-purple border-t-transparent rounded-full animate-spin" />
-          <span className="text-neutral-500">Loading profile...</span>
-        </div>
-      </div>
-    );
-  }
-
-  // If no profile found anywhere, show 404
-  if (!mockProfile && !twitterProfile) {
-    notFound();
-  }
+    fetchProfile();
+  }, [params.id]);
 
   // Format follower count to string like "1.2M" or "500K"
   const formatFollowers = (count: number): string => {
@@ -326,80 +420,118 @@ export default function ViewProfilePage() {
     return count.toString();
   };
 
-  // Use mock profile data if available, otherwise use Twitter profile
-  const profile = mockProfile || {
-    id: twitterProfile!.handle,
-    name: twitterProfile!.name,
-    handle: twitterProfile!.handle,
-    bio: twitterProfile!.bio || "No bio available",
-    avatar: twitterProfile!.profileImageUrl || "",
-    verified: twitterProfile!.isVerified || false,
-    rating: 0,
-    reviews: 0,
-    price: 0,
-    followers: formatFollowers(twitterProfile!.followersCount || 0),
-    responseTime: 0,
-    earnings: 0,
-    badge: "Rising Star" as const,
-    badges: [],
-    categories: twitterProfile!.category ? [twitterProfile!.category] : [],
-    availability: null,
-    isOnline: false,
-  };
-
-  // Convert profile availability to AvailabilityData format for the modal
-  const mockAvailabilityData: AvailabilityData = useMemo(() => {
-    // Generate default dates (next 14 days)
-    const today = new Date();
-    const defaultDates: string[] = [];
-    for (let i = 1; i <= 14; i++) {
-      const date = new Date(today);
-      date.setDate(date.getDate() + i);
-      defaultDates.push(date.toISOString().split("T")[0]);
-    }
-
-    if (!profile.availability) {
-      return {
-        timezone: "America/New_York",
-        slots: [],
-      };
-    }
-
-    // Group time slots by time range and create mock slots
-    const slots: AvailabilitySlot[] = profile.availability.timeSlots.reduce(
-      (acc: AvailabilitySlot[], slot, index) => {
-        if (index < 3) {
-          acc.push({
-            id: index + 1,
-            name: `${slot.day} Session`,
-            duration: 60, // 1 hour
-            times: [`${slot.startTime}-${slot.endTime}`],
-            price: profile.price,
-            selectedDates: defaultDates,
-          });
-        }
-        return acc;
-      },
-      []
-    );
+  // Transform profile data for display
+  const profile = useMemo(() => {
+    if (!profileData) return null;
 
     return {
-      timezone: profile.availability.timezone,
-      slots:
-        slots.length > 0
-          ? slots
-          : [
-              {
-                id: 1,
-                name: "Standard Session",
-                duration: 60,
-                times: ["10:00-11:00", "14:00-15:00", "16:00-17:00"],
-                price: profile.price,
-                selectedDates: defaultDates,
-              },
-            ],
+      id: profileData.handle,
+      name: profileData.name,
+      handle: profileData.handle,
+      bio: profileData.bio || "No bio available",
+      avatar: profileData.profileImageUrl || "",
+      banner: profileData.bannerUrl || "",
+      verified: profileData.isVerified || false,
+      followers: formatFollowers(profileData.followersCount || 0),
+      category: profileData.category,
+      tags: profileData.tags,
+      isOnKoru: profileData.isOnKoru,
     };
-  }, [profile]);
+  }, [profileData]);
+
+  // Availability data - only users on Koru can have availability
+  // For now, return empty availability since we're fetching from DB
+  const availabilityData: AvailabilityData = useMemo(() => {
+    // Only users on Koru can have availability set up
+    // This would be fetched from the user's settings in the database
+    return {
+      timezone: "America/New_York",
+      slots: [],
+    };
+  }, []);
+
+  // Show skeleton loading state - after all hooks are called
+  if (isLoading) {
+    return (
+      <div className="min-h-screen pb-[500px] sm:pb-96">
+        <main className="max-w-container mx-auto px-4 sm:px-6 py-8">
+          {/* Back Button Skeleton */}
+          <div className="mb-6">
+            <div className="h-5 w-32 bg-neutral-200 dark:bg-neutral-800 rounded animate-pulse" />
+          </div>
+
+          {/* Header Card Skeleton */}
+          <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 overflow-hidden mb-8 shadow-soft">
+            {/* Banner Skeleton */}
+            <div className="h-32 sm:h-48 bg-gradient-to-r from-neutral-200 via-neutral-300 to-neutral-200 dark:from-neutral-800 dark:via-neutral-700 dark:to-neutral-800 animate-pulse" />
+
+            {/* Profile Content Skeleton */}
+            <div className="px-4 sm:px-8 pb-6 -mt-16 sm:-mt-20 relative">
+              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+                {/* Avatar Skeleton */}
+                <div className="flex items-end gap-4">
+                  <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl bg-neutral-200 dark:bg-neutral-700 border-4 border-white dark:border-neutral-900 animate-pulse" />
+                  <div className="mb-2 space-y-2">
+                    <div className="h-7 w-40 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+                    <div className="h-5 w-28 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+                  </div>
+                </div>
+                {/* Button Skeleton */}
+                <div className="h-12 w-40 bg-neutral-200 dark:bg-neutral-700 rounded-xl animate-pulse" />
+              </div>
+
+              {/* Bio Skeleton */}
+              <div className="mt-4 space-y-2">
+                <div className="h-4 w-full max-w-xl bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+                <div className="h-4 w-3/4 max-w-md bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+              </div>
+
+              {/* Tags Skeleton */}
+              <div className="flex flex-wrap gap-2 mt-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="h-7 w-20 bg-neutral-200 dark:bg-neutral-700 rounded-full animate-pulse"
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Stats Grid Skeleton */}
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4"
+              >
+                <div className="w-10 h-10 rounded-xl bg-neutral-200 dark:bg-neutral-700 animate-pulse mb-3" />
+                <div className="h-3 w-16 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-2" />
+                <div className="h-6 w-12 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+
+          {/* Availability Card Skeleton */}
+          <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-neutral-200 dark:bg-neutral-700 animate-pulse" />
+              <div className="space-y-2">
+                <div className="h-5 w-24 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+                <div className="h-4 w-32 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+              </div>
+            </div>
+            <div className="h-24 bg-neutral-100 dark:bg-neutral-800 rounded-xl animate-pulse" />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // If no profile found anywhere, show 404
+  if (!profile) {
+    notFound();
+  }
 
   const handleBook = (
     slot: AvailabilitySlot,
@@ -412,11 +544,10 @@ export default function ViewProfilePage() {
     router.push(ROUTES.CHAT(profile.id));
   };
 
-  const hasAvailability = mockAvailabilityData.slots.length > 0;
+  const hasAvailability = availabilityData.slots.length > 0;
 
   return (
     <div className="min-h-screen pb-[500px] sm:pb-96">
-
       <main className="max-w-container mx-auto px-4 sm:px-6 py-8">
         {/* Back Button */}
         <motion.div
@@ -441,8 +572,19 @@ export default function ViewProfilePage() {
           className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 overflow-hidden mb-8 shadow-soft"
         >
           {/* Banner */}
-          <div className="h-32 bg-gradient-to-r from-koru-purple via-koru-golden/50 to-koru-lime/30 relative overflow-hidden">
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzMiAyIDIgNC0yIDQtMiA0LTItMi0yLTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
+          <div className="h-32 sm:h-48 relative overflow-hidden">
+            {profile.banner ? (
+              <img
+                src={profile.banner}
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-r from-koru-purple via-koru-golden/50 to-koru-lime/30" />
+                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzMiAyIDIgNC0yIDQtMiA0LTItMi0yLTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
+              </>
+            )}
           </div>
 
           {/* Profile Info */}
@@ -450,16 +592,50 @@ export default function ViewProfilePage() {
             {/* Avatar - positioned to overlap banner */}
             <div className="absolute -top-14 left-6">
               <div className="w-28 h-28 rounded-2xl border-4 border-white dark:border-neutral-900 shadow-xl overflow-hidden bg-white dark:bg-neutral-800">
-                <AvatarGenerator seed={profile.handle} size={112} />
+                {profile.avatar ? (
+                  <img
+                    src={profile.avatar}
+                    alt={profile.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <AvatarGenerator seed={profile.handle} size={112} />
+                )}
               </div>
             </div>
 
             <div className="pt-16 sm:pt-20">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-                    {profile.name}
-                  </h1>
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                      {profile.name}
+                    </h1>
+                    {profile.verified && (
+                      <Badge
+                        variant="secondary"
+                        className="bg-blue-500/10 text-blue-500 border-0"
+                      >
+                        <svg
+                          className="w-3.5 h-3.5 mr-1"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+                        </svg>
+                        Verified
+                      </Badge>
+                    )}
+                    {/* Show "Not on Koru" badge for profiles not on Koru */}
+                    {profileData && !profileData.isOnKoru && (
+                      <Badge
+                        variant="secondary"
+                        className="bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 border-0"
+                      >
+                        Not yet on Koru
+                      </Badge>
+                    )}
+                  </div>
                   <a
                     href={`https://twitter.com/${profile.handle}`}
                     target="_blank"
@@ -471,21 +647,19 @@ export default function ViewProfilePage() {
                   </a>
                 </div>
 
-                {/* Action Buttons */}
+                {/* Action Button - Only Talk to button */}
                 <div className="flex items-center gap-3">
                   <Button
                     size="lg"
-                    variant="outline"
-                    onClick={() => setAppealModalOpen(true)}
-                    className="border-koru-golden text-koru-golden hover:bg-koru-golden/10"
-                  >
-                    <MegaphoneIcon className="w-5 h-5 mr-2" />
-                    Appeal
-                  </Button>
-                  <Button
-                    size="lg"
-                    onClick={() => setBookingModalOpen(true)}
-                    disabled={!hasAvailability}
+                    onClick={() => {
+                      // If user is on Koru and has availability, open booking modal
+                      // Otherwise, show summon modal explaining they need to be summoned
+                      if (profile.isOnKoru && hasAvailability) {
+                        setBookingModalOpen(true);
+                      } else {
+                        setSummonModalOpen(true);
+                      }
+                    }}
                     className="bg-koru-purple hover:bg-koru-purple/90 text-white font-semibold px-8"
                   >
                     <ChatIcon className="w-5 h-5 mr-2" />
@@ -494,22 +668,50 @@ export default function ViewProfilePage() {
                 </div>
               </div>
 
-              {/* Bio */}
+              {/* Bio - with clickable URLs and @mentions */}
               <p className="text-neutral-600 dark:text-neutral-400 mt-4 max-w-2xl">
-                {profile.bio}
+                <ParsedBio text={profile.bio} />
               </p>
 
-              {/* Categories */}
+              {/* Categories & Tags - with colors */}
               <div className="flex flex-wrap gap-2 mt-4">
-                {profile.categories.map((category) => (
-                  <Badge
-                    key={category}
-                    variant="secondary"
-                    className="bg-koru-purple/10 text-koru-purple border-0"
-                  >
-                    {category}
-                  </Badge>
-                ))}
+                {/* Show category first if available */}
+                {profile.category &&
+                  (() => {
+                    const color = getTagColor(profile.category);
+                    return (
+                      <Badge
+                        variant="secondary"
+                        className={cn(
+                          color.bg,
+                          color.text,
+                          "border",
+                          color.border,
+                          "font-medium"
+                        )}
+                      >
+                        {profile.category}
+                      </Badge>
+                    );
+                  })()}
+                {/* Show tags */}
+                {profile.tags?.map((tag) => {
+                  const color = getTagColor(tag);
+                  return (
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      className={cn(
+                        color.bg,
+                        color.text,
+                        "border",
+                        color.border
+                      )}
+                    >
+                      {tag}
+                    </Badge>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -531,13 +733,13 @@ export default function ViewProfilePage() {
           <StatCard
             icon={<DollarIcon className="w-5 h-5" />}
             label="Min Price"
-            value={`$${profile.price}`}
+            value={profile.isOnKoru ? "$0" : "—"}
             color="golden"
           />
           <StatCard
             icon={<ClockIcon className="w-5 h-5" />}
             label="Avg Response"
-            value={`${profile.responseTime}h`}
+            value={profile.isOnKoru ? "—" : "—"}
             color="lime"
           />
         </motion.div>
@@ -558,37 +760,19 @@ export default function ViewProfilePage() {
                 <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                   Availability
                 </h3>
-                {profile.availability && (
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    {profile.availability.timezone}
-                  </p>
-                )}
               </div>
             </div>
           </div>
 
-          {hasAvailability ? (
+          {profile.isOnKoru && hasAvailability ? (
             <div className="space-y-4">
-              {/* Response Time */}
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
-                <ClockIcon className="w-5 h-5 text-koru-golden" />
-                <div>
-                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                    Average Response Time
-                  </p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                    {profile.availability?.averageResponseTime}
-                  </p>
-                </div>
-              </div>
-
               {/* Available Slots */}
               <div>
                 <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-3">
                   Available Sessions
                 </p>
                 <div className="space-y-2">
-                  {mockAvailabilityData.slots.map((slot) => (
+                  {availabilityData.slots.map((slot) => (
                     <div
                       key={slot.id}
                       className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700"
@@ -624,39 +808,6 @@ export default function ViewProfilePage() {
                 </div>
               </div>
 
-              {/* Legacy Time Slots Preview (for compatibility) */}
-              {profile.availability?.timeSlots &&
-                profile.availability.timeSlots.length > 0 &&
-                mockAvailabilityData.slots.length === 0 && (
-                  <div>
-                    <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-3">
-                      Time Slots
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {profile.availability.timeSlots
-                        .slice(0, 4)
-                        .map((slot) => (
-                          <div
-                            key={slot.id}
-                            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-koru-purple/5 border border-koru-purple/20"
-                          >
-                            <span className="text-xs font-medium text-koru-purple">
-                              {slot.day}
-                            </span>
-                            <span className="text-xs text-neutral-600 dark:text-neutral-400">
-                              {slot.startTime} - {slot.endTime}
-                            </span>
-                          </div>
-                        ))}
-                      {profile.availability.timeSlots.length > 4 && (
-                        <div className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-xs text-neutral-500">
-                          +{profile.availability.timeSlots.length - 4} more
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
               {/* CTA */}
               <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800">
                 <Button
@@ -672,13 +823,26 @@ export default function ViewProfilePage() {
             <div className="flex flex-col items-center gap-3 py-8">
               <CalendarIcon className="w-10 h-10 text-neutral-300 dark:text-neutral-600" />
               <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center">
-                This user hasn&apos;t set up their availability yet.
+                {profile.isOnKoru
+                  ? "This user hasn't set up their availability yet."
+                  : `${
+                      profile.name.split(" ")[0]
+                    } isn't on Koru yet. Create a Summon to bring them here!`}
               </p>
+              {!profile.isOnKoru && (
+                <Button
+                  onClick={() => setSummonModalOpen(true)}
+                  variant="outline"
+                  className="mt-2 border-koru-purple text-koru-purple hover:bg-koru-purple/10"
+                >
+                  <MegaphoneIcon className="w-4 h-4 mr-2" />
+                  Create Summon
+                </Button>
+              )}
             </div>
           )}
         </motion.div>
       </main>
-
 
       {/* Booking Modal */}
       <BookingModal
@@ -686,161 +850,323 @@ export default function ViewProfilePage() {
         onOpenChange={setBookingModalOpen}
         personName={profile.name}
         personId={profile.id}
-        availability={mockAvailabilityData}
+        availability={availabilityData}
         onBook={handleBook}
       />
 
-      {/* Appeal Modal */}
-      <AppealModal
-        open={appealModalOpen}
-        onOpenChange={setAppealModalOpen}
+      {/* Summon Modal */}
+      <SummonModal
+        open={summonModalOpen}
+        onOpenChange={setSummonModalOpen}
         personName={profile.name}
         personHandle={profile.handle}
-        onCreateSummon={() => {
-          setAppealModalOpen(false);
-          router.push(`${ROUTES.SUMMONS}/new?to=${profile.handle}`);
+        personImage={profile.avatar}
+        onSuccess={() => {
+          router.push(ROUTES.SUMMONS);
         }}
       />
     </div>
   );
 }
 
-// Summon Modal Component
-function AppealModal({
+// Not On Koru Modal Component - shown when trying to talk to someone not on the platform
+function SummonModal({
   open,
   onOpenChange,
   personName,
   personHandle,
-  onCreateSummon,
+  personImage,
+  onSuccess,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   personName: string;
   personHandle: string;
-  onCreateSummon: () => void;
+  personImage?: string;
+  onSuccess: () => void;
 }) {
+  const { data: session } = useSession();
+  const [step, setStep] = useState<"info" | "form">("info");
+  const [message, setMessage] = useState("");
+  const [pledgeAmount, setPledgeAmount] = useState("10");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Reset state when modal opens/closes
+  useEffect(() => {
+    if (open) {
+      setStep("info");
+      setMessage("");
+      setPledgeAmount("10");
+      setError(null);
+    }
+  }, [open]);
+
+  const handleCreateSummon = async () => {
+    if (!session?.user?.id) {
+      setError("You must be logged in to create a summon");
+      return;
+    }
+
+    if (!message.trim()) {
+      setError("Please write a message for your summon");
+      return;
+    }
+
+    const amount = parseFloat(pledgeAmount);
+    if (isNaN(amount) || amount < 1) {
+      setError("Pledge amount must be at least $1");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const summon = await createSummon({
+        creator_id: session.user.id,
+        target_twitter_id: personHandle,
+        target_username: personHandle,
+        target_name: personName,
+        target_profile_image: personImage || null,
+        message: message.trim(),
+        pledged_amount: amount,
+      });
+
+      if (summon) {
+        onSuccess();
+        onOpenChange(false);
+      } else {
+        setError("Failed to create summon. Please try again.");
+      }
+    } catch (err) {
+      console.error("Error creating summon:", err);
+      setError("An error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <AnimatePresence>
       {open && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
             onClick={() => onOpenChange(false)}
           />
-
-          {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-lg mx-4"
-          >
-            <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden">
-              {/* Header */}
-              <div className="relative bg-gradient-to-r from-koru-golden/20 via-koru-purple/10 to-koru-lime/20 p-6 pb-8">
-                <button
-                  onClick={() => onOpenChange(false)}
-                  className="absolute top-4 right-4 p-2 rounded-full bg-black/10 hover:bg-black/20 text-neutral-600 dark:text-neutral-400 transition-colors"
-                >
-                  <CloseIcon className="w-4 h-4" />
-                </button>
-                
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-12 h-12 rounded-2xl bg-koru-golden/20 flex items-center justify-center">
-                    <MegaphoneIcon className="w-6 h-6 text-koru-golden" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
-                      Appeal to {personName.split(" ")[0]}
-                    </h2>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      @{personHandle}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="p-6 space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-3">
-                    What is an Appeal?
-                  </h3>
-                  <p className="text-neutral-600 dark:text-neutral-400 text-sm leading-relaxed">
-                    An appeal is a public request to connect with a creator. It shows them you&apos;re genuinely interested in their expertise and helps them prioritize who to respond to.
-                  </p>
-                </div>
-
-                {/* Benefits */}
-                <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
-                    Why Appeal?
-                  </h4>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-start gap-3 p-3 rounded-xl bg-koru-purple/5 border border-koru-purple/10">
-                      <SparklesIcon className="w-5 h-5 text-koru-purple shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                          Stand Out
-                        </p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                          Your appeal becomes visible to {personName.split(" ")[0]}, showing your genuine interest
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start gap-3 p-3 rounded-xl bg-koru-golden/5 border border-koru-golden/10">
-                      <UsersIcon className="w-5 h-5 text-koru-golden shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                          Community Support
-                        </p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                          Others can upvote your appeal, increasing its visibility
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start gap-3 p-3 rounded-xl bg-koru-lime/5 border border-koru-lime/10">
-                      <DollarIcon className="w-5 h-5 text-koru-lime shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                          Set Your Price
-                        </p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                          Offer what you&apos;re willing to pay for their time and expertise
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* CTA */}
-                <div className="flex flex-col gap-3 pt-2">
-                  <Button
-                    onClick={onCreateSummon}
-                    className="w-full bg-gradient-to-r from-koru-golden to-koru-golden/80 hover:from-koru-golden/90 hover:to-koru-golden/70 text-neutral-900 font-semibold"
-                  >
-                    <MegaphoneIcon className="w-4 h-4 mr-2" />
-                    Create Appeal
-                  </Button>
-                  <Button
-                    variant="ghost"
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="w-full max-w-lg pointer-events-auto my-8"
+            >
+              <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden">
+                <div className="relative bg-gradient-to-r from-koru-purple/20 via-koru-golden/10 to-koru-purple/20 p-6 pb-8">
+                  <button
                     onClick={() => onOpenChange(false)}
-                    className="w-full"
+                    className="absolute top-4 right-4 p-2 rounded-full bg-black/10 hover:bg-black/20 text-neutral-600 dark:text-neutral-400 transition-colors"
                   >
-                    Maybe Later
-                  </Button>
+                    <CloseIcon className="w-4 h-4" />
+                  </button>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-12 h-12 rounded-2xl bg-koru-purple/20 flex items-center justify-center">
+                      <MegaphoneIcon className="w-6 h-6 text-koru-purple" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+                        {step === "info"
+                          ? `${personName.split(" ")[0]} isn't on Koru yet`
+                          : `Create Summon`}
+                      </h2>
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                        @{personHandle}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 space-y-6">
+                  <AnimatePresence mode="wait">
+                    {step === "info" ? (
+                      <motion.div
+                        key="info"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        className="space-y-6"
+                      >
+                        <p className="text-neutral-600 dark:text-neutral-400 text-sm leading-relaxed">
+                          <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                            {personName.split(" ")[0]}
+                          </span>{" "}
+                          hasn&apos;t joined Koru yet. Create a{" "}
+                          <span className="font-semibold text-koru-purple">
+                            Summon
+                          </span>{" "}
+                          to publicly request a conversation with them.
+                        </p>
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
+                            How Summons Work
+                          </h4>
+                          <div className="space-y-2">
+                            <div className="flex items-start gap-3 p-3 rounded-xl bg-koru-purple/5 border border-koru-purple/10">
+                              <div className="w-6 h-6 rounded-full bg-koru-purple/20 flex items-center justify-center text-xs font-bold text-koru-purple shrink-0">
+                                1
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                                  Create Your Summon
+                                </p>
+                                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                  Write a message and set how much you&apos;re
+                                  willing to pay for their time
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-3 p-3 rounded-xl bg-koru-golden/5 border border-koru-golden/10">
+                              <div className="w-6 h-6 rounded-full bg-koru-golden/20 flex items-center justify-center text-xs font-bold text-koru-golden shrink-0">
+                                2
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                                  Others Can Back Your Summon
+                                </p>
+                                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                  More backers = more visibility and incentive
+                                  for them to join
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-3 p-3 rounded-xl bg-koru-lime/5 border border-koru-lime/10">
+                              <div className="w-6 h-6 rounded-full bg-koru-lime/20 flex items-center justify-center text-xs font-bold text-koru-lime shrink-0">
+                                3
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                                  They Join & You Connect
+                                </p>
+                                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                  When they accept, you&apos;ll be first in line
+                                  to chat with them
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-3 pt-2">
+                          <Button
+                            onClick={() => setStep("form")}
+                            className="w-full bg-gradient-to-r from-koru-purple to-koru-purple/80 hover:from-koru-purple/90 hover:to-koru-purple/70 text-white font-semibold"
+                          >
+                            <MegaphoneIcon className="w-4 h-4 mr-2" />
+                            Continue to Create Summon
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            onClick={() => onOpenChange(false)}
+                            className="w-full"
+                          >
+                            Maybe Later
+                          </Button>
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="form"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        className="space-y-5"
+                      >
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                            Your Message to {personName.split(" ")[0]}
+                          </label>
+                          <textarea
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            placeholder={`Why do you want to talk to ${
+                              personName.split(" ")[0]
+                            }? What would you like to discuss?`}
+                            className="w-full h-28 px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 resize-none focus:outline-none focus:ring-2 focus:ring-koru-purple/50"
+                          />
+                          <p className="text-xs text-neutral-500">
+                            This message will be visible to{" "}
+                            {personName.split(" ")[0]} and other backers
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                            Your Pledge Amount
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 font-medium">
+                              $
+                            </span>
+                            <input
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={pledgeAmount}
+                              onChange={(e) => setPledgeAmount(e.target.value)}
+                              className="w-full h-12 pl-8 pr-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-koru-purple/50"
+                            />
+                          </div>
+                          <p className="text-xs text-neutral-500">
+                            This amount will be held and only charged if{" "}
+                            {personName.split(" ")[0]} joins and accepts
+                          </p>
+                        </div>
+                        {error && (
+                          <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                            <p className="text-sm text-red-600 dark:text-red-400">
+                              {error}
+                            </p>
+                          </div>
+                        )}
+                        <div className="flex flex-col gap-3 pt-2">
+                          <Button
+                            onClick={handleCreateSummon}
+                            disabled={isSubmitting || !session?.user}
+                            className="w-full bg-gradient-to-r from-koru-purple to-koru-purple/80 hover:from-koru-purple/90 hover:to-koru-purple/70 text-white font-semibold disabled:opacity-50"
+                          >
+                            {isSubmitting ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                Creating...
+                              </>
+                            ) : !session?.user ? (
+                              "Sign in to Create Summon"
+                            ) : (
+                              <>
+                                <MegaphoneIcon className="w-4 h-4 mr-2" />
+                                Create Summon (${pledgeAmount})
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            onClick={() => setStep("info")}
+                            className="w-full"
+                            disabled={isSubmitting}
+                          >
+                            Back
+                          </Button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </>
       )}
     </AnimatePresence>

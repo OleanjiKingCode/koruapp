@@ -4,6 +4,8 @@ export interface Profile {
   name: string;
   handle: string;
   bio: string;
+  avatar?: string;
+  verified?: boolean;
   followers: string;
   categories: string[];
   earnings: number;

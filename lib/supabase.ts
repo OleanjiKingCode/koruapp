@@ -13,9 +13,16 @@ export interface CachedTwitterProfile {
   name: string;
   bio: string | null;
   profile_image_url: string | null;
+  banner_url: string | null;
   followers_count: number;
   following_count: number;
   verified: boolean;
+  location: string | null;
+  statuses_count: number;
+  category: string | null;
+  tags: string[] | null;
+  is_featured: boolean;
+  featured_order: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -83,8 +90,16 @@ export async function upsertTwitterProfile(
   return data;
 }
 
+type ProfileUpsertData = Partial<
+  Omit<CachedTwitterProfile, "id" | "created_at" | "updated_at">
+> & {
+  twitter_id: string;
+  username: string;
+  name: string;
+};
+
 export async function upsertManyTwitterProfiles(
-  profiles: Omit<CachedTwitterProfile, "id" | "created_at" | "updated_at">[]
+  profiles: ProfileUpsertData[]
 ): Promise<void> {
   const { error } = await supabase.from("twitter_profiles").upsert(
     profiles.map((profile) => ({
@@ -103,8 +118,165 @@ export async function upsertManyTwitterProfiles(
 }
 
 // =============================================
+// FEATURED PROFILES OPERATIONS (uses featured_profiles table)
+// =============================================
+
+// Type for featured profiles
+export interface FeaturedProfile {
+  id: string;
+  twitter_id: string;
+  username: string;
+  name: string;
+  bio: string | null;
+  profile_image_url: string | null;
+  banner_url: string | null;
+  followers_count: number;
+  following_count: number;
+  verified: boolean;
+  location: string | null;
+  category: string;
+  tags: string[] | null;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Get featured profiles with pagination (from featured_profiles table)
+export async function getFeaturedProfiles(
+  page: number = 0,
+  limit: number = 50,
+  category?: string
+): Promise<{
+  profiles: FeaturedProfile[];
+  total: number;
+  hasMore: boolean;
+}> {
+  let query = supabase
+    .from("featured_profiles")
+    .select("*", { count: "exact" })
+    .eq("is_active", true);
+
+  if (category && category !== "All") {
+    query = query.eq("category", category);
+  }
+
+  const { data, error, count } = await query
+    .order("display_order", { ascending: true })
+    .range(page * limit, (page + 1) * limit - 1);
+
+  if (error || !data) {
+    console.error("Error fetching featured profiles:", error);
+    return { profiles: [], total: 0, hasMore: false };
+  }
+
+  return {
+    profiles: data,
+    total: count || 0,
+    hasMore: (count || 0) > (page + 1) * limit,
+  };
+}
+
+// Get profile by username (for profile page)
+// Checks both featured_profiles and twitter_profiles tables
+export async function getProfileByUsername(
+  username: string
+): Promise<CachedTwitterProfile | null> {
+  // First check featured_profiles (has category and tags from seed)
+  const { data: featuredData, error: featuredError } = await supabase
+    .from("featured_profiles")
+    .select("*")
+    .ilike("username", username)
+    .eq("is_active", true)
+    .single();
+
+  if (!featuredError && featuredData) {
+    // Map featured profile to CachedTwitterProfile format
+    return {
+      id: featuredData.id,
+      twitter_id: featuredData.twitter_id,
+      username: featuredData.username,
+      name: featuredData.name,
+      bio: featuredData.bio,
+      profile_image_url: featuredData.profile_image_url,
+      banner_url: featuredData.banner_url,
+      followers_count: featuredData.followers_count,
+      following_count: featuredData.following_count,
+      verified: featuredData.verified,
+      location: featuredData.location,
+      statuses_count: 0,
+      category: featuredData.category,
+      tags: featuredData.tags,
+      is_featured: true,
+      featured_order: featuredData.display_order,
+      created_at: featuredData.created_at,
+      updated_at: featuredData.updated_at,
+    };
+  }
+
+  // Fall back to twitter_profiles cache
+  const { data, error } = await supabase
+    .from("twitter_profiles")
+    .select("*")
+    .ilike("username", username)
+    .single();
+
+  if (error || !data) return null;
+  return data;
+}
+
+// Search featured profiles
+export async function searchFeaturedProfiles(
+  query: string,
+  limit: number = 20
+): Promise<CachedTwitterProfile[]> {
+  const { data, error } = await supabase
+    .from("twitter_profiles")
+    .select("*")
+    .or(`username.ilike.%${query}%,name.ilike.%${query}%,bio.ilike.%${query}%`)
+    .order("followers_count", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+  return data;
+}
+
+// Get featured categories (from featured_profiles table)
+export async function getFeaturedCategories(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("featured_profiles")
+    .select("category")
+    .eq("is_active", true)
+    .not("category", "is", null);
+
+  if (error || !data) return [];
+
+  const categories = [...new Set(data.map((p) => p.category).filter(Boolean))];
+  return categories as string[];
+}
+
+// =============================================
 // USER OPERATIONS
 // =============================================
+
+// Types for availability (embedded in user)
+export interface AvailabilitySlotData {
+  day: string;
+  start: string;
+  end: string;
+}
+
+export interface UserAvailability {
+  timezone: string;
+  slots: AvailabilitySlotData[];
+}
+
+// Types for connected wallets (embedded in user)
+export interface ConnectedWallet {
+  address: string;
+  chain: string;
+  is_primary: boolean;
+}
 
 // Types for users
 export interface User {
@@ -118,12 +290,130 @@ export interface User {
   followers_count: number;
   following_count: number;
   is_verified: boolean;
+  location: string | null;
+
+  // Creator settings
   is_creator: boolean;
   price_per_message: number;
-  total_earnings: number;
   response_time_hours: number;
+
+  // Balances
+  balance: number;
+  pending_balance: number;
+  total_earnings: number;
+  total_withdrawn: number;
+
+  // Tags
   tags: string[] | null;
-  last_login_at: string;
+
+  // Embedded data (JSONB columns)
+  availability: UserAvailability | null;
+  connected_wallets: ConnectedWallet[] | null;
+
+  // Stats
+  total_chats: number;
+  total_summons_created: number;
+  total_summons_backed: number;
+
+  last_login_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Types for chats
+export interface Chat {
+  id: string;
+  requester_id: string;
+  creator_id: string;
+  appeal_id: string | null;
+  status:
+    | "pending"
+    | "active"
+    | "completed"
+    | "expired"
+    | "refunded"
+    | "cancelled";
+  amount: number;
+  slot_name: string | null;
+  slot_duration: number | null;
+  deadline_at: string | null;
+  completed_at: string | null;
+  refunded_at: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  requester?: User;
+  creator?: User;
+}
+
+// Types for summons (appeals)
+export interface Summon {
+  id: string;
+  creator_id: string;
+  target_twitter_id: string;
+  target_username: string;
+  target_name: string;
+  target_profile_image: string | null;
+  title: string | null;
+  message: string;
+  pledged_amount: number;
+  goal_amount: number | null;
+  backers_count: number;
+  status: "active" | "successful" | "expired" | "cancelled";
+  expires_at: string | null;
+  successful_at: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  creator?: User;
+}
+
+// Types for transactions
+export interface Transaction {
+  id: string;
+  user_id: string;
+  type: "payment" | "refund" | "withdrawal" | "deposit" | "earning" | "pledge";
+  status: "pending" | "processing" | "completed" | "failed" | "cancelled";
+  amount: number;
+  currency: string;
+  chat_id: string | null;
+  appeal_id: string | null;
+  wallet_id: string | null;
+  counterparty_id: string | null;
+  counterparty_name: string | null;
+  payment_method: string | null;
+  payment_provider: string | null;
+  external_id: string | null;
+  description: string | null;
+  metadata: Record<string, unknown> | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Types for wallets
+export interface Wallet {
+  id: string;
+  user_id: string;
+  address: string;
+  chain: string;
+  is_primary: boolean;
+  label: string | null;
+  verified_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Types for availability slots
+export interface AvailabilitySlot {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  duration: number;
+  price: number;
+  is_active: boolean;
+  max_bookings_per_day: number;
   created_at: string;
   updated_at: string;
 }
@@ -227,4 +517,385 @@ export async function updateUser(
   }
 
   return data;
+}
+
+// =============================================
+// CHATS OPERATIONS
+// =============================================
+
+// Get user's chats (as creator or requester)
+export async function getUserChats(userId: string): Promise<Chat[]> {
+  const { data, error } = await supabase
+    .from("chats")
+    .select("*")
+    .or(`requester_id.eq.${userId},creator_id.eq.${userId}`)
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+  return data;
+}
+
+// Get chat by ID
+export async function getChatById(chatId: string): Promise<Chat | null> {
+  const { data, error } = await supabase
+    .from("chats")
+    .select("*")
+    .eq("id", chatId)
+    .single();
+
+  if (error || !data) return null;
+  return data;
+}
+
+// =============================================
+// SUMMONS (APPEALS) OPERATIONS
+// =============================================
+
+// Get user's created summons
+export async function getUserSummons(userId: string): Promise<Summon[]> {
+  const { data, error } = await supabase
+    .from("appeals")
+    .select("*")
+    .eq("creator_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+  return data;
+}
+
+// Get user's backed summons
+export async function getUserBackedSummons(userId: string): Promise<Summon[]> {
+  const { data, error } = await supabase
+    .from("appeal_backers")
+    .select("appeal_id")
+    .eq("user_id", userId);
+
+  if (error || !data || data.length === 0) return [];
+
+  const appealIds = data.map((b) => b.appeal_id);
+
+  const { data: appeals, error: appealsError } = await supabase
+    .from("appeals")
+    .select("*")
+    .in("id", appealIds)
+    .order("created_at", { ascending: false });
+
+  if (appealsError || !appeals) return [];
+  return appeals;
+}
+
+// Get all active summons
+export async function getActiveSummons(limit = 50): Promise<Summon[]> {
+  const { data, error } = await supabase
+    .from("appeals")
+    .select("*")
+    .eq("status", "active")
+    .order("pledged_amount", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+  return data;
+}
+
+// Create a new summon (appeal)
+export async function createSummon(summon: {
+  creator_id: string;
+  target_twitter_id: string;
+  target_username: string;
+  target_name: string;
+  target_profile_image?: string | null;
+  message: string;
+  pledged_amount: number;
+  goal_amount?: number | null;
+  expires_at?: string | null;
+}): Promise<Summon | null> {
+  const { data, error } = await supabase
+    .from("appeals")
+    .insert({
+      ...summon,
+      status: "active",
+      backers_count: 1, // Creator counts as first backer
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating summon:", error);
+    return null;
+  }
+
+  // Also increment the creator's total_summons_created count
+  await supabase.rpc("increment_user_summons", { user_id: summon.creator_id });
+
+  return data;
+}
+
+// Get summon by target username
+export async function getSummonByTarget(
+  targetUsername: string
+): Promise<Summon | null> {
+  const { data, error } = await supabase
+    .from("appeals")
+    .select("*")
+    .ilike("target_username", targetUsername)
+    .eq("status", "active")
+    .single();
+
+  if (error || !data) return null;
+  return data;
+}
+
+// Back an existing summon
+export async function backSummon(
+  summonId: string,
+  userId: string,
+  amount: number
+): Promise<boolean> {
+  // First add the backer
+  const { error: backerError } = await supabase.from("appeal_backers").insert({
+    appeal_id: summonId,
+    user_id: userId,
+    amount,
+  });
+
+  if (backerError) {
+    console.error("Error adding backer:", backerError);
+    return false;
+  }
+
+  // Then update the summon's pledged_amount and backers_count
+  const { error: updateError } = await supabase.rpc(
+    "increment_summon_backing",
+    {
+      summon_id: summonId,
+      backing_amount: amount,
+    }
+  );
+
+  if (updateError) {
+    console.error("Error updating summon:", updateError);
+    return false;
+  }
+
+  return true;
+}
+
+// =============================================
+// TRANSACTIONS OPERATIONS
+// =============================================
+
+// Get user's transactions
+export async function getUserTransactions(
+  userId: string,
+  limit = 50
+): Promise<Transaction[]> {
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+  return data;
+}
+
+// Get recent transactions (for profile)
+export async function getRecentTransactions(
+  userId: string,
+  limit = 5
+): Promise<Transaction[]> {
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("status", "completed")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+  return data;
+}
+
+// =============================================
+// WALLETS OPERATIONS
+// =============================================
+
+// Get user's wallets
+export async function getUserWallets(userId: string): Promise<Wallet[]> {
+  const { data, error } = await supabase
+    .from("wallets")
+    .select("*")
+    .eq("user_id", userId)
+    .order("is_primary", { ascending: false });
+
+  if (error || !data) return [];
+  return data;
+}
+
+// Get primary wallet
+export async function getPrimaryWallet(userId: string): Promise<Wallet | null> {
+  const { data, error } = await supabase
+    .from("wallets")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("is_primary", true)
+    .single();
+
+  if (error || !data) return null;
+  return data;
+}
+
+// Add wallet
+export async function addWallet(
+  userId: string,
+  address: string,
+  chain: string = "ethereum",
+  label?: string
+): Promise<Wallet | null> {
+  const { data, error } = await supabase
+    .from("wallets")
+    .insert({
+      user_id: userId,
+      address,
+      chain,
+      label,
+      is_primary: false,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error adding wallet:", error);
+    return null;
+  }
+
+  return data;
+}
+
+// =============================================
+// AVAILABILITY OPERATIONS
+// =============================================
+
+// Get user's availability slots
+export async function getUserAvailabilitySlots(
+  userId: string
+): Promise<AvailabilitySlot[]> {
+  const { data, error } = await supabase
+    .from("availability_slots")
+    .select("*")
+    .eq("user_id", userId)
+    .order("price", { ascending: true });
+
+  if (error || !data) return [];
+  return data;
+}
+
+// Create availability slot
+export async function createAvailabilitySlot(
+  userId: string,
+  slot: {
+    name: string;
+    description?: string;
+    duration: number;
+    price: number;
+    max_bookings_per_day?: number;
+  }
+): Promise<AvailabilitySlot | null> {
+  const { data, error } = await supabase
+    .from("availability_slots")
+    .insert({
+      user_id: userId,
+      ...slot,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating availability slot:", error);
+    return null;
+  }
+
+  return data;
+}
+
+// Update availability slot
+export async function updateAvailabilitySlot(
+  slotId: string,
+  updates: Partial<
+    Omit<AvailabilitySlot, "id" | "user_id" | "created_at" | "updated_at">
+  >
+): Promise<AvailabilitySlot | null> {
+  const { data, error } = await supabase
+    .from("availability_slots")
+    .update({
+      ...updates,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", slotId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating availability slot:", error);
+    return null;
+  }
+
+  return data;
+}
+
+// =============================================
+// USER STATS
+// =============================================
+
+// Get user stats summary
+export async function getUserStats(userId: string): Promise<{
+  totalChats: number;
+  activeChats: number;
+  totalSummons: number;
+  activeSummons: number;
+  totalTransactions: number;
+} | null> {
+  try {
+    // Get chat counts
+    const { count: totalChats } = await supabase
+      .from("chats")
+      .select("*", { count: "exact", head: true })
+      .or(`requester_id.eq.${userId},creator_id.eq.${userId}`);
+
+    const { count: activeChats } = await supabase
+      .from("chats")
+      .select("*", { count: "exact", head: true })
+      .or(`requester_id.eq.${userId},creator_id.eq.${userId}`)
+      .eq("status", "active");
+
+    // Get summon counts
+    const { count: totalSummons } = await supabase
+      .from("appeals")
+      .select("*", { count: "exact", head: true })
+      .eq("creator_id", userId);
+
+    const { count: activeSummons } = await supabase
+      .from("appeals")
+      .select("*", { count: "exact", head: true })
+      .eq("creator_id", userId)
+      .eq("status", "active");
+
+    // Get transaction count
+    const { count: totalTransactions } = await supabase
+      .from("transactions")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId);
+
+    return {
+      totalChats: totalChats || 0,
+      activeChats: activeChats || 0,
+      totalSummons: totalSummons || 0,
+      activeSummons: activeSummons || 0,
+      totalTransactions: totalTransactions || 0,
+    };
+  } catch (error) {
+    console.error("Error fetching user stats:", error);
+    return null;
+  }
 }

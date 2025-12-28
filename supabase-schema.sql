@@ -9,23 +9,35 @@ CREATE TABLE IF NOT EXISTS twitter_profiles (
   name TEXT NOT NULL,
   bio TEXT,
   profile_image_url TEXT,
+  banner_url TEXT,
   followers_count INTEGER DEFAULT 0,
   following_count INTEGER DEFAULT 0,
   verified BOOLEAN DEFAULT FALSE,
   location TEXT,
-  banner_url TEXT,
   statuses_count INTEGER DEFAULT 0,
   professional_type TEXT,
   category TEXT,
+  tags TEXT[] DEFAULT '{}',
+  is_featured BOOLEAN DEFAULT FALSE,
+  featured_order INTEGER,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Add new columns if table already exists
+ALTER TABLE twitter_profiles ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}';
+ALTER TABLE twitter_profiles ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT FALSE;
+ALTER TABLE twitter_profiles ADD COLUMN IF NOT EXISTS featured_order INTEGER;
+ALTER TABLE twitter_profiles ADD COLUMN IF NOT EXISTS banner_url TEXT;
 
 -- Create indexes for faster queries
 CREATE INDEX IF NOT EXISTS idx_twitter_profiles_username ON twitter_profiles(username);
 CREATE INDEX IF NOT EXISTS idx_twitter_profiles_name ON twitter_profiles USING gin(to_tsvector('english', name));
 CREATE INDEX IF NOT EXISTS idx_twitter_profiles_followers ON twitter_profiles(followers_count DESC);
 CREATE INDEX IF NOT EXISTS idx_twitter_profiles_updated ON twitter_profiles(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_twitter_profiles_featured ON twitter_profiles(is_featured) WHERE is_featured = TRUE;
+CREATE INDEX IF NOT EXISTS idx_twitter_profiles_featured_order ON twitter_profiles(featured_order) WHERE is_featured = TRUE;
+CREATE INDEX IF NOT EXISTS idx_twitter_profiles_category ON twitter_profiles(category);
 
 -- Create a GIN index for full-text search on username, name, and bio
 CREATE INDEX IF NOT EXISTS idx_twitter_profiles_search ON twitter_profiles 
@@ -114,13 +126,21 @@ CREATE TABLE IF NOT EXISTS users (
   total_earnings DECIMAL(12, 2) DEFAULT 0,
   response_time_hours INTEGER DEFAULT 24,
   tags TEXT[] DEFAULT '{}',
+  -- Balance tracking
+  balance DECIMAL(12, 2) DEFAULT 0, -- Available balance (can withdraw)
+  pending_balance DECIMAL(12, 2) DEFAULT 0, -- Pending earnings not yet available
+  total_withdrawn DECIMAL(12, 2) DEFAULT 0, -- Total amount withdrawn
+  -- Timestamps
   last_login_at TIMESTAMPTZ DEFAULT NOW(),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- If table already exists, add tags column
+-- If table already exists, add new columns
 ALTER TABLE users ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS balance DECIMAL(12, 2) DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS pending_balance DECIMAL(12, 2) DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS total_withdrawn DECIMAL(12, 2) DEFAULT 0;
 
 -- Indexes for users
 CREATE INDEX IF NOT EXISTS idx_users_twitter_id ON users(twitter_id);

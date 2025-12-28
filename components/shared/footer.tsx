@@ -151,7 +151,7 @@ export function Footer() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 50 }}
           transition={{ type: "spring", stiffness: 100, damping: 20 }}
-          className="fixed bottom-0 left-0 right-0 z-40"
+          className="fixed bottom-0 left-0 right-0 z-30"
         >
           <div className="mx-4 mb-4">
             <div
