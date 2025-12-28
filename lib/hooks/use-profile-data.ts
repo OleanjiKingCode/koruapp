@@ -72,7 +72,9 @@ export function useUserTransactions(limit = 10) {
     userId ? `user-transactions-${userId}-${limit}` : null,
     async () => {
       if (!userId) return [];
-      const response = await fetch(`${API_ROUTES.USER_TRANSACTIONS}?limit=${limit}`);
+      const response = await fetch(
+        `${API_ROUTES.USER_TRANSACTIONS}?limit=${limit}`
+      );
       if (!response.ok) throw new Error("Failed to fetch transactions");
       const result = await response.json();
       return result.transactions;
@@ -113,7 +115,7 @@ export function useUserWallets() {
 
   return {
     wallets: data || [],
-    primaryWallet: data?.find((w) => w.is_primary) || data?.[0] || null,
+    primaryWallet: data?.find((w: Wallet) => w.is_primary) || data?.[0] || null,
     isLoading,
     error,
     refresh: mutate,
@@ -185,10 +187,20 @@ export function useUserStats() {
 // Combined hook for all profile data
 export function useProfileData() {
   const { chats, isLoading: isLoadingChats } = useUserChats();
-  const { createdSummons, backedSummons, isLoading: isLoadingSummons } = useUserSummons();
-  const { transactions, isLoading: isLoadingTransactions } = useUserTransactions();
-  const { wallets, primaryWallet, isLoading: isLoadingWallets } = useUserWallets();
-  const { slots: availabilitySlots, isLoading: isLoadingAvailability } = useUserAvailability();
+  const {
+    createdSummons,
+    backedSummons,
+    isLoading: isLoadingSummons,
+  } = useUserSummons();
+  const { transactions, isLoading: isLoadingTransactions } =
+    useUserTransactions();
+  const {
+    wallets,
+    primaryWallet,
+    isLoading: isLoadingWallets,
+  } = useUserWallets();
+  const { slots: availabilitySlots, isLoading: isLoadingAvailability } =
+    useUserAvailability();
   const { stats, isLoading: isLoadingStats } = useUserStats();
 
   return {
@@ -209,4 +221,3 @@ export function useProfileData() {
       isLoadingStats,
   };
 }
-

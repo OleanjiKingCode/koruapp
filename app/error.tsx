@@ -10,11 +10,6 @@ interface ErrorProps {
 }
 
 export default function Error({ error, reset }: ErrorProps) {
-  useEffect(() => {
-    // Log the error to an error reporting service
-    console.error(error);
-  }, [error]);
-
   return (
     <main className="min-h-screen flex items-center justify-center bg-[#f8f7f4] dark:bg-[#0d0d10] px-4">
       {/* Background orbs */}

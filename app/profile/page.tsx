@@ -31,6 +31,7 @@ import {
   useUserSummons,
   useUserStats,
 } from "@/lib/hooks";
+import type { Chat, Summon } from "@/lib/supabase";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -702,7 +703,7 @@ export default function ProfilePage() {
                   ))}
                 </>
               ) : chats.length > 0 ? (
-                chats.map((chat, index) => (
+                chats.map((chat: Chat, index: number) => (
                   <motion.a
                     href={`/chat/${chat.id}`}
                     key={chat.id}
@@ -786,7 +787,7 @@ export default function ProfilePage() {
               ) : createdSummons.length > 0 || backedSummons.length > 0 ? (
                 <>
                   {/* Created Summons */}
-                  {createdSummons.map((summon, index) => (
+                  {createdSummons.map((summon: Summon, index: number) => (
                     <motion.div
                       key={summon.id}
                       initial={{ opacity: 0, y: 10 }}
@@ -865,7 +866,7 @@ export default function ProfilePage() {
                           Summons You Backed
                         </h4>
                       </div>
-                      {backedSummons.map((summon, index) => (
+                      {backedSummons.map((summon: Summon, index: number) => (
                         <motion.div
                           key={summon.id}
                           initial={{ opacity: 0, y: 10 }}
