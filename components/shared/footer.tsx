@@ -76,14 +76,15 @@ export function Footer() {
     
     // Only show footer when:
     // 1. User is within 30px of the true bottom AND has scrolled significantly
-    // 2. OR page has almost no scrollable content (truly short page)
+    // 2. OR page is truly short (content less than viewport) AND document is less than 1.2x viewport
+    //    This prevents showing footer on pages that use min-h-screen but have little actual content
     const nearBottom = distanceFromBottom <= pixelThreshold;
     const hasScrolledEnough = scrollTop > 150;
-    const pageIsTinyAndNotScrollable = scrollableHeight <= 30;
+    const pageIsTrulyShort = scrollableHeight <= 30 && documentHeight < windowHeight * 1.2;
     
     setIsVisible(
       (nearBottom && hasScrolledEnough) || 
-      pageIsTinyAndNotScrollable
+      pageIsTrulyShort
     );
   }, []);
 

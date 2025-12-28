@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 
 export default function NotFound() {
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[#f8f7f4] dark:bg-[#0d0d10] px-4">
+    <main className="min-h-[calc(100vh+400px)] flex items-center justify-center bg-[#f8f7f4] dark:bg-[#0d0d10] px-4 pb-64">
       {/* Background orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div

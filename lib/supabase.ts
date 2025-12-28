@@ -35,19 +35,20 @@ export async function getCachedProfile(
     .from("twitter_profiles")
     .select("*")
     .eq("username", username.toLowerCase())
-    .single();
+    .limit(1);
 
-  if (error || !data) return null;
+  if (error || !data || data.length === 0) return null;
+  const profile = data[0];
 
   // Check if cache is older than 24 hours
-  const cacheAge = Date.now() - new Date(data.updated_at).getTime();
+  const cacheAge = Date.now() - new Date(profile.updated_at).getTime();
   const twentyFourHours = 24 * 60 * 60 * 1000;
 
   if (cacheAge > twentyFourHours) {
     return null; // Return null to force refresh
   }
 
-  return data;
+  return profile;
 }
 
 export async function getCachedProfilesByQuery(
@@ -183,46 +184,49 @@ export async function getProfileByUsername(
   username: string
 ): Promise<CachedTwitterProfile | null> {
   // First check featured_profiles (has category and tags from seed)
+  // Use limit(1) to handle duplicates - just take the first match
   const { data: featuredData, error: featuredError } = await supabase
     .from("featured_profiles")
     .select("*")
     .ilike("username", username)
     .eq("is_active", true)
-    .single();
+    .limit(1);
 
-  if (!featuredError && featuredData) {
+  if (!featuredError && featuredData && featuredData.length > 0) {
+    const featured = featuredData[0];
     // Map featured profile to CachedTwitterProfile format
     return {
-      id: featuredData.id,
-      twitter_id: featuredData.twitter_id,
-      username: featuredData.username,
-      name: featuredData.name,
-      bio: featuredData.bio,
-      profile_image_url: featuredData.profile_image_url,
-      banner_url: featuredData.banner_url,
-      followers_count: featuredData.followers_count,
-      following_count: featuredData.following_count,
-      verified: featuredData.verified,
-      location: featuredData.location,
+      id: featured.id,
+      twitter_id: featured.twitter_id,
+      username: featured.username,
+      name: featured.name,
+      bio: featured.bio,
+      profile_image_url: featured.profile_image_url,
+      banner_url: featured.banner_url,
+      followers_count: featured.followers_count,
+      following_count: featured.following_count,
+      verified: featured.verified,
+      location: featured.location,
       statuses_count: 0,
-      category: featuredData.category,
-      tags: featuredData.tags,
+      category: featured.category,
+      tags: featured.tags,
       is_featured: true,
-      featured_order: featuredData.display_order,
-      created_at: featuredData.created_at,
-      updated_at: featuredData.updated_at,
+      featured_order: featured.display_order,
+      created_at: featured.created_at,
+      updated_at: featured.updated_at,
     };
   }
 
   // Fall back to twitter_profiles cache
+  // Use limit(1) to handle duplicates - just take the first match
   const { data, error } = await supabase
     .from("twitter_profiles")
     .select("*")
     .ilike("username", username)
-    .single();
+    .limit(1);
 
-  if (error || !data) return null;
-  return data;
+  if (error || !data || data.length === 0) return null;
+  return data[0];
 }
 
 // Search featured profiles
@@ -426,10 +430,10 @@ export async function getUserByTwitterId(
     .from("users")
     .select("*")
     .eq("twitter_id", twitterId)
-    .single();
+    .limit(1);
 
-  if (error || !data) return null;
-  return data;
+  if (error || !data || data.length === 0) return null;
+  return data[0];
 }
 
 // Get user by username
@@ -440,10 +444,10 @@ export async function getUserByUsername(
     .from("users")
     .select("*")
     .eq("username", username.toLowerCase())
-    .single();
+    .limit(1);
 
-  if (error || !data) return null;
-  return data;
+  if (error || !data || data.length === 0) return null;
+  return data[0];
 }
 
 // Create or update user on login
@@ -541,10 +545,10 @@ export async function getChatById(chatId: string): Promise<Chat | null> {
     .from("chats")
     .select("*")
     .eq("id", chatId)
-    .single();
+    .limit(1);
 
-  if (error || !data) return null;
-  return data;
+  if (error || !data || data.length === 0) return null;
+  return data[0];
 }
 
 // =============================================
@@ -639,10 +643,10 @@ export async function getSummonByTarget(
     .select("*")
     .ilike("target_username", targetUsername)
     .eq("status", "active")
-    .single();
+    .limit(1);
 
-  if (error || !data) return null;
-  return data;
+  if (error || !data || data.length === 0) return null;
+  return data[0];
 }
 
 // Back an existing summon
@@ -740,10 +744,10 @@ export async function getPrimaryWallet(userId: string): Promise<Wallet | null> {
     .select("*")
     .eq("user_id", userId)
     .eq("is_primary", true)
-    .single();
+    .limit(1);
 
-  if (error || !data) return null;
-  return data;
+  if (error || !data || data.length === 0) return null;
+  return data[0];
 }
 
 // Add wallet
