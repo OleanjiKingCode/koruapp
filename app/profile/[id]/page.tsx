@@ -647,25 +647,6 @@ export default function ViewProfilePage() {
 
               {/* Categories & Tags - with colors */}
               <div className="flex flex-wrap gap-2 mt-4">
-                {/* Show category first if available */}
-                {profile.category &&
-                  (() => {
-                    const color = getTagColor(profile.category);
-                    return (
-                      <Badge
-                        variant="secondary"
-                        className={cn(
-                          color.bg,
-                          color.text,
-                          "border",
-                          color.border,
-                          "font-medium"
-                        )}
-                      >
-                        {profile.category}
-                      </Badge>
-                    );
-                  })()}
                 {/* Show tags */}
                 {profile.tags?.map((tag: string) => {
                   const color = getTagColor(tag);

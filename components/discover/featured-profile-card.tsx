@@ -15,7 +15,10 @@ interface FeaturedProfileCardProps {
   onView: () => void;
 }
 
-export function FeaturedProfileCard({ profile, onView }: FeaturedProfileCardProps) {
+export function FeaturedProfileCard({
+  profile,
+  onView,
+}: FeaturedProfileCardProps) {
   const tags = deduplicateTags(profile.tags || []);
 
   return (
@@ -73,18 +76,7 @@ export function FeaturedProfileCard({ profile, onView }: FeaturedProfileCardProp
 
         {/* Category & Tags - with colors */}
         <div className="flex flex-wrap gap-2">
-          {profile.category &&
-            (() => {
-              const color = getTagColor(profile.category);
-              return (
-                <span
-                  className={`px-2.5 py-1 ${color.bg} ${color.text} text-xs rounded-full font-medium border ${color.border}`}
-                >
-                  {profile.category}
-                </span>
-              );
-            })()}
-          {tags.slice(0, 2).map((tag) => {
+          {tags.slice(0, 5).map((tag) => {
             const color = getTagColor(tag);
             return (
               <span
@@ -111,5 +103,3 @@ export function FeaturedProfileCard({ profile, onView }: FeaturedProfileCardProp
     </motion.div>
   );
 }
-
-

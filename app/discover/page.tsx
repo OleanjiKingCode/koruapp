@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -62,12 +62,35 @@ export default function DiscoverPage() {
     loadMore,
   } = useFeaturedProfiles({ selectedCategories });
 
-  // Table sorting
+  // Table sorting - map sortBy to tableSortField
+  const getSortFieldFromSortBy = (
+    sortByValue: string
+  ): "followers" | "earnings" => {
+    switch (sortByValue) {
+      case "most_followers":
+        return "followers";
+      case "highest_earned":
+      default:
+        return "earnings";
+    }
+  };
+
   const {
     sortField: tableSortField,
     sortDirection: tableSortDirection,
     handleSort: handleTableSort,
-  } = useTableSort({ defaultField: "earnings", defaultDirection: "desc" });
+  } = useTableSort({
+    defaultField: getSortFieldFromSortBy(sortBy),
+    defaultDirection: "desc",
+  });
+
+  // Update table sort when sortBy changes
+  useEffect(() => {
+    const field = getSortFieldFromSortBy(sortBy);
+    if (tableSortField !== field) {
+      handleTableSort(field);
+    }
+  }, [sortBy]);
 
   // Infinite scroll
   const { sentinelRef } = useInfiniteScroll({
@@ -112,21 +135,26 @@ export default function DiscoverPage() {
 
     profiles.sort((a, b) => {
       let aVal: number, bVal: number;
-      switch (tableSortField) {
-        case "followers":
+      switch (sortBy) {
+        case "most_followers":
           aVal = a.followers_count;
           bVal = b.followers_count;
           break;
+        case "highest_earned":
         default:
-          // Default sort by followers
+          // For now, sort by followers as earnings data might not be available
+          // TODO: Add earnings field to FeaturedProfile if needed
           aVal = a.followers_count;
           bVal = b.followers_count;
+          break;
       }
-      return tableSortDirection === "desc" ? bVal - aVal : aVal - bVal;
+      // Always use desc for grid view, respect tableSortDirection for list view
+      const direction = viewMode === "grid" ? "desc" : tableSortDirection;
+      return direction === "desc" ? bVal - aVal : aVal - bVal;
     });
 
     return profiles;
-  }, [featuredProfiles, tableSortField, tableSortDirection]);
+  }, [featuredProfiles, sortBy, tableSortDirection, viewMode]);
 
   // Handlers
   const handleViewFeaturedProfile = (profile: FeaturedProfile) => {
@@ -259,7 +287,12 @@ export default function DiscoverPage() {
               />
             )
           ) : (
-            <EmptyFiltersState />
+            <EmptyFiltersState
+              onClearFilters={() => {
+                setSelectedCategories([]);
+                setSearchQuery("");
+              }}
+            />
           )}
         </AnimatePresence>
       </main>
@@ -592,19 +625,6 @@ function FeaturedProfilesTable({
                 </td>
                 <td className="p-4">
                   <div className="flex flex-wrap gap-1 max-w-[350px]">
-                    {/* Show category first */}
-                    {profile.category &&
-                      (() => {
-                        const color = getTagColor(profile.category);
-                        return (
-                          <span
-                            className={`px-1.5 py-0.5 ${color.bg} ${color.text} text-xs rounded font-normal border ${color.border}`}
-                          >
-                            {profile.category}
-                          </span>
-                        );
-                      })()}
-                    {/* Show up to 5 tags */}
                     {deduplicateTags(profile.tags || [])
                       .slice(0, 5)
                       .map((tag) => {
@@ -678,7 +698,11 @@ function NoResultsState({ searchQuery }: { searchQuery: string }) {
   );
 }
 
-function EmptyFiltersState() {
+function EmptyFiltersState({
+  onClearFilters,
+}: {
+  onClearFilters?: () => void;
+}) {
   return (
     <motion.div
       key="empty"
@@ -691,7 +715,17 @@ function EmptyFiltersState() {
         title="No profiles found"
         description="No profiles match your current filters. Try clearing filters or browse all."
         ctaText="Clear Filters"
-        ctaHref="/discover"
+        ctaHref={onClearFilters ? undefined : "/discover"}
+        action={
+          onClearFilters ? (
+            <Button
+              onClick={onClearFilters}
+              className="bg-koru-purple hover:bg-koru-purple/90"
+            >
+              Clear Filters
+            </Button>
+          ) : undefined
+        }
         secondaryCtaText="Browse Summons"
         secondaryCtaHref="/summons"
       />

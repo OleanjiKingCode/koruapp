@@ -195,13 +195,13 @@ export async function getFeaturedProfiles(
     .eq("is_active", true);
 
   if (categories && categories.length > 0) {
-    // Use AND logic: profile must have ALL selected categories
-    // Since profiles have a single category field, AND logic means the category must be in the selected list
-    // This is effectively OR logic for single-value fields, but we'll implement it as requested
-    // For tags (array field), we'd need: categories.forEach(cat => query = query.contains('tags', [cat]))
-    // For now, using OR logic for categories (which makes sense for single-value fields)
-    // If user wants true AND logic for tags, we need to filter by tags array instead
-    query = query.in("category", categories);
+    // Filter by tags only - use AND logic for multiple filters
+    // Profile must have ALL selected categories in their tags array
+    categories.forEach((category) => {
+      // Filter: tags array contains this category
+      // Using filter with 'cs' operator (contains) - each filter adds an AND condition
+      query = query.filter("tags", "cs", `{${category}}`);
+    });
   }
 
   const { data, error, count } = await query

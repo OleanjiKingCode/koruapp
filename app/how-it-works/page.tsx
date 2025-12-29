@@ -980,7 +980,7 @@ export default function HowItWorksPage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  View Appeals
+                  View Summons
                 </motion.a>
               </div>
             </div>
