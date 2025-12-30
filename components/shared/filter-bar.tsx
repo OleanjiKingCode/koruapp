@@ -175,7 +175,7 @@ export function FilterBar({
         {/* Sort & View Controls */}
         <div className="flex items-center gap-2 shrink-0">
           {/* Sort Dropdown */}
-          <DropdownMenu>
+          {/* <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2 rounded-lg">
                 <SortIcon className="w-4 h-4" />
@@ -201,7 +201,7 @@ export function FilterBar({
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu> */}
 
           {/* View Toggle */}
           <div className="flex items-center bg-neutral-100 dark:bg-neutral-800 rounded-lg p-1">
