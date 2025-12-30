@@ -5,6 +5,7 @@ export interface Summon {
   id: string;
   targetHandle: string;
   targetName: string;
+  targetProfileImage?: string | null;
   totalPledged: number;
   backers: number;
   category: string;
@@ -12,6 +13,10 @@ export interface Summon {
   trendValue: number;
   request: string;
   createdAt: string;
+  // Creator info (optional, for display)
+  creatorUsername?: string;
+  creatorName?: string;
+  creatorProfileImage?: string | null;
 }
 
 export interface UserSummon {

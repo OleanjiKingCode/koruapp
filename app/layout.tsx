@@ -40,18 +40,6 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Koru",
     description: "Pay for access. Earn for time.",
-    url: "https://koruapp.xyz",
-    siteName: "Koru",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Koru",
-    description: "Pay for access. Earn for time.",
-  },
-  openGraph: {
-    title: "Koru",
-    description: "Pay for access. Earn for time.",
     url: "https://www.koruapp.xyz",
     siteName: "Koru",
     images: [
