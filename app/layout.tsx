@@ -30,6 +30,25 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.ico",
   },
+  openGraph: {
+    title: "Koru",
+    description: "Koru - Pay for access. Earn for time.",
+    images: [
+      {
+        url: "/koruBanner.png",
+        width: 1200,
+        height: 630,
+        alt: "Koru - Pay for access. Earn for time.",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Koru",
+    description: "Koru - Pay for access. Earn for time.",
+    images: ["/koruBanner.png"],
+  },
 };
 
 export default function RootLayout({
