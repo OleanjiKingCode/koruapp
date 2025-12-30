@@ -90,7 +90,31 @@ export async function GET(request: NextRequest) {
     }
 
     const data: TwitterSearchResponse = await response.json();
-    const profiles = parseTwitterSearchResponse(data);
+    let profiles = parseTwitterSearchResponse(data);
+
+    // If People search returned no results, try Top search to extract users from tweets
+    if (profiles.length === 0 && type === "People") {
+      const topResponse = await fetch(
+        `https://${RAPIDAPI_HOST}/search?` +
+          new URLSearchParams({
+            type: "Top",
+            count,
+            query,
+          }),
+        {
+          method: "GET",
+          headers: {
+            "x-rapidapi-key": RAPIDAPI_KEY,
+            "x-rapidapi-host": RAPIDAPI_HOST,
+          },
+        }
+      );
+
+      if (topResponse.ok) {
+        const topData: TwitterSearchResponse = await topResponse.json();
+        profiles = parseTwitterSearchResponse(topData);
+      }
+    }
 
     // Cache profiles in Supabase for future searches
     if (profiles.length > 0) {

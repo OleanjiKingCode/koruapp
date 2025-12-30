@@ -383,7 +383,8 @@ export default function ViewProfilePage() {
     if (!profileData) return null;
 
     return {
-      id: profileData.handle,
+      id: profileData.id || profileData.handle,
+      twitterId: profileData.twitterId,
       name: profileData.name,
       handle: profileData.handle,
       bio: profileData.bio || "",
@@ -402,6 +403,11 @@ export default function ViewProfilePage() {
         return acc;
       }, [] as string[]),
       isOnKoru: profileData.isOnKoru,
+      // Creator-specific data (only for users on Koru)
+      isCreator: profileData.isCreator || false,
+      pricePerMessage: profileData.pricePerMessage,
+      responseTimeHours: profileData.responseTimeHours,
+      availabilitySlots: profileData.availabilitySlots || [],
     };
   }, [profileData]);
 
@@ -412,16 +418,18 @@ export default function ViewProfilePage() {
     notFound();
   }
 
-  // Availability data - only users on Koru can have availability
-  // For now, return empty availability since we're fetching from DB
+  // Availability data - use data from API for Koru users
   const availabilityData: AvailabilityData = useMemo(() => {
-    // Only users on Koru can have availability set up
-    // This would be fetched from the user's settings in the database
+    // Use availability from API if user is on Koru
+    if (profileData?.isOnKoru && profileData?.availability) {
+      return profileData.availability;
+    }
+    // Default empty availability
     return {
       timezone: "America/New_York",
       slots: [],
     };
-  }, []);
+  }, [profileData]);
 
   // Show skeleton loading state - after all hooks are called
   if (isLoading) {
@@ -517,7 +525,10 @@ export default function ViewProfilePage() {
     router.push(ROUTES.CHAT(profile.id));
   };
 
-  const hasAvailability = availabilityData.slots.length > 0;
+  // User has availability if they have time slots OR pricing slots set up
+  const hasAvailability =
+    availabilityData.slots.length > 0 ||
+    (profile?.availabilitySlots && profile.availabilitySlots.length > 0);
 
   return (
     <div className="min-h-screen pb-[500px] sm:pb-96">

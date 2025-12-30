@@ -75,7 +75,16 @@ export interface TwitterUserResult {
     name: string;
     screen_name: string;
   };
-  legacy: TwitterUserLegacy;
+  // New structure: location is now an object
+  location?: {
+    location: string;
+  };
+  // New structure: profile_bio contains description
+  profile_bio?: {
+    description: string;
+  };
+  // Legacy may be optional or have different fields in new API format
+  legacy?: TwitterUserLegacy;
   professional?: {
     rest_id: string;
     professional_type: string;
@@ -90,9 +99,10 @@ export interface TwitterUserResult {
 }
 
 export interface TwitterUserLegacy {
-  created_at: string;
-  description: string;
-  entities: {
+  // These fields may not be present in new API format (moved to core/avatar/location)
+  created_at?: string;
+  description?: string;
+  entities?: {
     description?: {
       urls: Array<{
         display_url: string;
@@ -108,15 +118,15 @@ export interface TwitterUserLegacy {
       }>;
     };
   };
-  followers_count: number;
-  friends_count: number;
-  location: string;
-  name: string;
+  followers_count?: number;
+  friends_count?: number;
+  location?: string;
+  name?: string;
   profile_banner_url?: string;
   profile_image_url_https?: string;
-  screen_name: string;
-  statuses_count: number;
-  verified: boolean;
+  screen_name?: string;
+  statuses_count?: number;
+  verified?: boolean;
   verified_type?: string;
   favourites_count?: number;
   listed_count?: number;
@@ -197,11 +207,11 @@ export function parseTwitterSearchResponse(
     }
 
     for (const entry of instruction.entries) {
+      const entryType = entry.content.entryType;
+      const itemType = entry.content.itemContent?.itemType;
+
       // Handle TimelineTimelineItem with TimelineUser (People search results)
-      if (
-        entry.content.entryType === "TimelineTimelineItem" &&
-        entry.content.itemContent?.itemType === "TimelineUser"
-      ) {
+      if (entryType === "TimelineTimelineItem" && itemType === "TimelineUser") {
         const userResult = entry.content.itemContent?.user_results?.result;
         if (userResult && !seenIds.has(userResult.rest_id)) {
           const profile = transformUserToProfile(userResult);
@@ -214,10 +224,7 @@ export function parseTwitterSearchResponse(
       }
 
       // Handle TimelineTimelineModule (contains user results in items array - for "Top" search)
-      if (
-        entry.content.entryType === "TimelineTimelineModule" &&
-        entry.content.items
-      ) {
+      if (entryType === "TimelineTimelineModule" && entry.content.items) {
         for (const item of entry.content.items) {
           const userResult = item.item?.itemContent?.user_results?.result;
           if (userResult && !seenIds.has(userResult.rest_id)) {
@@ -231,11 +238,33 @@ export function parseTwitterSearchResponse(
         continue;
       }
 
-      // Handle TimelineTimelineItem with tweet_results (extract user from tweet - for "Top" search)
-      if (entry.content.entryType === "TimelineTimelineItem") {
+      // Handle TimelineTimelineItem with TimelineTweet (extract user from tweet)
+      if (
+        entryType === "TimelineTimelineItem" &&
+        itemType === "TimelineTweet"
+      ) {
         const tweetResult = entry.content.itemContent?.tweet_results?.result;
+        const actualTweet = (tweetResult as any)?.tweet || tweetResult;
 
-        // Handle TweetWithVisibilityResults wrapper
+        if (actualTweet?.core?.user_results?.result) {
+          const tweetUserResult = actualTweet.core.user_results.result;
+          if (!seenIds.has(tweetUserResult.rest_id)) {
+            const profile = transformUserToProfile(tweetUserResult);
+            if (profile) {
+              seenIds.add(tweetUserResult.rest_id);
+              profiles.push(profile);
+            }
+          }
+        }
+        continue;
+      }
+
+      // Fallback: Handle any TimelineTimelineItem with tweet_results (catch-all for tweets)
+      if (
+        entryType === "TimelineTimelineItem" &&
+        entry.content.itemContent?.tweet_results
+      ) {
+        const tweetResult = entry.content.itemContent.tweet_results.result;
         const actualTweet = (tweetResult as any)?.tweet || tweetResult;
 
         if (actualTweet?.core?.user_results?.result) {
@@ -293,17 +322,20 @@ function transformUserToProfile(
     );
   }
 
+  // Get bio from profile_bio (new structure) or legacy.description (fallback)
+  const bio = user.profile_bio?.description || legacy?.description || "";
+
   return {
     id: user.rest_id,
     twitterId: user.rest_id,
     username: screenName,
     name: name,
-    bio: legacy?.description || "",
+    bio,
     profileImageUrl,
     followersCount: legacy?.followers_count || 0,
     followingCount: legacy?.friends_count || 0,
     verified: user.is_blue_verified || legacy?.verified || false,
-    location: legacy?.location || undefined,
+    location: user.location?.location || legacy?.location || undefined,
     createdAt,
     bannerUrl: legacy?.profile_banner_url,
     statusesCount: legacy?.statuses_count,

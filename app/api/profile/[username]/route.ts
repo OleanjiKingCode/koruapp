@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserByUsername, getProfileByUsername } from "@/lib/supabase";
+import {
+  getUserByUsername,
+  getProfileByUsername,
+  getUserAvailabilitySlots,
+} from "@/lib/supabase";
 
 export async function GET(
   request: NextRequest,
@@ -18,8 +22,16 @@ export async function GET(
     // First check if user is registered on Koru
     const koruUser = await getUserByUsername(username);
     if (koruUser) {
+      // Fetch availability slots if user is a creator
+      let availabilitySlots = null;
+      if (koruUser.is_creator) {
+        availabilitySlots = await getUserAvailabilitySlots(koruUser.id);
+      }
+
       return NextResponse.json({
         profile: {
+          id: koruUser.id,
+          twitterId: koruUser.twitter_id,
           name: koruUser.name,
           handle: koruUser.username,
           bio: koruUser.bio || undefined,
@@ -28,7 +40,14 @@ export async function GET(
           followingCount: koruUser.following_count || undefined,
           isVerified: koruUser.is_verified,
           tags: koruUser.tags || undefined,
+          location: koruUser.location || undefined,
           isOnKoru: true,
+          // Creator-specific data
+          isCreator: koruUser.is_creator,
+          pricePerMessage: koruUser.price_per_message,
+          responseTimeHours: koruUser.response_time_hours,
+          availability: koruUser.availability,
+          availabilitySlots: availabilitySlots || [],
         },
       });
     }
@@ -38,6 +57,7 @@ export async function GET(
     if (cached) {
       return NextResponse.json({
         profile: {
+          twitterId: cached.twitter_id,
           name: cached.name,
           handle: cached.username,
           bio: cached.bio || undefined,
