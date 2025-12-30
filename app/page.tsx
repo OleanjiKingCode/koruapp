@@ -96,6 +96,7 @@ export default function Home() {
             transition={{ delay: 1, duration: 0.5 }}
             className="flex flex-col sm:flex-row gap-4"
           >
+
             <Link href="/discover">
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -114,7 +115,6 @@ export default function Home() {
               Know more
             </motion.button>
           </motion.div>
-
           {/* Social Links */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}

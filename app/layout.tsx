@@ -29,9 +29,9 @@ const lemonTuesday = Caveat({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.koruapp.xyz"),
   title: "Koru",
-  description: "Koru - Pay for access. Earn for time.",
-  metadataBase: new URL("https://koruapp.xyz"),
+  description: "Pay for access. Earn for time.",
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
@@ -49,6 +49,36 @@ export const metadata: Metadata = {
     title: "Koru",
     description: "Pay for access. Earn for time.",
   },
+  openGraph: {
+    title: "Koru",
+    description: "Pay for access. Earn for time.",
+    url: "https://www.koruapp.xyz",
+    siteName: "Koru",
+    images: [
+      {
+        url: "https://www.koruapp.xyz/koruBanner.png",
+        width: 1200,
+        height: 630,
+        alt: "Koru - Pay for access. Earn for time.",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Koru",
+    description: "Pay for access. Earn for time.",
+    images: [
+      {
+        url: "https://www.koruapp.xyz/koruBanner.png",
+        width: 1200,
+        height: 630,
+        alt: "Koru - Pay for access. Earn for time.",
+      },
+    ],
+    creator: "@koruapp",
+    site: "@koruapp",
+  },
 };
 
 export default function RootLayout({
@@ -58,6 +88,25 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Additional Twitter meta tags for better compatibility */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:title" content="Koru" />
+        <meta
+          property="twitter:description"
+          content="Pay for access. Earn for time."
+        />
+        <meta
+          property="twitter:image"
+          content="https://www.koruapp.xyz/koruBanner.png"
+        />
+        <meta
+          name="twitter:image:src"
+          content="https://www.koruapp.xyz/koruBanner.png"
+        />
+        <meta property="twitter:url" content="https://www.koruapp.xyz" />
+        <meta name="twitter:domain" content="www.koruapp.xyz" />
+      </head>
       <body
         className={`${quicksand.variable} ${tenorSans.variable} ${lemonTuesday.variable} antialiased`}
       >
