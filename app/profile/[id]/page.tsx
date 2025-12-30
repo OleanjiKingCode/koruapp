@@ -724,104 +724,123 @@ export default function ViewProfilePage() {
           />
         </motion.div>
 
-        {/* Availability Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-koru-lime/10 flex items-center justify-center">
-                <CalendarIcon className="w-5 h-5 text-koru-lime" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                  Availability
-                </h3>
-              </div>
-            </div>
-          </div>
-
-          {profile.isOnKoru && hasAvailability ? (
-            <div className="space-y-4">
-              {/* Available Slots */}
-              <div>
-                <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-3">
-                  Available Sessions
-                </p>
-                <div className="space-y-2">
-                  {availabilityData.slots.map((slot) => (
-                    <div
-                      key={slot.id}
-                      className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700"
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium text-neutral-900 dark:text-neutral-100">
-                          {slot.name}
-                        </span>
-                        <span
-                          className={cn(
-                            "font-semibold",
-                            slot.price === 0
-                              ? "text-koru-lime"
-                              : "text-koru-golden"
-                          )}
-                        >
-                          {slot.price === 0 ? "Free" : `$${slot.price}`}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
-                        <span className="flex items-center gap-1">
-                          <ClockIcon className="w-3 h-3" />
-                          {slot.duration} min
-                        </span>
-                        <span>·</span>
-                        <span>
-                          {slot.times.length} time
-                          {slot.times.length !== 1 ? "s" : ""}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+        {/* Availability Card - Only show for users on Koru */}
+        {profile.isOnKoru && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-koru-lime/10 flex items-center justify-center">
+                  <CalendarIcon className="w-5 h-5 text-koru-lime" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                    Availability
+                  </h3>
                 </div>
               </div>
+            </div>
 
-              {/* CTA */}
-              <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800">
-                <Button
-                  onClick={() => setBookingModalOpen(true)}
-                  className="w-full bg-koru-purple hover:bg-koru-purple/90"
-                >
-                  <CalendarIcon className="w-4 h-4 mr-2" />
-                  Book a Time
-                </Button>
+            {hasAvailability ? (
+              <div className="space-y-4">
+                {/* Available Slots */}
+                <div>
+                  <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-3">
+                    Available Sessions
+                  </p>
+                  <div className="space-y-2">
+                    {availabilityData.slots.map((slot) => (
+                      <div
+                        key={slot.id}
+                        className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700"
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                            {slot.name}
+                          </span>
+                          <span
+                            className={cn(
+                              "font-semibold",
+                              slot.price === 0
+                                ? "text-koru-lime"
+                                : "text-koru-golden"
+                            )}
+                          >
+                            {slot.price === 0 ? "Free" : `$${slot.price}`}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
+                          <span className="flex items-center gap-1">
+                            <ClockIcon className="w-3 h-3" />
+                            {slot.duration} min
+                          </span>
+                          <span>·</span>
+                          <span>
+                            {slot.times.length} time
+                            {slot.times.length !== 1 ? "s" : ""}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* CTA */}
+                <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800">
+                  <Button
+                    onClick={() => setBookingModalOpen(true)}
+                    className="w-full bg-koru-purple hover:bg-koru-purple/90"
+                  >
+                    <CalendarIcon className="w-4 h-4 mr-2" />
+                    Book a Time
+                  </Button>
+                </div>
               </div>
+            ) : (
+              <div className="flex flex-col items-center gap-3 py-8">
+                <CalendarIcon className="w-10 h-10 text-neutral-300 dark:text-neutral-600" />
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center">
+                  This user hasn't set up their availability yet.
+                </p>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Summon Card - Show for users NOT on Koru */}
+        {!profile.isOnKoru && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft"
+          >
+            <div className="flex flex-col items-center gap-4 py-4">
+              <div className="w-14 h-14 rounded-full bg-koru-purple/10 flex items-center justify-center">
+                <MegaphoneIcon className="w-7 h-7 text-koru-purple" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-1">
+                  Bring {profile.name.split(" ")[0]} to Koru
+                </h3>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  {profile.name.split(" ")[0]} isn't on Koru yet. Create a Summon to invite them!
+                </p>
+              </div>
+              <Button
+                onClick={() => setSummonModalOpen(true)}
+                className="mt-2 bg-koru-purple hover:bg-koru-purple/90"
+              >
+                <MegaphoneIcon className="w-4 h-4 mr-2" />
+                Create Summon
+              </Button>
             </div>
-          ) : (
-            <div className="flex flex-col items-center gap-3 py-8">
-              <CalendarIcon className="w-10 h-10 text-neutral-300 dark:text-neutral-600" />
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center">
-                {profile.isOnKoru
-                  ? "This user hasn't set up their availability yet."
-                  : `${
-                      profile.name.split(" ")[0]
-                    } isn't on Koru yet. Create a Summon to bring them here!`}
-              </p>
-              {!profile.isOnKoru && (
-                <Button
-                  onClick={() => setSummonModalOpen(true)}
-                  variant="outline"
-                  className="mt-2 border-koru-purple text-koru-purple hover:bg-koru-purple/10"
-                >
-                  <MegaphoneIcon className="w-4 h-4 mr-2" />
-                  Create Summon
-                </Button>
-              )}
-            </div>
-          )}
-        </motion.div>
+          </motion.div>
+        )}
       </main>
 
       {/* Booking Modal */}

@@ -138,6 +138,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               twitterProfileData?.profileImageUrl || data.profile_image_url;
             const bio = twitterProfileData?.bio || data.description;
             const bannerUrl = twitterProfileData?.bannerUrl;
+            const location = twitterProfileData?.location || data.location;
             const followersCount =
               twitterProfileData?.followersCount ||
               data.public_metrics?.followers_count;
@@ -154,10 +155,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               username: data.username,
               name: data.name,
               profile_image_url: profileImageUrl,
+              banner_url: bannerUrl,
               bio: bio,
               is_verified: isVerified,
               followers_count: followersCount,
               following_count: followingCount,
+              location: location,
             });
 
             // Store the database user ID

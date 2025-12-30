@@ -332,6 +332,7 @@ export interface User {
   name: string;
   email: string | null;
   profile_image_url: string | null;
+  banner_url: string | null;
   bio: string | null;
   followers_count: number;
   following_count: number;
@@ -499,10 +500,12 @@ export async function upsertUser(user: {
   name: string;
   email?: string | null;
   profile_image_url?: string | null;
+  banner_url?: string | null;
   bio?: string | null;
   is_verified?: boolean;
   followers_count?: number;
   following_count?: number;
+  location?: string | null;
 }): Promise<User | null> {
   // Build the upsert object, only including fields that are provided
   const upsertData: Record<string, unknown> = {
@@ -517,12 +520,14 @@ export async function upsertUser(user: {
   if (user.email !== undefined) upsertData.email = user.email;
   if (user.profile_image_url !== undefined)
     upsertData.profile_image_url = user.profile_image_url;
+  if (user.banner_url !== undefined) upsertData.banner_url = user.banner_url;
   if (user.bio !== undefined) upsertData.bio = user.bio;
   if (user.is_verified !== undefined) upsertData.is_verified = user.is_verified;
   if (user.followers_count !== undefined)
     upsertData.followers_count = user.followers_count;
   if (user.following_count !== undefined)
     upsertData.following_count = user.following_count;
+  if (user.location !== undefined) upsertData.location = user.location;
 
   const { data, error } = await supabase
     .from("users")
