@@ -70,6 +70,25 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Additional Twitter meta tags for better compatibility */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:title" content="Koru" />
+        <meta
+          property="twitter:description"
+          content="Pay for access. Earn for time."
+        />
+        <meta
+          property="twitter:image"
+          content="https://www.koruapp.xyz/koruBanner.png"
+        />
+        <meta
+          name="twitter:image:src"
+          content="https://www.koruapp.xyz/koruBanner.png"
+        />
+        <meta property="twitter:url" content="https://www.koruapp.xyz" />
+        <meta name="twitter:domain" content="www.koruapp.xyz" />
+      </head>
       <body
         className={`${quicksand.variable} ${tenorSans.variable} ${lemonTuesday.variable} antialiased`}
       >
