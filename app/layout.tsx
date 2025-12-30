@@ -27,13 +27,13 @@ const lemonTuesday = Caveat({
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.koruapp.xyz"),
   title: "Koru",
-  description: "Koru - Pay for access. Earn for time.",
+  description: "Pay for access. Earn for time.",
   icons: {
     icon: "/favicon.ico",
   },
   openGraph: {
     title: "Koru",
-    description: "Koru - Pay for access. Earn for time.",
+    description: "Pay for access. Earn for time.",
     url: "https://www.koruapp.xyz",
     siteName: "Koru",
     images: [
@@ -49,9 +49,17 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Koru",
-    description: "Koru - Pay for access. Earn for time.",
-    images: ["https://www.koruapp.xyz/koruBanner.png"],
+    description: "Pay for access. Earn for time.",
+    images: [
+      {
+        url: "https://www.koruapp.xyz/koruBanner.png",
+        width: 1200,
+        height: 630,
+        alt: "Koru - Pay for access. Earn for time.",
+      },
+    ],
     creator: "@koruapp",
+    site: "@koruapp",
   },
 };
 
