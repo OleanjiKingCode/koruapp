@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
+import useSWR from "swr";
+import { useSession } from "next-auth/react";
 import {
   StatusPill,
   EmptyState,
@@ -15,9 +17,63 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { cn } from "@/lib/utils";
-import { MOCK_CHATS } from "@/lib/data";
+import { API_ROUTES } from "@/lib/constants";
 import { ChatIcon, ChevronRightIcon } from "@/components/icons";
-import type { Chat } from "@/lib/types";
+
+// Chat type from API
+interface ChatFromAPI {
+  id: string;
+  requester_id: string;
+  creator_id: string;
+  status:
+    | "pending"
+    | "active"
+    | "completed"
+    | "expired"
+    | "refunded"
+    | "cancelled";
+  amount: number;
+  slot_name: string | null;
+  deadline_at: string | null;
+  created_at: string;
+  updated_at: string;
+  last_message: string | null;
+  last_message_at: string | null;
+  // Joined user data
+  requester?: {
+    id: string;
+    name: string;
+    username: string;
+    profile_image_url: string | null;
+  };
+  creator?: {
+    id: string;
+    name: string;
+    username: string;
+    profile_image_url: string | null;
+  };
+  otherParty?: {
+    id: string;
+    name: string;
+    username: string;
+    profile_image_url: string | null;
+  };
+}
+
+// Display chat type (transformed)
+interface DisplayChat {
+  id: string;
+  otherParty: string;
+  handle: string;
+  profileImage: string | null;
+  status: "Pending" | "Active" | "Completed" | "Refunded";
+  amount: string;
+  deadline: string;
+  lastMessage: string;
+  type: "sent" | "received";
+  createdAt: string;
+  awaitingReply: "me" | "them" | null;
+}
 
 // Icons
 function SendIcon({ className }: { className?: string }) {
@@ -92,7 +148,7 @@ function ChatCard({
   chat,
   variant = "sent",
 }: {
-  chat: Chat;
+  chat: DisplayChat;
   variant?: "sent" | "received";
 }) {
   const isPaying = variant === "sent";
@@ -120,7 +176,15 @@ function ChatCard({
                   : "bg-gradient-to-br from-koru-golden/20 to-koru-lime/20"
               )}
             >
-              <AvatarGenerator seed={chat.handle} size={48} />
+              {chat.profileImage ? (
+                <img
+                  src={chat.profileImage}
+                  alt={chat.otherParty}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <AvatarGenerator seed={chat.handle} size={48} />
+              )}
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -218,7 +282,63 @@ function ChatCard({
   );
 }
 
+// Helper function to format deadline
+function formatDeadline(deadlineAt: string | null, status: string): string {
+  if (status === "completed") return "Completed";
+  if (status === "refunded") return "Expired";
+  if (!deadlineAt) return "24h left";
+
+  const deadline = new Date(deadlineAt);
+  const now = new Date();
+  const diff = deadline.getTime() - now.getTime();
+
+  if (diff <= 0) return "Expired";
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  return `${hours}h left`;
+}
+
+// Helper function to transform API chat to display chat
+function transformChat(chat: ChatFromAPI, userId: string): DisplayChat {
+  const isSent = chat.requester_id === userId;
+  const otherUser = chat.otherParty || (isSent ? chat.creator : chat.requester);
+
+  const statusMap: Record<
+    string,
+    "Pending" | "Active" | "Completed" | "Refunded"
+  > = {
+    pending: "Pending",
+    active: "Active",
+    completed: "Completed",
+    refunded: "Refunded",
+    expired: "Refunded",
+    cancelled: "Refunded",
+  };
+
+  // Determine last message text
+  let lastMessage = "Chat started";
+  if (chat.last_message) {
+    lastMessage = chat.last_message;
+  } else if (chat.slot_name) {
+    lastMessage = `Session: ${chat.slot_name}`;
+  }
+
+  return {
+    id: chat.id,
+    otherParty: otherUser?.name || "Unknown User",
+    handle: otherUser?.username || "unknown",
+    profileImage: otherUser?.profile_image_url || null,
+    status: statusMap[chat.status] || "Pending",
+    amount: `$${chat.amount.toFixed(2)}`,
+    deadline: formatDeadline(chat.deadline_at, chat.status),
+    lastMessage,
+    type: isSent ? "sent" : "received",
+    createdAt: chat.updated_at || chat.created_at,
+    awaitingReply: chat.status === "active" ? (isSent ? "them" : "me") : null,
+  };
+}
+
 export default function ChatsPage() {
+  const { data: session } = useSession();
   const [mainTab, setMainTab] = useState<"sent" | "received">("received");
   const [sentSubTab, setSentSubTab] = useState<
     "pending" | "active" | "completed"
@@ -226,16 +346,34 @@ export default function ChatsPage() {
   const [receivedSubTab, setReceivedSubTab] = useState<
     "pending" | "active" | "completed"
   >("pending");
-  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch chats from API
+  const fetcher = async (url: string) => {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Failed to fetch chats");
+    return res.json();
+  };
+
+  const { data, error, isLoading } = useSWR<{ chats: ChatFromAPI[] }>(
+    session?.user?.dbId ? API_ROUTES.USER_CHATS : null,
+    fetcher
+  );
+
+  // Transform API chats to display format
+  const allChats = useMemo(() => {
+    const userId = session?.user?.dbId;
+    if (!data?.chats || !userId) return [];
+    return data.chats.map((chat) => transformChat(chat, userId));
+  }, [data, session]);
 
   // Filter chats by type
   const sentChats = useMemo(
-    () => MOCK_CHATS.filter((c) => c.type === "sent"),
-    []
+    () => allChats.filter((c) => c.type === "sent"),
+    [allChats]
   );
   const receivedChats = useMemo(
-    () => MOCK_CHATS.filter((c) => c.type === "received"),
-    []
+    () => allChats.filter((c) => c.type === "received"),
+    [allChats]
   );
 
   // Sent sub-categories
@@ -452,7 +590,19 @@ export default function ChatsPage() {
 
                 <TabsContent value="pending" className="space-y-4">
                   <AnimatePresence mode="wait">
-                    {receivedPending.length > 0 ? (
+                    {isLoading ? (
+                      <motion.div
+                        key="loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="space-y-4"
+                      >
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <ChatCardSkeleton key={i} />
+                        ))}
+                      </motion.div>
+                    ) : receivedPending.length > 0 ? (
                       <motion.div
                         key="list"
                         initial={{ opacity: 0 }}
@@ -486,7 +636,19 @@ export default function ChatsPage() {
 
                 <TabsContent value="active" className="space-y-4">
                   <AnimatePresence mode="wait">
-                    {receivedActive.length > 0 ? (
+                    {isLoading ? (
+                      <motion.div
+                        key="loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="space-y-4"
+                      >
+                        {Array.from({ length: 2 }).map((_, i) => (
+                          <ChatCardSkeleton key={i} />
+                        ))}
+                      </motion.div>
+                    ) : receivedActive.length > 0 ? (
                       <motion.div
                         key="list"
                         initial={{ opacity: 0 }}
@@ -518,7 +680,19 @@ export default function ChatsPage() {
 
                 <TabsContent value="completed" className="space-y-4">
                   <AnimatePresence mode="wait">
-                    {receivedCompleted.length > 0 ? (
+                    {isLoading ? (
+                      <motion.div
+                        key="loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="space-y-4"
+                      >
+                        {Array.from({ length: 2 }).map((_, i) => (
+                          <ChatCardSkeleton key={i} />
+                        ))}
+                      </motion.div>
+                    ) : receivedCompleted.length > 0 ? (
                       <motion.div
                         key="list"
                         initial={{ opacity: 0 }}
@@ -592,7 +766,19 @@ export default function ChatsPage() {
 
                 <TabsContent value="pending" className="space-y-4">
                   <AnimatePresence mode="wait">
-                    {sentPending.length > 0 ? (
+                    {isLoading ? (
+                      <motion.div
+                        key="loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="space-y-4"
+                      >
+                        {Array.from({ length: 2 }).map((_, i) => (
+                          <ChatCardSkeleton key={i} />
+                        ))}
+                      </motion.div>
+                    ) : sentPending.length > 0 ? (
                       <motion.div
                         key="list"
                         initial={{ opacity: 0 }}
@@ -626,7 +812,19 @@ export default function ChatsPage() {
 
                 <TabsContent value="active" className="space-y-4">
                   <AnimatePresence mode="wait">
-                    {sentActive.length > 0 ? (
+                    {isLoading ? (
+                      <motion.div
+                        key="loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="space-y-4"
+                      >
+                        {Array.from({ length: 2 }).map((_, i) => (
+                          <ChatCardSkeleton key={i} />
+                        ))}
+                      </motion.div>
+                    ) : sentActive.length > 0 ? (
                       <motion.div
                         key="list"
                         initial={{ opacity: 0 }}
@@ -658,7 +856,19 @@ export default function ChatsPage() {
 
                 <TabsContent value="completed" className="space-y-4">
                   <AnimatePresence mode="wait">
-                    {sentCompleted.length > 0 ? (
+                    {isLoading ? (
+                      <motion.div
+                        key="loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="space-y-4"
+                      >
+                        {Array.from({ length: 2 }).map((_, i) => (
+                          <ChatCardSkeleton key={i} />
+                        ))}
+                      </motion.div>
+                    ) : sentCompleted.length > 0 ? (
                       <motion.div
                         key="list"
                         initial={{ opacity: 0 }}

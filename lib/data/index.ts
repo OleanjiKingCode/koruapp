@@ -1,8 +1,2 @@
-// Re-export all mock data
-export * from "./mock-summons";
-export * from "./mock-profiles";
+// Re-export data modules
 export * from "./featured-profiles";
-
-
-
-
