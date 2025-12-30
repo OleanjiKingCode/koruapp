@@ -20,6 +20,7 @@ export async function PATCH(request: NextRequest) {
       "email",
       "tags",
       "website",
+      "availability",
     ];
 
     // Filter out any fields that aren't allowed

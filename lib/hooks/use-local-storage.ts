@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { FONT_OPTIONS } from "@/lib/constants";
 
@@ -94,7 +94,7 @@ export function useFontPreference(defaultFont = "quicksand") {
 }
 
 /**
- * Hook for managing availability data
+ * Hook for managing availability data - fetches from and saves to database
  */
 export interface AvailabilitySlot {
   id: number;
@@ -124,7 +124,7 @@ function getDefaultSelectedDates(): string[] {
 
 const defaultSelectedDates = getDefaultSelectedDates();
 
-const DEFAULT_AVAILABILITY: AvailabilityData = {
+export const DEFAULT_AVAILABILITY: AvailabilityData = {
   timezone: "America/New_York",
   slots: [
     {
@@ -155,10 +155,72 @@ const DEFAULT_AVAILABILITY: AvailabilityData = {
 };
 
 export function useAvailability() {
-  const [availability, setAvailability] = useLocalStorage<AvailabilityData>(
-    "koru-availability",
-    DEFAULT_AVAILABILITY
-  );
+  const [availability, setAvailabilityState] = useState<AvailabilityData>(DEFAULT_AVAILABILITY);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Fetch availability from database on mount
+  useEffect(() => {
+    async function fetchAvailability() {
+      try {
+        const response = await fetch("/api/user");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.user?.availability) {
+            // Merge with defaults to ensure all required fields exist
+            const dbAvailability = data.user.availability;
+            setAvailabilityState({
+              timezone: dbAvailability.timezone || DEFAULT_AVAILABILITY.timezone,
+              slots: dbAvailability.slots?.length > 0 
+                ? dbAvailability.slots.map((slot: Partial<AvailabilitySlot>, index: number) => ({
+                    id: slot.id || index + 1,
+                    name: slot.name || "",
+                    duration: slot.duration || 30,
+                    times: slot.times || [],
+                    price: slot.price ?? 50,
+                    selectedDates: slot.selectedDates || defaultSelectedDates,
+                  }))
+                : DEFAULT_AVAILABILITY.slots,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching availability:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchAvailability();
+  }, []);
+
+  // Save availability to database
+  const setAvailability = useCallback(async (newAvailability: AvailabilityData | ((prev: AvailabilityData) => AvailabilityData)) => {
+    const valueToSave = typeof newAvailability === "function" 
+      ? newAvailability(availability) 
+      : newAvailability;
+    
+    // Update local state immediately for responsive UI
+    setAvailabilityState(valueToSave);
+    setIsSaving(true);
+
+    try {
+      const response = await fetch("/api/user/update", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ availability: valueToSave }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to save availability");
+        // Optionally revert on error
+      }
+    } catch (error) {
+      console.error("Error saving availability:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [availability]);
 
   const filledSlots = availability.slots.filter(
     (s) => s.name && s.times.length > 0
@@ -171,5 +233,7 @@ export function useAvailability() {
     setAvailability,
     filledSlots,
     hasAvailability,
+    isLoading,
+    isSaving,
   };
 }
