@@ -34,3 +34,4 @@ export function getSupabaseClient() {
 // Export type for the client
 export type SupabaseClient = ReturnType<typeof createClient>;
 
+

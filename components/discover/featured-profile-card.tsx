@@ -103,3 +103,4 @@ export function FeaturedProfileCard({
     </motion.div>
   );
 }
+

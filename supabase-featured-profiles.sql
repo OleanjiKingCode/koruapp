@@ -44,3 +44,4 @@ CREATE POLICY "Update featured_profiles" ON featured_profiles FOR UPDATE USING (
 SELECT 'featured_profiles table created!' as status;
 
 
+

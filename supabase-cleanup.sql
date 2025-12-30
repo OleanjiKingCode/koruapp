@@ -32,3 +32,4 @@ DROP TABLE IF EXISTS notifications CASCADE;
 SELECT 'Cleanup complete! Removed redundant tables.' as status;
 
 
+
