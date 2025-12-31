@@ -620,6 +620,37 @@ export async function getChatById(chatId: string): Promise<Chat | null> {
   return data[0];
 }
 
+// Create a new chat
+export async function createChat(chat: {
+  requester_id: string;
+  creator_id: string;
+  amount: number;
+  slot_name?: string | null;
+  slot_duration?: number | null;
+  deadline_at?: string | null;
+}): Promise<Chat | null> {
+  const { data, error } = await supabase
+    .from("chats")
+    .insert({
+      requester_id: chat.requester_id,
+      creator_id: chat.creator_id,
+      amount: chat.amount,
+      slot_name: chat.slot_name,
+      slot_duration: chat.slot_duration,
+      deadline_at: chat.deadline_at || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      status: "active",
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating chat:", error);
+    return null;
+  }
+
+  return data;
+}
+
 // =============================================
 // SUMMONS (APPEALS) OPERATIONS
 // =============================================

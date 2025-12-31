@@ -45,3 +45,4 @@ SELECT 'featured_profiles table created!' as status;
 
 
 
+

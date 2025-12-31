@@ -24,6 +24,7 @@ export const API_ROUTES = {
   USER_STATS: "/api/user/stats",
   PROFILE: (username: string) => `/api/profile/${username}`,
   SUMMONS_CREATE: "/api/summons",
+  CHATS_CREATE: "/api/chats",
   CHAT_MESSAGES: (chatId: string) => `/api/chat/${chatId}/messages`,
 } as const;
 

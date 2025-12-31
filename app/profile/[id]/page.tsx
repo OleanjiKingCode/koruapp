@@ -514,15 +514,42 @@ export default function ViewProfilePage() {
     notFound();
   }
 
-  const handleBook = (
+  const handleBook = async (
     slot: AvailabilitySlot,
     date: Date,
     timeSlot: string,
     receipt: { id: string }
   ) => {
-    console.log(`Booked ${profile.name} - Receipt: ${receipt.id}`);
-    setBookingModalOpen(false);
-    router.push(ROUTES.CHAT(profile.id));
+    try {
+      // Create the chat in the database
+      const response = await fetch("/api/chats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          creatorUsername: profile.handle,
+          amount: slot.price,
+          slotName: slot.name,
+          slotDuration: slot.duration,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("Failed to create chat:", error);
+        // Still close the modal, but maybe show an error
+        setBookingModalOpen(false);
+        return;
+      }
+
+      const { chat } = await response.json();
+      setBookingModalOpen(false);
+      
+      // Navigate to the new chat using the chat ID
+      router.push(ROUTES.CHAT(chat.id));
+    } catch (error) {
+      console.error("Error creating chat:", error);
+      setBookingModalOpen(false);
+    }
   };
 
   // User has availability if they have time slots OR pricing slots set up
