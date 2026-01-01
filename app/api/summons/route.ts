@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { supabase, getActiveSummons, getSummonBackers } from "@/lib/supabase";
+import { supabase, getActiveSummons } from "@/lib/supabase";
+
+interface BackerInfo {
+  user_id: string;
+  username: string;
+  name: string;
+  profile_image_url: string | null;
+  amount: number;
+  backed_at: string;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,13 +18,12 @@ export async function GET(request: NextRequest) {
     const searchQuery = searchParams.get("search");
     const limit = parseInt(searchParams.get("limit") || "50");
 
-    // Get all active summons
+    // Get all active summons (now includes backers array)
     let summons = await getActiveSummons(limit);
 
     // Filter by category if provided
     if (category && category !== "All") {
       // Note: summons table doesn't have category field, so we'll skip this for now
-      // If you want category filtering, you'd need to add it to the schema
     }
 
     // Filter by search query if provided
@@ -29,25 +37,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch backers for each summon (first 10 only)
-    const summonsWithBackers = await Promise.all(
-      summons.map(async (summon: any) => {
-        const backers = await getSummonBackers(summon.id, 10);
-        return {
-          ...summon,
-          backersData: backers.map((b: any) => ({
-            id: b.user?.id || b.user_id,
-            name: b.user?.name || "Anonymous",
-            username: b.user?.username || "user",
-            profileImageUrl: b.user?.profile_image_url || null,
-            amount: Number(b.amount),
-          })),
-        };
-      })
-    );
-
     // Fetch creator info for summons
-    const creatorIds = [...new Set(summonsWithBackers.map((s: any) => s.creator_id).filter(Boolean))];
+    const creatorIds = [...new Set(summons.map((s: any) => s.creator_id).filter(Boolean))];
     let creatorsMap: Record<string, any> = {};
     
     if (creatorIds.length > 0) {
@@ -65,11 +56,23 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform to match the frontend Summon type
-    const transformedSummons = summonsWithBackers.map((summon: any) => {
+    const transformedSummons = summons.map((summon: any) => {
       const creator = creatorsMap[summon.creator_id];
-      let backersData = summon.backersData || [];
       
-      // If no backers data but we have a creator, add creator as first backer
+      // Use the backers array directly from the summon
+      const backersFromArray: BackerInfo[] = summon.backers || [];
+      
+      // Transform backers to frontend format
+      let backersData = backersFromArray.map((b: BackerInfo) => ({
+        id: b.user_id,
+        name: b.name,
+        username: b.username,
+        profileImageUrl: b.profile_image_url,
+        amount: Number(b.amount),
+      }));
+      
+      // If no backers in array but we have a creator and backers_count > 0,
+      // add creator as first backer (for backwards compatibility with old summons)
       if (backersData.length === 0 && creator && summon.backers_count > 0) {
         backersData = [{
           id: creator.id,
@@ -82,16 +85,16 @@ export async function GET(request: NextRequest) {
       
       return {
         id: summon.id,
-        targetHandle: summon.target_username || summon.target_twitter_id,
+        targetHandle: summon.target_username || summon.target_handle || summon.target_twitter_id,
         targetName: summon.target_name || summon.target_username || "Unknown",
-        targetProfileImage: summon.target_profile_image || null,
-        totalPledged: Number(summon.pledged_amount || 0),
-        backers: summon.backers_count || 0,
+        targetProfileImage: summon.target_profile_image || summon.target_image || null,
+        totalPledged: Number(summon.total_backed || summon.pledged_amount || summon.amount || 0),
+        backers: summon.backers_count || backersData.length || 0,
         backersData,
-        category: "All", // Default category since summons table doesn't have category
-        trend: "up" as const, // Default trend - could be calculated from recent backers
-        trendValue: 0, // Default trend value - could be calculated
-        request: summon.message || "",
+        category: "All",
+        trend: "up" as const,
+        trendValue: 0,
+        request: summon.message || summon.request || "",
         createdAt: summon.created_at,
         creatorUsername: creator?.username || null,
         creatorName: creator?.name || null,
@@ -137,6 +140,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get creator info to add to backers array
+    const { data: creatorData } = await supabase
+      .from("users")
+      .select("id, username, name, profile_image_url")
+      .eq("id", session.user.dbId)
+      .single();
+
+    // Create creator as first backer
+    const creatorAsBacker: BackerInfo = {
+      user_id: session.user.dbId,
+      username: creatorData?.username || session.user.name || "user",
+      name: creatorData?.name || session.user.name || "User",
+      profile_image_url: creatorData?.profile_image_url || session.user.image || null,
+      amount: parseFloat(pledged_amount),
+      backed_at: new Date().toISOString(),
+    };
+
     // Create summon directly using Supabase client
     // Map to correct column names: summons table uses target_handle, target_image, request, amount
     const { data: summon, error: summonError } = await supabase
@@ -153,6 +173,7 @@ export async function POST(request: NextRequest) {
         status: "active",
         backers_count: 1, // Creator counts as first backer
         total_backed: parseFloat(pledged_amount), // Initialize with pledged amount
+        backers: [creatorAsBacker], // Add creator to backers array
       })
       .select()
       .single();

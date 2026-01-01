@@ -712,6 +712,7 @@ export async function getActiveSummons(limit = 50): Promise<Summon[]> {
     pledged_amount: Number(s.total_backed || s.amount || 0),
     goal_amount: null,
     backers_count: s.backers_count || 0,
+    backers: s.backers || [], // Include backers array
     status: s.status as "active" | "successful" | "expired" | "cancelled",
     expires_at: s.expires_at,
     successful_at: s.completed_at,
