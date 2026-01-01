@@ -768,6 +768,20 @@ export async function getSummonByTarget(
   return data[0];
 }
 
+// Backer type for summons (raw from DB)
+interface SummonBackerRaw {
+  id: string;
+  user_id: string;
+  amount: number;
+  created_at: string;
+  user: {
+    id: string;
+    name: string;
+    username: string;
+    profile_image_url: string | null;
+  } | null;
+}
+
 // Backer type for summons
 export interface SummonBacker {
   id: string;
@@ -779,7 +793,7 @@ export interface SummonBacker {
     name: string;
     username: string;
     profile_image_url: string | null;
-  };
+  } | null;
 }
 
 // Get backers for a summon with user info
@@ -827,10 +841,18 @@ export async function getSummonBackers(
       .limit(limit);
 
     if (sbError || !summonBackers) return [];
-    return summonBackers;
+    // Transform array user to single object
+    return (summonBackers as any[]).map((b) => ({
+      ...b,
+      user: Array.isArray(b.user) ? b.user[0] : b.user,
+    }));
   }
 
-  return data || [];
+  // Transform array user to single object
+  return (data as any[] || []).map((b) => ({
+    ...b,
+    user: Array.isArray(b.user) ? b.user[0] : b.user,
+  }));
 }
 
 // Back an existing summon
