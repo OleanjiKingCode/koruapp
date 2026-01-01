@@ -208,9 +208,23 @@ export default function SummonsPage() {
     setBackError(null);
 
     try {
-      // TODO: Implement backing API endpoint
-      // For now, show a placeholder success
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const response = await fetch(API_ROUTES.SUMMONS_BACK, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          summon_id: summonToBack.id,
+          amount: amount,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to back summon");
+      }
+
       setBackModalOpen(false);
       mutate(); // Refresh the summons list
     } catch (err) {
