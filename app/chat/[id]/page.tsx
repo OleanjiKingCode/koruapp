@@ -14,6 +14,7 @@ import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { cn } from "@/lib/utils";
 import { API_ROUTES } from "@/lib/constants";
 import { useChatMessages } from "@/lib/hooks/use-chat-messages";
+import { useUnreadCount } from "@/lib/hooks/use-unread-count";
 
 interface ChatData {
   id: string;
@@ -77,6 +78,16 @@ export default function ChatPage() {
     userId,
     enabled: !!chat && !!userId,
   });
+
+  // Unread count management
+  const { markChatAsSeen } = useUnreadCount();
+
+  // Mark this chat as seen when opened
+  useEffect(() => {
+    if (chatId && chat) {
+      markChatAsSeen(chatId);
+    }
+  }, [chatId, chat, markChatAsSeen]);
 
   // Determine other party
   const otherParty = useMemo(() => {
@@ -249,7 +260,7 @@ export default function ChatPage() {
                     )}
                   </div>
                   {/* Real-time connection indicator */}
-                  <div
+                  {/* <div
                     className={cn(
                       "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-neutral-900",
                       isConnected ? "bg-koru-lime" : "bg-neutral-400"
@@ -257,7 +268,7 @@ export default function ChatPage() {
                     title={
                       isConnected ? "Real-time connected" : "Connecting..."
                     }
-                  />
+                  /> */}
                 </div>
                 <div>
                   <h1 className="font-semibold text-neutral-900 dark:text-neutral-100">
@@ -480,17 +491,19 @@ export default function ChatPage() {
                 </p>
               </div>
 
-              <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 mb-4 border border-neutral-200 dark:border-neutral-700">
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                  Auto-Refund In
-                </p>
-                <div className="flex items-center gap-2">
-                  <ClockIcon className="w-5 h-5 text-koru-golden" />
-                  <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                    {deadline}
+              {chat.amount > 0 && (
+                <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 mb-4 border border-neutral-200 dark:border-neutral-700">
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
+                    Auto-Refund In
                   </p>
+                  <div className="flex items-center gap-2">
+                    <ClockIcon className="w-5 h-5 text-koru-golden" />
+                    <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                      {deadline}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {(chat.slot_name || bookingInfo?.slotName) && (
                 <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 mb-4 border border-neutral-200 dark:border-neutral-700">
@@ -549,19 +562,32 @@ export default function ChatPage() {
                 </div>
               </div>
 
-              <div className="bg-koru-lime/10 rounded-xl p-4 border border-koru-lime/30">
-                <div className="flex items-start gap-3">
-                  <InfoIcon className="w-5 h-5 text-koru-lime flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                    If {otherParty.name.split(" ")[0]} doesn&apos;t reply within
-                    24 hours, your payment will be{" "}
-                    <span className="text-koru-lime font-medium">
-                      automatically refunded
-                    </span>{" "}
-                    to your wallet.
-                  </p>
+              {chat.amount > 0 ? (
+                <div className="bg-koru-lime/10 rounded-xl p-4 border border-koru-lime/30">
+                  <div className="flex items-start gap-3">
+                    <InfoIcon className="w-5 h-5 text-koru-lime flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                      If {otherParty.name.split(" ")[0]} doesn&apos;t reply
+                      within 24 hours, your payment will be{" "}
+                      <span className="text-koru-lime font-medium">
+                        automatically refunded
+                      </span>{" "}
+                      to your wallet.
+                    </p>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="bg-koru-purple/10 rounded-xl p-4 border border-koru-purple/30">
+                  <div className="flex items-start gap-3">
+                    <InfoIcon className="w-5 h-5 text-koru-purple flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                      This is a free session with{" "}
+                      {otherParty.name.split(" ")[0]}. Send a message to start
+                      the conversation!
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </aside>
         </div>

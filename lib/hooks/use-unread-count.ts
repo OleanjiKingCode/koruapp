@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import useSWR from "swr";
+import { useMemo, useCallback, useEffect } from "react";
+import useSWR, { mutate as globalMutate } from "swr";
 import { useSession } from "next-auth/react";
 import { API_ROUTES } from "@/lib/constants";
 
@@ -20,9 +20,67 @@ interface ChatFromAPI {
   status: string;
   amount: number;
   created_at: string;
+  updated_at: string;
 }
 
-export function useUnreadCount(): UnreadCounts {
+const SEEN_CHATS_KEY = "koru-seen-chats";
+
+// Get seen chat IDs from localStorage
+function getSeenChatIds(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const stored = localStorage.getItem(SEEN_CHATS_KEY);
+    if (stored) {
+      const data = JSON.parse(stored);
+      return new Set(data.ids || []);
+    }
+  } catch {
+    // Ignore errors
+  }
+  return new Set();
+}
+
+// Mark chat IDs as seen in localStorage
+function markChatsAsSeen(chatIds: string[]) {
+  if (typeof window === "undefined") return;
+  try {
+    const existing = getSeenChatIds();
+    chatIds.forEach((id) => existing.add(id));
+    localStorage.setItem(
+      SEEN_CHATS_KEY,
+      JSON.stringify({
+        ids: Array.from(existing),
+        updatedAt: new Date().toISOString(),
+      })
+    );
+  } catch {
+    // Ignore errors
+  }
+}
+
+// Clear specific chat from seen (when it's updated and needs attention again)
+function clearSeenChat(chatId: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const existing = getSeenChatIds();
+    existing.delete(chatId);
+    localStorage.setItem(
+      SEEN_CHATS_KEY,
+      JSON.stringify({
+        ids: Array.from(existing),
+        updatedAt: new Date().toISOString(),
+      })
+    );
+  } catch {
+    // Ignore errors
+  }
+}
+
+export function useUnreadCount(): UnreadCounts & {
+  markAllAsSeen: () => void;
+  markChatAsSeen: (chatId: string) => void;
+  refresh: () => void;
+} {
   const { data: session } = useSession();
 
   const fetcher = async (url: string) => {
@@ -31,12 +89,12 @@ export function useUnreadCount(): UnreadCounts {
     return res.json();
   };
 
-  const { data } = useSWR<{ chats: ChatFromAPI[] }>(
+  const { data, mutate } = useSWR<{ chats: ChatFromAPI[] }>(
     session?.user?.dbId ? API_ROUTES.USER_CHATS : null,
     fetcher,
     {
-      revalidateOnFocus: false,
-      dedupingInterval: 60000, // Cache for 1 minute
+      revalidateOnFocus: true, // Revalidate when user comes back to tab
+      dedupingInterval: 30000, // Cache for 30 seconds
     }
   );
 
@@ -52,28 +110,72 @@ export function useUnreadCount(): UnreadCounts {
       };
     }
 
-    // Count pending/active received chats (someone wants to chat with you)
+    const seenChatIds = getSeenChatIds();
+
+    // Count pending/active received chats that haven't been seen
     // These are chats where you are the CREATOR (person being requested)
-    const inboxCount = data.chats.filter(
-      (c) => c.creator_id === userId && (c.status === "pending" || c.status === "active")
+    const inboxChats = data.chats.filter(
+      (c) =>
+        c.creator_id === userId &&
+        (c.status === "pending" || c.status === "active")
+    );
+
+    // Only count unseen chats
+    const unseenInboxCount = inboxChats.filter(
+      (c) => !seenChatIds.has(c.id)
     ).length;
 
     // Sent count is for reference only, not shown in badge
-    const sentCount = data.chats.filter(
-      (c) => c.requester_id === userId
-    ).length;
+    const sentCount = data.chats.filter((c) => c.requester_id === userId).length;
 
     return {
-      // Badge only shows inbox (chats where people are requesting YOU)
-      chats: inboxCount,
-      inbox: inboxCount,
+      // Badge only shows unseen inbox chats
+      chats: unseenInboxCount,
+      inbox: unseenInboxCount,
       sent: sentCount,
-      notifications: 0, // Real notifications would come from a separate API
+      notifications: 0,
       appeals: 0,
     };
   }, [data, session]);
 
-  return counts;
+  // Mark all inbox chats as seen
+  const markAllAsSeen = useCallback(() => {
+    const userId = session?.user?.dbId;
+    if (!data?.chats || !userId) return;
+
+    const inboxChatIds = data.chats
+      .filter(
+        (c) =>
+          c.creator_id === userId &&
+          (c.status === "pending" || c.status === "active")
+      )
+      .map((c) => c.id);
+
+    markChatsAsSeen(inboxChatIds);
+    // Trigger re-render by mutating
+    mutate();
+  }, [data, session, mutate]);
+
+  // Mark a specific chat as seen
+  const markChatAsSeen = useCallback(
+    (chatId: string) => {
+      markChatsAsSeen([chatId]);
+      mutate();
+    },
+    [mutate]
+  );
+
+  // Refresh the data
+  const refresh = useCallback(() => {
+    mutate();
+  }, [mutate]);
+
+  return {
+    ...counts,
+    markAllAsSeen,
+    markChatAsSeen,
+    refresh,
+  };
 }
 
 // Helper to format count for display (e.g., 99+)
@@ -81,4 +183,12 @@ export function formatUnreadCount(count: number): string {
   if (count === 0) return "";
   if (count > 99) return "99+";
   return count.toString();
+}
+
+// Export for use in other components
+export { markChatsAsSeen, getSeenChatIds, clearSeenChat };
+
+// Global mutate function for refreshing from anywhere
+export function refreshUnreadCounts() {
+  globalMutate(API_ROUTES.USER_CHATS);
 }

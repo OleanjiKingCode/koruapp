@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import useSWR from "swr";
 import { useSession } from "next-auth/react";
+import { useUnreadCount } from "@/lib/hooks/use-unread-count";
 import {
   StatusPill,
   EmptyState,
@@ -359,23 +360,33 @@ export default function ChatsPage() {
     fetcher
   );
 
+  // Unread count management
+  const { markAllAsSeen } = useUnreadCount();
+
+  // Mark all inbox chats as seen when data is loaded
+  useEffect(() => {
+    if (!isLoading && data?.chats) {
+      markAllAsSeen();
+    }
+  }, [isLoading, data, markAllAsSeen]);
+
   // Fetch featured profiles for empty state suggestions
-  const { data: featuredData } = useSWR<{ profiles: Array<{
-    id: string;
-    username: string;
-    name: string;
-    profile_image_url: string | null;
-    category: string;
-  }> }>(
-    API_ROUTES.DISCOVER_FEATURED + "?limit=3",
-    fetcher,
-    { revalidateOnFocus: false }
-  );
+  const { data: featuredData } = useSWR<{
+    profiles: Array<{
+      id: string;
+      username: string;
+      name: string;
+      profile_image_url: string | null;
+      category: string;
+    }>;
+  }>(API_ROUTES.DISCOVER_FEATURED + "?limit=3", fetcher, {
+    revalidateOnFocus: false,
+  });
 
   // Transform featured profiles for empty state
   const suggestedProfiles = useMemo(() => {
     if (!featuredData?.profiles) return [];
-    return featuredData.profiles.slice(0, 3).map(p => ({
+    return featuredData.profiles.slice(0, 3).map((p) => ({
       id: p.id,
       name: p.name,
       handle: p.username,
