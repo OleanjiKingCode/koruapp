@@ -52,23 +52,22 @@ export function useUnreadCount(): UnreadCounts {
       };
     }
 
-    // Count pending received chats (you need to respond)
-    const inboxPending = data.chats.filter(
-      (c) => c.creator_id === userId && c.status === "pending"
+    // Count pending/active received chats (someone wants to chat with you)
+    // These are chats where you are the CREATOR (person being requested)
+    const inboxCount = data.chats.filter(
+      (c) => c.creator_id === userId && (c.status === "pending" || c.status === "active")
     ).length;
 
-    // Count active chats where user needs to respond
-    // For sent chats: active means they responded, you need to respond
-    const sentNeedingReply = data.chats.filter(
-      (c) => c.requester_id === userId && c.status === "active"
+    // Sent count is for reference only, not shown in badge
+    const sentCount = data.chats.filter(
+      (c) => c.requester_id === userId
     ).length;
-
-    const totalChats = inboxPending + sentNeedingReply;
 
     return {
-      chats: totalChats,
-      inbox: inboxPending,
-      sent: sentNeedingReply,
+      // Badge only shows inbox (chats where people are requesting YOU)
+      chats: inboxCount,
+      inbox: inboxCount,
+      sent: sentCount,
       notifications: 0, // Real notifications would come from a separate API
       appeals: 0,
     };

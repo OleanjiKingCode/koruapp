@@ -410,7 +410,7 @@ export default function ChatPage() {
             </div>
 
             {/* Input */}
-            <div className="sticky bottom-0 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border-t border-neutral-200/50 dark:border-neutral-800/50 p-4">
+            <div className="sticky bottom-0 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border-t border-neutral-200/50 dark:border-neutral-800/50 p-4 pb-24 sm:pb-4">
               {canSendMessages ? (
                 <form
                   onSubmit={handleSend}
@@ -564,32 +564,6 @@ export default function ChatPage() {
               </div>
             </div>
           </aside>
-        </div>
-
-        {/* Mobile Summary */}
-        <div className="lg:hidden fixed bottom-20 left-4 right-4 pointer-events-none">
-          <motion.div
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl rounded-2xl shadow-xl border border-neutral-200/50 dark:border-neutral-800/50 p-4 pointer-events-auto"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  Paid
-                </p>
-                <p className="font-semibold text-neutral-900 dark:text-neutral-100">
-                  {chat.amount === 0
-                    ? "Free"
-                    : `$${bookingInfo?.price || chat.amount}`}
-                </p>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-neutral-500">
-                <ClockIcon className="w-4 h-4" />
-                <span>Refund: {deadline}</span>
-              </div>
-            </div>
-          </motion.div>
         </div>
       </div>
     </AuthGuard>

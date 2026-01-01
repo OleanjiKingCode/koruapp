@@ -359,6 +359,31 @@ export default function ChatsPage() {
     fetcher
   );
 
+  // Fetch featured profiles for empty state suggestions
+  const { data: featuredData } = useSWR<{ profiles: Array<{
+    id: string;
+    username: string;
+    name: string;
+    profile_image_url: string | null;
+    category: string;
+  }> }>(
+    API_ROUTES.DISCOVER_FEATURED + "?limit=3",
+    fetcher,
+    { revalidateOnFocus: false }
+  );
+
+  // Transform featured profiles for empty state
+  const suggestedProfiles = useMemo(() => {
+    if (!featuredData?.profiles) return [];
+    return featuredData.profiles.slice(0, 3).map(p => ({
+      id: p.id,
+      name: p.name,
+      handle: p.username,
+      category: p.category,
+      profileImageUrl: p.profile_image_url,
+    }));
+  }, [featuredData]);
+
   // Transform API chats to display format
   const allChats = useMemo(() => {
     const userId = session?.user?.dbId;
@@ -802,9 +827,9 @@ export default function ChatsPage() {
                         icon="search"
                         title="No pending requests"
                         description="Start a conversation by finding someone on the Discover page."
-                        showSuggestions
                         ctaText="Discover People"
                         ctaHref="/discover"
+                        suggestedProfiles={suggestedProfiles}
                       />
                     )}
                   </AnimatePresence>

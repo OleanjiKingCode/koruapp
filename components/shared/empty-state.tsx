@@ -10,7 +10,8 @@ interface SuggestedProfile {
   id: string;
   name: string;
   handle: string;
-  category: string;
+  category?: string;
+  profileImageUrl?: string | null;
 }
 
 interface EmptyStateProps {
@@ -19,22 +20,13 @@ interface EmptyStateProps {
   icon?: "search" | "compass" | "beacon" | "error" | "chat" | "inbox" | "wallet";
   action?: React.ReactNode;
   className?: string;
-  // New props for enhanced empty states
-  showSuggestions?: boolean;
-  suggestedProfiles?: SuggestedProfile[];
   variant?: "default" | "compact" | "card";
   ctaText?: string;
   ctaHref?: string;
   secondaryCtaText?: string;
   secondaryCtaHref?: string;
+  suggestedProfiles?: SuggestedProfile[];
 }
-
-// Default suggested profiles for different contexts
-const DEFAULT_SUGGESTED_PROFILES: SuggestedProfile[] = [
-  { id: "1", name: "Vitalik Buterin", handle: "VitalikButerin", category: "Web3" },
-  { id: "4", name: "Stani Kulechov", handle: "StaniKulechov", category: "Web3" },
-  { id: "6", name: "Sam Altman", handle: "sama", category: "Tech" },
-];
 
 export function EmptyState({
   title,
@@ -42,13 +34,12 @@ export function EmptyState({
   icon = "search",
   action,
   className,
-  showSuggestions = false,
-  suggestedProfiles = DEFAULT_SUGGESTED_PROFILES,
   variant = "default",
   ctaText,
   ctaHref,
   secondaryCtaText,
   secondaryCtaHref,
+  suggestedProfiles,
 }: EmptyStateProps) {
   if (variant === "compact") {
     return (
@@ -176,8 +167,8 @@ export function EmptyState({
         </div>
       )}
 
-      {/* Suggested Profiles */}
-      {showSuggestions && suggestedProfiles.length > 0 && (
+      {/* Suggested Profiles - only shown if provided */}
+      {suggestedProfiles && suggestedProfiles.length > 0 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -195,10 +186,18 @@ export function EmptyState({
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4 + index * 0.1 }}
               >
-                <Link href={`/profile/${profile.id}`}>
+                <Link href={`/profile/${profile.handle}`}>
                   <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer group">
                     <div className="w-10 h-10 rounded-full overflow-hidden">
-                      <AvatarGenerator seed={profile.handle} size={40} />
+                      {profile.profileImageUrl ? (
+                        <img
+                          src={profile.profileImageUrl}
+                          alt={profile.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <AvatarGenerator seed={profile.handle} size={40} />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0 text-left">
                       <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate group-hover:text-koru-purple transition-colors">
@@ -208,9 +207,11 @@ export function EmptyState({
                         @{profile.handle}
                       </p>
                     </div>
-                    <span className="text-xs px-2 py-1 rounded-full bg-koru-purple/10 text-koru-purple">
-                      {profile.category}
-                    </span>
+                    {profile.category && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-koru-purple/10 text-koru-purple">
+                        {profile.category}
+                      </span>
+                    )}
                     <ChevronRightIcon className="w-4 h-4 text-neutral-400 group-hover:text-koru-purple group-hover:translate-x-1 transition-all" />
                   </div>
                 </Link>
@@ -220,6 +221,22 @@ export function EmptyState({
         </motion.div>
       )}
     </motion.div>
+  );
+}
+
+function ChevronRightIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m9 18 6-6-6-6" />
+    </svg>
   );
 }
 
@@ -349,20 +366,4 @@ function KayaIcon({ type, className }: { type: string; className?: string }) {
     default:
       return null;
   }
-}
-
-function ChevronRightIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="m9 18 6-6-6-6" />
-    </svg>
-  );
 }

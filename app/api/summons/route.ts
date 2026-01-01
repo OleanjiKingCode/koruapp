@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { supabase, getActiveSummons } from "@/lib/supabase";
+import { supabase, getActiveSummons, getSummonBackers } from "@/lib/supabase";
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,13 +29,32 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Fetch backers for each summon (first 10 only)
+    const summonsWithBackers = await Promise.all(
+      summons.map(async (summon: any) => {
+        const backers = await getSummonBackers(summon.id, 10);
+        return {
+          ...summon,
+          backersData: backers.map((b: any) => ({
+            id: b.user?.id || b.user_id,
+            name: b.user?.name || "Anonymous",
+            username: b.user?.username || "user",
+            profileImageUrl: b.user?.profile_image_url || null,
+            amount: Number(b.amount),
+          })),
+        };
+      })
+    );
+
     // Transform to match the frontend Summon type
-    const transformedSummons = summons.map((summon) => ({
+    const transformedSummons = summonsWithBackers.map((summon: any) => ({
       id: summon.id,
       targetHandle: summon.target_username || summon.target_twitter_id,
       targetName: summon.target_name || summon.target_username || "Unknown",
+      targetProfileImage: summon.target_profile_image || null,
       totalPledged: Number(summon.pledged_amount || 0),
       backers: summon.backers_count || 0,
+      backersData: summon.backersData || [],
       category: "All", // Default category since summons table doesn't have category
       trend: "up" as const, // Default trend - could be calculated from recent backers
       trendValue: 0, // Default trend value - could be calculated

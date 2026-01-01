@@ -884,7 +884,15 @@ function TreemapView({
                 <div className="flex items-center gap-1 sm:gap-2 min-w-0">
                   {(isLarge || isMedium) && (
                     <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md overflow-hidden bg-white/20 shrink-0">
-                      <AvatarGenerator seed={summon.targetHandle} size={24} />
+                      {summon.targetProfileImage ? (
+                        <img
+                          src={summon.targetProfileImage}
+                          alt={summon.targetName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <AvatarGenerator seed={summon.targetHandle} size={24} />
+                      )}
                     </div>
                   )}
                   <span
@@ -1013,7 +1021,15 @@ function ListView({
             </div>
 
             {/* Avatar */}
-            <AvatarGenerator seed={summon.targetHandle} size={48} />
+            {summon.targetProfileImage ? (
+              <img
+                src={summon.targetProfileImage}
+                alt={summon.targetName}
+                className="w-12 h-12 rounded-full object-cover ring-2 ring-white dark:ring-neutral-800"
+              />
+            ) : (
+              <AvatarGenerator seed={summon.targetHandle} size={48} />
+            )}
 
             {/* Info */}
             <div className="flex-1 min-w-0">
@@ -1029,6 +1045,38 @@ function ListView({
                 @{summon.targetHandle} · {summon.request}
               </p>
             </div>
+
+            {/* Backers Avatars */}
+            {summon.backersData && summon.backersData.length > 0 && (
+              <div className="hidden sm:flex items-center shrink-0">
+                <div className="flex -space-x-2">
+                  {summon.backersData.slice(0, 5).map((backer, idx) => (
+                    <div
+                      key={backer.id || idx}
+                      className="w-8 h-8 rounded-full ring-2 ring-white dark:ring-neutral-900 overflow-hidden"
+                      title={backer.name}
+                    >
+                      {backer.profileImageUrl ? (
+                        <img
+                          src={backer.profileImageUrl}
+                          alt={backer.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <AvatarGenerator seed={backer.username} size={32} />
+                      )}
+                    </div>
+                  ))}
+                  {summon.backers > 5 && (
+                    <div className="w-8 h-8 rounded-full ring-2 ring-white dark:ring-neutral-900 bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center">
+                      <span className="text-[10px] font-bold text-neutral-600 dark:text-neutral-300">
+                        +{summon.backers - 5}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Stats */}
             <div className="flex items-center gap-4 shrink-0">

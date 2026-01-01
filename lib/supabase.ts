@@ -768,6 +768,71 @@ export async function getSummonByTarget(
   return data[0];
 }
 
+// Backer type for summons
+export interface SummonBacker {
+  id: string;
+  user_id: string;
+  amount: number;
+  created_at: string;
+  user?: {
+    id: string;
+    name: string;
+    username: string;
+    profile_image_url: string | null;
+  };
+}
+
+// Get backers for a summon with user info
+export async function getSummonBackers(
+  summonId: string,
+  limit: number = 10
+): Promise<SummonBacker[]> {
+  // Try appeal_backers first, then summon_backers
+  const { data, error } = await supabase
+    .from("appeal_backers")
+    .select(`
+      id,
+      user_id,
+      amount,
+      created_at,
+      user:users!user_id (
+        id,
+        name,
+        username,
+        profile_image_url
+      )
+    `)
+    .eq("appeal_id", summonId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    // Try summon_backers table as fallback
+    const { data: summonBackers, error: sbError } = await supabase
+      .from("summon_backers")
+      .select(`
+        id,
+        user_id,
+        amount,
+        created_at,
+        user:users!user_id (
+          id,
+          name,
+          username,
+          profile_image_url
+        )
+      `)
+      .eq("summon_id", summonId)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (sbError || !summonBackers) return [];
+    return summonBackers;
+  }
+
+  return data || [];
+}
+
 // Back an existing summon
 export async function backSummon(
   summonId: string,

@@ -1,6 +1,14 @@
 // Summon-related types
 export type TrendDirection = "up" | "down";
 
+export interface SummonBacker {
+  id: string;
+  name: string;
+  username: string;
+  profileImageUrl: string | null;
+  amount: number;
+}
+
 export interface Summon {
   id: string;
   targetHandle: string;
@@ -8,6 +16,7 @@ export interface Summon {
   targetProfileImage?: string | null;
   totalPledged: number;
   backers: number;
+  backersData?: SummonBacker[]; // First 10 backers for display
   category: string;
   trend: TrendDirection;
   trendValue: number;
