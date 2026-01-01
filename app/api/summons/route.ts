@@ -46,21 +46,58 @@ export async function GET(request: NextRequest) {
       })
     );
 
+    // Fetch creator info for summons
+    const creatorIds = [...new Set(summonsWithBackers.map((s: any) => s.creator_id).filter(Boolean))];
+    let creatorsMap: Record<string, any> = {};
+    
+    if (creatorIds.length > 0) {
+      const { data: creators } = await supabase
+        .from("users")
+        .select("id, name, username, profile_image_url")
+        .in("id", creatorIds);
+      
+      if (creators) {
+        creatorsMap = creators.reduce((acc: Record<string, any>, c: any) => {
+          acc[c.id] = c;
+          return acc;
+        }, {});
+      }
+    }
+
     // Transform to match the frontend Summon type
-    const transformedSummons = summonsWithBackers.map((summon: any) => ({
-      id: summon.id,
-      targetHandle: summon.target_username || summon.target_twitter_id,
-      targetName: summon.target_name || summon.target_username || "Unknown",
-      targetProfileImage: summon.target_profile_image || null,
-      totalPledged: Number(summon.pledged_amount || 0),
-      backers: summon.backers_count || 0,
-      backersData: summon.backersData || [],
-      category: "All", // Default category since summons table doesn't have category
-      trend: "up" as const, // Default trend - could be calculated from recent backers
-      trendValue: 0, // Default trend value - could be calculated
-      request: summon.message || "",
-      createdAt: summon.created_at,
-    }));
+    const transformedSummons = summonsWithBackers.map((summon: any) => {
+      const creator = creatorsMap[summon.creator_id];
+      let backersData = summon.backersData || [];
+      
+      // If no backers data but we have a creator, add creator as first backer
+      if (backersData.length === 0 && creator && summon.backers_count > 0) {
+        backersData = [{
+          id: creator.id,
+          name: creator.name,
+          username: creator.username,
+          profileImageUrl: creator.profile_image_url,
+          amount: Number(summon.pledged_amount || summon.amount || 0),
+        }];
+      }
+      
+      return {
+        id: summon.id,
+        targetHandle: summon.target_username || summon.target_twitter_id,
+        targetName: summon.target_name || summon.target_username || "Unknown",
+        targetProfileImage: summon.target_profile_image || null,
+        totalPledged: Number(summon.pledged_amount || 0),
+        backers: summon.backers_count || 0,
+        backersData,
+        category: "All", // Default category since summons table doesn't have category
+        trend: "up" as const, // Default trend - could be calculated from recent backers
+        trendValue: 0, // Default trend value - could be calculated
+        request: summon.message || "",
+        createdAt: summon.created_at,
+        creatorUsername: creator?.username || null,
+        creatorName: creator?.name || null,
+        creatorProfileImage: creator?.profile_image_url || null,
+      };
+    });
 
     return NextResponse.json({ summons: transformedSummons });
   } catch (error) {

@@ -238,12 +238,6 @@ export function FloatingNav() {
                             {formatUnreadCount(unreadCounts.chats)}
                           </span>
                         )}
-                        {/* Lock indicator for protected routes when not authenticated */}
-                        {isProtected && !isAuthenticated && !isActive && (
-                          <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 flex items-center justify-center text-[8px] text-white bg-neutral-500 rounded-full">
-                            🔒
-                          </span>
-                        )}
                       </motion.button>
                     </Link>
                   );
@@ -367,10 +361,6 @@ export function FloatingNav() {
                         <span className="min-w-[20px] h-5 flex items-center justify-center px-1.5 text-[10px] font-bold text-white bg-red-500 rounded-full ml-1">
                           {formatUnreadCount(unreadCounts.chats)}
                         </span>
-                      )}
-                      {/* Lock indicator for protected routes when not authenticated */}
-                      {isProtected && !isAuthenticated && (
-                        <span className="text-[10px] ml-1">🔒</span>
                       )}
                     </motion.button>
                   </Link>

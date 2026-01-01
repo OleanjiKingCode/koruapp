@@ -11,6 +11,7 @@ import {
   TreemapSkeleton,
 } from "@/components/shared";
 import { ShareModal } from "@/components/share";
+import { LoginModal } from "@/components/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -112,6 +113,16 @@ export default function SummonsPage() {
   // Share modal state
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [selectedSummon, setSelectedSummon] = useState<Summon | null>(null);
+  
+  // Back modal state
+  const [backModalOpen, setBackModalOpen] = useState(false);
+  const [summonToBack, setSummonToBack] = useState<Summon | null>(null);
+  const [backAmount, setBackAmount] = useState("5");
+  const [isBackingSubmitting, setIsBackingSubmitting] = useState(false);
+  const [backError, setBackError] = useState<string | null>(null);
+  
+  // Login modal state
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   // Form state
   const [step, setStep] = useState<"info" | "form">("info");
@@ -168,6 +179,45 @@ export default function SummonsPage() {
   const handleShareSummon = (summon: Summon) => {
     setSelectedSummon(summon);
     setShareModalOpen(true);
+  };
+
+  const handleBackSummon = (summon: Summon) => {
+    if (!session?.user?.id) {
+      setShowLoginModal(true);
+      return;
+    }
+    setSummonToBack(summon);
+    setBackAmount("5");
+    setBackError(null);
+    setBackModalOpen(true);
+  };
+
+  const handleSubmitBacking = async () => {
+    if (!session?.user?.dbId || !summonToBack) {
+      setBackError("You must be logged in to back a summon");
+      return;
+    }
+
+    const amount = parseFloat(backAmount);
+    if (isNaN(amount) || amount < 1) {
+      setBackError("Amount must be at least $1");
+      return;
+    }
+
+    setIsBackingSubmitting(true);
+    setBackError(null);
+
+    try {
+      // TODO: Implement backing API endpoint
+      // For now, show a placeholder success
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setBackModalOpen(false);
+      mutate(); // Refresh the summons list
+    } catch (err) {
+      setBackError(err instanceof Error ? err.message : "Failed to back summon");
+    } finally {
+      setIsBackingSubmitting(false);
+    }
   };
 
   const filteredSummons = useMemo(() => {
@@ -779,6 +829,8 @@ export default function SummonsPage() {
               key="list"
               summons={filteredSummons}
               onShare={handleShareSummon}
+              onBack={handleBackSummon}
+              currentUserId={session?.user?.dbId}
             />
           )}
         </AnimatePresence>
@@ -793,6 +845,106 @@ export default function SummonsPage() {
           summon={selectedSummon}
         />
       )}
+
+      {/* Back Modal */}
+      <AnimatePresence>
+        {backModalOpen && summonToBack && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
+              onClick={() => setBackModalOpen(false)}
+            />
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                className="w-full max-w-sm pointer-events-auto"
+              >
+                <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden">
+                  <div className="p-5">
+                    <div className="flex items-center gap-3 mb-4">
+                      {summonToBack.targetProfileImage ? (
+                        <img
+                          src={summonToBack.targetProfileImage}
+                          alt={summonToBack.targetName}
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                      ) : (
+                        <AvatarGenerator seed={summonToBack.targetHandle} size={48} />
+                      )}
+                      <div>
+                        <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">
+                          Back this Summon
+                        </h3>
+                        <p className="text-sm text-neutral-500">
+                          @{summonToBack.targetHandle}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1 block">
+                          Your pledge amount
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500">
+                            $
+                          </span>
+                          <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={backAmount}
+                            onChange={(e) => setBackAmount(e.target.value)}
+                            className="w-full h-10 pl-7 pr-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-koru-purple/50"
+                          />
+                        </div>
+                      </div>
+
+                      {backError && (
+                        <p className="text-sm text-red-500">{backError}</p>
+                      )}
+
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => setBackModalOpen(false)}
+                          disabled={isBackingSubmitting}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          className="flex-1 bg-koru-purple hover:bg-koru-purple/90"
+                          onClick={handleSubmitBacking}
+                          disabled={isBackingSubmitting}
+                        >
+                          {isBackingSubmitting ? "Backing..." : `Back $${backAmount}`}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Login Modal */}
+      <LoginModal
+        open={showLoginModal}
+        onOpenChange={setShowLoginModal}
+        callbackUrl="/summons"
+        title="Sign in to back"
+        description="Connect your X account to back this summon"
+      />
     </div>
   );
 }
@@ -950,21 +1102,52 @@ function TreemapView({
             {/* Hover overlay */}
             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
               <div className="text-center text-white">
-                <p className=" text-sm sm:text-base mb-0.5 truncate">
+                <p className="text-sm sm:text-base mb-0.5 truncate">
                   {summon.targetName}
                 </p>
-                <p className="text-xs text-white/80  line-clamp-2">
+                <p className="text-xs text-white/80 line-clamp-2">
                   {summon.request}
                 </p>
-                <p className="text-[10px] text-white/60 mt-1">
-                  {summon.backers} backers · {rect.percentage.toFixed(2)}%
-                </p>
+                {/* Backers avatars */}
+                <div className="flex items-center justify-center gap-1 mt-2">
+                  <div className="flex -space-x-1.5">
+                    {summon.backersData && summon.backersData.length > 0 ? (
+                      summon.backersData.slice(0, 3).map((backer, idx) => (
+                        <div
+                          key={backer.id || idx}
+                          className="w-5 h-5 rounded-full ring-1 ring-white/50 overflow-hidden"
+                          title={backer.name}
+                        >
+                          {backer.profileImageUrl ? (
+                            <img
+                              src={backer.profileImageUrl}
+                              alt={backer.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <AvatarGenerator seed={backer.username} size={20} />
+                          )}
+                        </div>
+                      ))
+                    ) : null}
+                    {summon.backers > 3 && (
+                      <div className="w-5 h-5 rounded-full ring-1 ring-white/50 bg-white/20 flex items-center justify-center">
+                        <span className="text-[8px] font-bold text-white">
+                          +{summon.backers - 3}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-white/60">
+                    {summon.backers} backer{summon.backers !== 1 ? 's' : ''} · {rect.percentage.toFixed(2)}%
+                  </span>
+                </div>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onShare(summon);
                   }}
-                  className="mt-2 px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs  font-medium transition-colors flex items-center gap-1 mx-auto"
+                  className="mt-2 px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-medium transition-colors flex items-center gap-1 mx-auto"
                 >
                   <ShareIcon className="w-3 h-3" />
                   Share
@@ -982,10 +1165,19 @@ function TreemapView({
 function ListView({
   summons,
   onShare,
+  onBack,
+  currentUserId,
 }: {
   summons: Summon[];
   onShare: (summon: Summon) => void;
+  onBack: (summon: Summon) => void;
+  currentUserId?: string;
 }) {
+  // Check if user has already backed a summon
+  const hasUserBacked = (summon: Summon) => {
+    if (!currentUserId || !summon.backersData) return false;
+    return summon.backersData.some((backer) => backer.id === currentUserId);
+  };
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -1046,75 +1238,93 @@ function ListView({
               </p>
             </div>
 
-            {/* Backers Avatars */}
-            {summon.backersData && summon.backersData.length > 0 && (
-              <div className="hidden sm:flex items-center shrink-0">
-                <div className="flex -space-x-2">
-                  {summon.backersData.slice(0, 5).map((backer, idx) => (
-                    <div
-                      key={backer.id || idx}
-                      className="w-8 h-8 rounded-full ring-2 ring-white dark:ring-neutral-900 overflow-hidden"
-                      title={backer.name}
-                    >
-                      {backer.profileImageUrl ? (
-                        <img
-                          src={backer.profileImageUrl}
-                          alt={backer.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <AvatarGenerator seed={backer.username} size={32} />
-                      )}
-                    </div>
-                  ))}
-                  {summon.backers > 5 && (
-                    <div className="w-8 h-8 rounded-full ring-2 ring-white dark:ring-neutral-900 bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center">
-                      <span className="text-[10px] font-bold text-neutral-600 dark:text-neutral-300">
-                        +{summon.backers - 5}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Stats */}
-            <div className="flex items-center gap-4 shrink-0">
-              <div className="text-right">
-                <p className="text-lg  text-koru-golden">
+            {/* Stats - Two rows */}
+            <div className="flex flex-col items-end gap-1.5 shrink-0">
+              {/* First row: Amount, Trend, Back, Share */}
+              <div className="flex items-center gap-2 sm:gap-3">
+                <p className="text-lg text-koru-golden">
                   ${(summon.totalPledged / 1000).toFixed(1)}K
                 </p>
-                <p className="text-xs text-neutral-500">
-                  {summon.backers} backers
-                </p>
-              </div>
-              <div
-                className={cn(
-                  "flex items-center gap-1 px-2 py-1 rounded-lg text-sm ",
-                  summon.trend === "up"
-                    ? "bg-emerald-500/10 text-emerald-500"
-                    : "bg-rose-500/10 text-rose-500"
+                <div
+                  className={cn(
+                    "flex items-center gap-1 px-2 py-1 rounded-lg text-sm",
+                    summon.trend === "up"
+                      ? "bg-emerald-500/10 text-emerald-500"
+                      : "bg-rose-500/10 text-rose-500"
+                  )}
+                >
+                  {summon.trend === "up" ? (
+                    <TrendUpIcon className="w-4 h-4" />
+                  ) : (
+                    <TrendDownIcon className="w-4 h-4" />
+                  )}
+                  {summon.trendValue.toFixed(2)}%
+                </div>
+
+                {/* Back Button - show if user hasn't backed yet */}
+                {!hasUserBacked(summon) && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onBack(summon);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-koru-purple/10 hover:bg-koru-purple/20 text-koru-purple text-xs font-medium transition-all"
+                    title="Back this summon"
+                  >
+                    Back
+                  </button>
                 )}
-              >
-                {summon.trend === "up" ? (
-                  <TrendUpIcon className="w-4 h-4" />
-                ) : (
-                  <TrendDownIcon className="w-4 h-4" />
-                )}
-                {summon.trendValue.toFixed(2)}%
+
+                {/* Share Button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onShare(summon);
+                  }}
+                  className="p-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-koru-golden/10 hover:text-koru-golden text-neutral-500 transition-all"
+                  title="Share summon"
+                >
+                  <ShareIcon className="w-4 h-4" />
+                </button>
               </div>
 
-              {/* Share Button */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onShare(summon);
-                }}
-                className="p-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-koru-golden/10 hover:text-koru-golden text-neutral-500 transition-all"
-                title="Share summon"
-              >
-                <ShareIcon className="w-4 h-4" />
-              </button>
+              {/* Second row: Backer avatars - aligned right */}
+              <div className="flex items-center justify-end">
+                <div className="flex -space-x-1">
+                  {summon.backersData && summon.backersData.length > 0 ? (
+                    <>
+                      {summon.backersData.slice(0, 20).map((backer, idx) => (
+                        <div
+                          key={backer.id || idx}
+                          className="w-5 h-5 rounded-full ring-1 ring-white dark:ring-neutral-900 overflow-hidden"
+                          title={backer.name}
+                        >
+                          {backer.profileImageUrl ? (
+                            <img
+                              src={backer.profileImageUrl}
+                              alt={backer.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <AvatarGenerator seed={backer.username} size={20} />
+                          )}
+                        </div>
+                      ))}
+                      {summon.backers > 20 && (
+                        <div className="w-5 h-5 rounded-full ring-1 ring-white dark:ring-neutral-900 bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center">
+                          <span className="text-[8px] font-bold text-neutral-600 dark:text-neutral-300">
+                            +{summon.backers - 20}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  ) : summon.backers > 0 ? (
+                    <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                      {summon.backers} backer{summon.backers !== 1 ? 's' : ''}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
             </div>
           </div>
         </motion.div>
