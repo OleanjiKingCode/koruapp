@@ -21,6 +21,7 @@ export interface Summon {
   trend: TrendDirection;
   trendValue: number;
   request: string;
+  tags?: Record<string, number>; // Tag counts: { "Web3": 5, "Tech": 3 }
   createdAt: string;
   // Creator info (optional, for display)
   creatorUsername?: string;

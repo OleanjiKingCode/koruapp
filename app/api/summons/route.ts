@@ -38,15 +38,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch creator info for summons
-    const creatorIds = [...new Set(summons.map((s: any) => s.creator_id).filter(Boolean))];
+    const creatorIds = [
+      ...new Set(summons.map((s: any) => s.creator_id).filter(Boolean)),
+    ];
     let creatorsMap: Record<string, any> = {};
-    
+
     if (creatorIds.length > 0) {
       const { data: creators } = await supabase
         .from("users")
         .select("id, name, username, profile_image_url")
         .in("id", creatorIds);
-      
+
       if (creators) {
         creatorsMap = creators.reduce((acc: Record<string, any>, c: any) => {
           acc[c.id] = c;
@@ -58,10 +60,10 @@ export async function GET(request: NextRequest) {
     // Transform to match the frontend Summon type
     const transformedSummons = summons.map((summon: any) => {
       const creator = creatorsMap[summon.creator_id];
-      
+
       // Use the backers array directly from the summon
       const backersFromArray: BackerInfo[] = summon.backers || [];
-      
+
       // Transform backers to frontend format
       let backersData = backersFromArray.map((b: BackerInfo) => ({
         id: b.user_id,
@@ -70,31 +72,40 @@ export async function GET(request: NextRequest) {
         profileImageUrl: b.profile_image_url,
         amount: Number(b.amount),
       }));
-      
+
       // If no backers in array but we have a creator and backers_count > 0,
       // add creator as first backer (for backwards compatibility with old summons)
       if (backersData.length === 0 && creator && summon.backers_count > 0) {
-        backersData = [{
-          id: creator.id,
-          name: creator.name,
-          username: creator.username,
-          profileImageUrl: creator.profile_image_url,
-          amount: Number(summon.pledged_amount || summon.amount || 0),
-        }];
+        backersData = [
+          {
+            id: creator.id,
+            name: creator.name,
+            username: creator.username,
+            profileImageUrl: creator.profile_image_url,
+            amount: Number(summon.pledged_amount || summon.amount || 0),
+          },
+        ];
       }
-      
+
       return {
         id: summon.id,
-        targetHandle: summon.target_username || summon.target_handle || summon.target_twitter_id,
+        targetHandle:
+          summon.target_username ||
+          summon.target_handle ||
+          summon.target_twitter_id,
         targetName: summon.target_name || summon.target_username || "Unknown",
-        targetProfileImage: summon.target_profile_image || summon.target_image || null,
-        totalPledged: Number(summon.total_backed || summon.pledged_amount || summon.amount || 0),
+        targetProfileImage:
+          summon.target_profile_image || summon.target_image || null,
+        totalPledged: Number(
+          summon.total_backed || summon.pledged_amount || summon.amount || 0
+        ),
         backers: summon.backers_count || backersData.length || 0,
         backersData,
         category: "All",
         trend: "up" as const,
         trendValue: 0,
         request: summon.message || summon.request || "",
+        tags: summon.tags || {}, // Include tag counts
         createdAt: summon.created_at,
         creatorUsername: creator?.username || null,
         creatorName: creator?.name || null,
@@ -128,17 +139,21 @@ export async function POST(request: NextRequest) {
       target_name,
       target_profile_image,
       message,
+      tags,
       pledged_amount,
       goal_amount,
       expires_at,
     } = body;
 
-    if (!target_username || !message || !pledged_amount) {
+    if (!target_username || !pledged_amount) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
+
+    // Validate tags if provided
+    const summonTags: Record<string, number> = tags || {};
 
     // Get creator info to add to backers array
     const { data: creatorData } = await supabase
@@ -152,7 +167,8 @@ export async function POST(request: NextRequest) {
       user_id: session.user.dbId,
       username: creatorData?.username || session.user.name || "user",
       name: creatorData?.name || session.user.name || "User",
-      profile_image_url: creatorData?.profile_image_url || session.user.image || null,
+      profile_image_url:
+        creatorData?.profile_image_url || session.user.image || null,
       amount: parseFloat(pledged_amount),
       backed_at: new Date().toISOString(),
     };
@@ -167,7 +183,8 @@ export async function POST(request: NextRequest) {
         target_handle: target_username,
         target_name: target_name || null,
         target_image: target_profile_image || null,
-        request: message,
+        request: message || Object.keys(summonTags).join(", "), // Fallback to tags as message
+        tags: summonTags, // Store tag counts
         amount: parseFloat(pledged_amount),
         expires_at: expires_at || null,
         status: "active",

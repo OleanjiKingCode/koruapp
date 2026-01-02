@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { summon_id, amount } = body;
+    const { summon_id, amount, tags: backerTags } = body;
 
     if (!summon_id || !amount) {
       return NextResponse.json(
@@ -37,19 +37,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the summon with current backers array
+    // Tags selected by this backer (array of strings)
+    const selectedTags: string[] = backerTags || [];
+
+    // Get the summon with current backers array and tags
     const { data: summon, error: fetchError } = await supabase
       .from("summons")
-      .select("total_backed, backers_count, backers")
+      .select("total_backed, backers_count, backers, tags")
       .eq("id", summon_id)
       .single();
 
     if (fetchError || !summon) {
       console.error("Error fetching summon:", fetchError);
-      return NextResponse.json(
-        { error: "Summon not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Summon not found" }, { status: 404 });
     }
 
     // Check if user already backed this summon (check the backers array)
@@ -73,10 +73,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (!userData) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Create new backer object
@@ -92,11 +89,19 @@ export async function POST(request: NextRequest) {
     // Add to backers array
     const updatedBackers = [...existingBackers, newBacker];
 
-    // Update the summon with new backer in array
+    // Update tag counts - increment each tag the backer selected
+    const existingTags: Record<string, number> = summon.tags || {};
+    const updatedTags = { ...existingTags };
+    selectedTags.forEach((tag) => {
+      updatedTags[tag] = (updatedTags[tag] || 0) + 1;
+    });
+
+    // Update the summon with new backer in array and updated tags
     const { error: updateError } = await supabase
       .from("summons")
       .update({
         backers: updatedBackers,
+        tags: updatedTags,
         total_backed: (summon.total_backed || 0) + pledgeAmount,
         backers_count: updatedBackers.length,
         updated_at: new Date().toISOString(),
@@ -114,13 +119,11 @@ export async function POST(request: NextRequest) {
     // Also add to summon_backers table for backwards compatibility
     // Ignore errors - the backers array is the source of truth now
     try {
-      await supabase
-        .from("summon_backers")
-        .insert({
-          summon_id: summon_id,
-          user_id: session.user.dbId,
-          amount: pledgeAmount,
-        });
+      await supabase.from("summon_backers").insert({
+        summon_id: summon_id,
+        user_id: session.user.dbId,
+        amount: pledgeAmount,
+      });
     } catch {
       // Ignore errors
     }
@@ -133,10 +136,10 @@ export async function POST(request: NextRequest) {
       })
       .eq("id", session.user.dbId);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       message: "Successfully backed summon",
-      backer: newBacker
+      backer: newBacker,
     });
   } catch (error) {
     console.error("Error backing summon:", error);
@@ -146,4 +149,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

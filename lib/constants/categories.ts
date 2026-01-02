@@ -16,6 +16,7 @@ export const TIME_FILTERS = [
   "3M",
   "6M",
   "12M",
+  "All",
 ] as const;
 
 export const VIEW_MODES = ["grid", "list", "treemap"] as const;

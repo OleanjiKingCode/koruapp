@@ -17,7 +17,13 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { cn, calculateTreemapLayout, formatCurrency } from "@/lib/utils";
-import { CATEGORIES, TIME_FILTERS, API_ROUTES } from "@/lib/constants";
+import {
+  CATEGORIES,
+  TIME_FILTERS,
+  API_ROUTES,
+  SUMMON_TAGS,
+  getTagColor,
+} from "@/lib/constants";
 import type { Summon, TreemapRect } from "@/lib/types";
 import { useDebouncedTwitterSearch } from "@/lib/hooks/use-twitter-search";
 import type { TwitterProfile } from "@/lib/types/twitter";
@@ -74,7 +80,7 @@ function CloseIcon({ className }: { className?: string }) {
 export default function SummonsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [selectedTime, setSelectedTime] = useState("24H");
+  const [selectedTime, setSelectedTime] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [sortBy, setSortBy] = useState<
@@ -113,14 +119,14 @@ export default function SummonsPage() {
   // Share modal state
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [selectedSummon, setSelectedSummon] = useState<Summon | null>(null);
-  
+
   // Back modal state
   const [backModalOpen, setBackModalOpen] = useState(false);
   const [summonToBack, setSummonToBack] = useState<Summon | null>(null);
   const [backAmount, setBackAmount] = useState("5");
   const [isBackingSubmitting, setIsBackingSubmitting] = useState(false);
   const [backError, setBackError] = useState<string | null>(null);
-  
+
   // Login modal state
   const [showLoginModal, setShowLoginModal] = useState(false);
 
@@ -131,10 +137,14 @@ export default function SummonsPage() {
     null
   );
   const [requestText, setRequestText] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [pledgeAmount, setPledgeAmount] = useState("10");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
+
+  // Back modal tags state
+  const [backSelectedTags, setBackSelectedTags] = useState<string[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -189,6 +199,7 @@ export default function SummonsPage() {
     setSummonToBack(summon);
     setBackAmount("5");
     setBackError(null);
+    setBackSelectedTags([]);
     setBackModalOpen(true);
   };
 
@@ -204,6 +215,11 @@ export default function SummonsPage() {
       return;
     }
 
+    if (backSelectedTags.length === 0) {
+      setBackError("Please select at least one tag");
+      return;
+    }
+
     setIsBackingSubmitting(true);
     setBackError(null);
 
@@ -216,6 +232,7 @@ export default function SummonsPage() {
         body: JSON.stringify({
           summon_id: summonToBack.id,
           amount: amount,
+          tags: backSelectedTags,
         }),
       });
 
@@ -228,15 +245,52 @@ export default function SummonsPage() {
       setBackModalOpen(false);
       mutate(); // Refresh the summons list
     } catch (err) {
-      setBackError(err instanceof Error ? err.message : "Failed to back summon");
+      setBackError(
+        err instanceof Error ? err.message : "Failed to back summon"
+      );
     } finally {
       setIsBackingSubmitting(false);
     }
   };
 
+  // Helper function to get time filter cutoff date
+  const getTimeFilterCutoff = (timeFilter: string): Date | null => {
+    const now = new Date();
+    switch (timeFilter) {
+      case "24H":
+        return new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      case "48H":
+        return new Date(now.getTime() - 48 * 60 * 60 * 1000);
+      case "7D":
+        return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      case "30D":
+        return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      case "3M":
+        return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      case "6M":
+        return new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+      case "12M":
+        return new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+      case "All":
+      default:
+        return null; // No filter
+    }
+  };
+
   const filteredSummons = useMemo(() => {
-    // Filtering is done on the server, but we can do additional client-side filtering if needed
-    const sorted = [...allSummons].sort((a, b) => {
+    // Filter by time first
+    const cutoffDate = getTimeFilterCutoff(selectedTime);
+    let filtered = allSummons;
+
+    if (cutoffDate) {
+      filtered = allSummons.filter((summon) => {
+        const createdAt = new Date(summon.createdAt);
+        return createdAt >= cutoffDate;
+      });
+    }
+
+    // Then sort
+    const sorted = [...filtered].sort((a, b) => {
       let aVal: number, bVal: number;
       switch (sortBy) {
         case "backers":
@@ -256,7 +310,7 @@ export default function SummonsPage() {
       return sortDirection === "desc" ? bVal - aVal : aVal - bVal;
     });
     return sorted;
-  }, [allSummons, sortBy, sortDirection]);
+  }, [allSummons, sortBy, sortDirection, selectedTime]);
 
   const totalPledged = filteredSummons.reduce(
     (sum, a) => sum + a.totalPledged,
@@ -270,6 +324,7 @@ export default function SummonsPage() {
       setTargetSearch("");
       setSelectedProfile(null);
       setRequestText("");
+      setSelectedTags([]);
       setPledgeAmount("10");
       setError(null);
       setShowDropdown(false);
@@ -295,8 +350,8 @@ export default function SummonsPage() {
       return;
     }
 
-    if (!requestText.trim()) {
-      setError("Please write a message for your summon");
+    if (selectedTags.length === 0) {
+      setError("Please select at least one tag for your summon");
       return;
     }
 
@@ -308,6 +363,12 @@ export default function SummonsPage() {
 
     setIsSubmitting(true);
     setError(null);
+
+    // Convert selected tags to counts object (each tag starts with count of 1)
+    const tagsObject: Record<string, number> = {};
+    selectedTags.forEach((tag) => {
+      tagsObject[tag] = 1;
+    });
 
     try {
       const response = await fetch(API_ROUTES.SUMMONS_CREATE, {
@@ -321,7 +382,8 @@ export default function SummonsPage() {
           target_username: selectedProfile.username,
           target_name: selectedProfile.name,
           target_profile_image: selectedProfile.profileImageUrl || null,
-          message: requestText.trim(),
+          message: requestText.trim() || selectedTags.join(", "), // fallback message
+          tags: tagsObject,
           pledged_amount: amount,
         }),
       });
@@ -352,8 +414,8 @@ export default function SummonsPage() {
   };
 
   return (
-    <div className="min-h-screen pb-[500px] sm:pb-96">
-      <main className="max-w-container mx-auto px-4 sm:px-6 py-8">
+    <div className="min-h-[100vh] pb-[500px] sm:pb-96">
+      <main className="max-w-container mx-auto px-4 sm:px-6 py-8 min-h-[calc(100vh-200px)]">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
           <PageHeader
@@ -622,27 +684,53 @@ export default function SummonsPage() {
 
                               <div className="space-y-2">
                                 <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                                  Your Message
-                                  {selectedProfile &&
-                                    ` to ${selectedProfile.name.split(" ")[0]}`}
+                                  What&apos;s this summon about?
+                                  {selectedTags.length > 0 && (
+                                    <span className="ml-2 text-koru-purple">
+                                      ({selectedTags.length} selected)
+                                    </span>
+                                  )}
                                 </label>
-                                <textarea
-                                  value={requestText}
-                                  onChange={(e) =>
-                                    setRequestText(e.target.value)
-                                  }
-                                  placeholder={
-                                    selectedProfile
-                                      ? `Why do you want to talk to ${
-                                          selectedProfile.name.split(" ")[0]
-                                        }? What would you like to discuss?`
-                                      : "What would you like to discuss?"
-                                  }
-                                  className="w-full h-28 px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 resize-none focus:outline-none focus:ring-2 focus:ring-koru-purple/50"
-                                />
+                                <div className="max-h-40 overflow-y-auto p-3 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800">
+                                  <div className="flex flex-wrap gap-2">
+                                    {SUMMON_TAGS.map((tag) => {
+                                      const isSelected =
+                                        selectedTags.includes(tag);
+                                      return (
+                                        <button
+                                          key={tag}
+                                          type="button"
+                                          onClick={() => {
+                                            if (isSelected) {
+                                              setSelectedTags(
+                                                selectedTags.filter(
+                                                  (t) => t !== tag
+                                                )
+                                              );
+                                            } else {
+                                              setSelectedTags([
+                                                ...selectedTags,
+                                                tag,
+                                              ]);
+                                            }
+                                          }}
+                                          className={cn(
+                                            "px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                                            isSelected
+                                              ? "bg-koru-purple text-white ring-2 ring-koru-purple/30"
+                                              : getTagColor(tag) +
+                                                  " hover:ring-2 hover:ring-koru-purple/20"
+                                          )}
+                                        >
+                                          {tag}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
                                 <p className="text-xs text-neutral-500">
-                                  This message will be visible to the target and
-                                  other backers
+                                  Select tags that describe what you want to
+                                  discuss
                                 </p>
                               </div>
 
@@ -685,7 +773,7 @@ export default function SummonsPage() {
                                   disabled={
                                     isSubmitting ||
                                     !selectedProfile ||
-                                    !requestText.trim() ||
+                                    selectedTags.length === 0 ||
                                     !pledgeAmount
                                   }
                                   className="w-full bg-gradient-to-r from-koru-purple to-koru-purple/80 hover:from-koru-purple/90 hover:to-koru-purple/70 text-white font-semibold disabled:opacity-50"
@@ -831,6 +919,61 @@ export default function SummonsPage() {
                 ))}
               </motion.div>
             )
+          ) : filteredSummons.length === 0 ? (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4"
+            >
+              <div className="w-24 h-24 mb-6 rounded-full bg-gradient-to-br from-koru-purple/20 to-koru-golden/20 flex items-center justify-center">
+                <MegaphoneIcon className="w-12 h-12 text-koru-purple/60" />
+              </div>
+              {allSummons.length === 0 ? (
+                <>
+                  <h3 className="text-2xl font-bold text-neutral-800 dark:text-neutral-200 mb-2">
+                    No Summons Yet
+                  </h3>
+                  <p className="text-neutral-500 dark:text-neutral-400 max-w-md mb-6">
+                    Be the first to rally the community! Create a summon to get
+                    attention from who matters.
+                  </p>
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="px-6 py-3 bg-gradient-to-r from-koru-purple to-koru-purple/80 hover:from-koru-purple/90 hover:to-koru-purple/70 text-white font-semibold rounded-xl transition-all shadow-lg shadow-koru-purple/20 flex items-center gap-2"
+                  >
+                    <PlusIcon className="w-5 h-5" />
+                    Create First Summon
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-2xl font-bold text-neutral-800 dark:text-neutral-200 mb-2">
+                    No Summons in the Last {selectedTime}
+                  </h3>
+                  <p className="text-neutral-500 dark:text-neutral-400 max-w-md mb-6">
+                    There are no summons created in this time period. Try
+                    selecting a longer time range or view all summons.
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setSelectedTime("All")}
+                      className="px-6 py-3 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-semibold rounded-xl transition-all flex items-center gap-2"
+                    >
+                      View All Summons
+                    </button>
+                    <button
+                      onClick={() => setIsModalOpen(true)}
+                      className="px-6 py-3 bg-gradient-to-r from-koru-purple to-koru-purple/80 hover:from-koru-purple/90 hover:to-koru-purple/70 text-white font-semibold rounded-xl transition-all shadow-lg shadow-koru-purple/20 flex items-center gap-2"
+                    >
+                      <PlusIcon className="w-5 h-5" />
+                      Create Summon
+                    </button>
+                  </div>
+                </>
+              )}
+            </motion.div>
           ) : viewMode === "treemap" ? (
             <TreemapView
               key="treemap"
@@ -889,7 +1032,10 @@ export default function SummonsPage() {
                           className="w-12 h-12 rounded-full object-cover"
                         />
                       ) : (
-                        <AvatarGenerator seed={summonToBack.targetHandle} size={48} />
+                        <AvatarGenerator
+                          seed={summonToBack.targetHandle}
+                          size={48}
+                        />
                       )}
                       <div>
                         <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">
@@ -902,6 +1048,82 @@ export default function SummonsPage() {
                     </div>
 
                     <div className="space-y-3">
+                      {/* Show existing tags with counts */}
+                      {summonToBack.tags &&
+                        Object.keys(summonToBack.tags).length > 0 && (
+                          <div>
+                            <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                              Community interests
+                            </label>
+                            <div className="flex flex-wrap gap-1.5">
+                              {Object.entries(summonToBack.tags)
+                                .sort(([, a], [, b]) => b - a)
+                                .map(([tag, count]) => (
+                                  <span
+                                    key={tag}
+                                    className={cn(
+                                      "px-2 py-0.5 rounded-full text-xs font-medium",
+                                      getTagColor(tag)
+                                    )}
+                                  >
+                                    {tag}{" "}
+                                    <span className="opacity-60">
+                                      ({count})
+                                    </span>
+                                  </span>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+
+                      {/* Tag selection for backer */}
+                      <div>
+                        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                          What interests you?
+                          {backSelectedTags.length > 0 && (
+                            <span className="ml-2 text-koru-purple">
+                              ({backSelectedTags.length} selected)
+                            </span>
+                          )}
+                        </label>
+                        <div className="max-h-32 overflow-y-auto p-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800">
+                          <div className="flex flex-wrap gap-1.5">
+                            {SUMMON_TAGS.map((tag) => {
+                              const isSelected = backSelectedTags.includes(tag);
+                              return (
+                                <button
+                                  key={tag}
+                                  type="button"
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      setBackSelectedTags(
+                                        backSelectedTags.filter(
+                                          (t) => t !== tag
+                                        )
+                                      );
+                                    } else {
+                                      setBackSelectedTags([
+                                        ...backSelectedTags,
+                                        tag,
+                                      ]);
+                                    }
+                                  }}
+                                  className={cn(
+                                    "px-2 py-0.5 rounded-full text-xs font-medium transition-all",
+                                    isSelected
+                                      ? "bg-koru-purple text-white ring-2 ring-koru-purple/30"
+                                      : getTagColor(tag) +
+                                          " hover:ring-1 hover:ring-koru-purple/20"
+                                  )}
+                                >
+                                  {tag}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
                       <div>
                         <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1 block">
                           Your pledge amount
@@ -937,9 +1159,13 @@ export default function SummonsPage() {
                         <Button
                           className="flex-1 bg-koru-purple hover:bg-koru-purple/90"
                           onClick={handleSubmitBacking}
-                          disabled={isBackingSubmitting}
+                          disabled={
+                            isBackingSubmitting || backSelectedTags.length === 0
+                          }
                         >
-                          {isBackingSubmitting ? "Backing..." : `Back $${backAmount}`}
+                          {isBackingSubmitting
+                            ? "Backing..."
+                            : `Back $${backAmount}`}
                         </Button>
                       </div>
                     </div>
@@ -1125,25 +1351,28 @@ function TreemapView({
                 {/* Backers avatars */}
                 <div className="flex items-center justify-center gap-1 mt-2">
                   <div className="flex -space-x-1.5">
-                    {summon.backersData && summon.backersData.length > 0 ? (
-                      summon.backersData.slice(0, 3).map((backer, idx) => (
-                        <div
-                          key={backer.id || idx}
-                          className="w-5 h-5 rounded-full ring-1 ring-white/50 overflow-hidden"
-                          title={backer.name}
-                        >
-                          {backer.profileImageUrl ? (
-                            <img
-                              src={backer.profileImageUrl}
-                              alt={backer.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <AvatarGenerator seed={backer.username} size={20} />
-                          )}
-                        </div>
-                      ))
-                    ) : null}
+                    {summon.backersData && summon.backersData.length > 0
+                      ? summon.backersData.slice(0, 3).map((backer, idx) => (
+                          <div
+                            key={backer.id || idx}
+                            className="w-5 h-5 rounded-full ring-1 ring-white/50 overflow-hidden"
+                            title={backer.name}
+                          >
+                            {backer.profileImageUrl ? (
+                              <img
+                                src={backer.profileImageUrl}
+                                alt={backer.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <AvatarGenerator
+                                seed={backer.username}
+                                size={20}
+                              />
+                            )}
+                          </div>
+                        ))
+                      : null}
                     {summon.backers > 3 && (
                       <div className="w-5 h-5 rounded-full ring-1 ring-white/50 bg-white/20 flex items-center justify-center">
                         <span className="text-[8px] font-bold text-white">
@@ -1153,7 +1382,8 @@ function TreemapView({
                     )}
                   </div>
                   <span className="text-[10px] text-white/60">
-                    {summon.backers} backer{summon.backers !== 1 ? 's' : ''} · {rect.percentage.toFixed(2)}%
+                    {summon.backers} backer{summon.backers !== 1 ? "s" : ""} ·{" "}
+                    {rect.percentage.toFixed(2)}%
                   </span>
                 </div>
                 <button
@@ -1243,13 +1473,42 @@ function ListView({
                 <h3 className=" font-semibold text-neutral-900 dark:text-neutral-100 truncate">
                   {summon.targetName}
                 </h3>
-                <Badge variant="outline" className="shrink-0 text-xs">
-                  {summon.category}
-                </Badge>
               </div>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate">
-                @{summon.targetHandle} · {summon.request}
-              </p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                  @{summon.targetHandle}
+                </span>
+                {summon.tags && Object.keys(summon.tags).length > 0 ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-neutral-300 dark:text-neutral-600">
+                      ·
+                    </span>
+                    {Object.entries(summon.tags)
+                      .sort(([, a], [, b]) => b - a)
+                      .slice(0, 3)
+                      .map(([tag, count]) => (
+                        <span
+                          key={tag}
+                          className={cn(
+                            "px-2 py-0.5 rounded-full text-xs font-medium",
+                            getTagColor(tag)
+                          )}
+                        >
+                          {tag} <span className="opacity-60">{count}</span>
+                        </span>
+                      ))}
+                    {Object.keys(summon.tags).length > 3 && (
+                      <span className="text-xs text-neutral-400">
+                        +{Object.keys(summon.tags).length - 3}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <Badge variant="outline" className="shrink-0 text-xs">
+                    {summon.category}
+                  </Badge>
+                )}
+              </div>
             </div>
 
             {/* Stats - Two rows */}
@@ -1334,7 +1593,7 @@ function ListView({
                     </>
                   ) : summon.backers > 0 ? (
                     <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                      {summon.backers} backer{summon.backers !== 1 ? 's' : ''}
+                      {summon.backers} backer{summon.backers !== 1 ? "s" : ""}
                     </span>
                   ) : null}
                 </div>
