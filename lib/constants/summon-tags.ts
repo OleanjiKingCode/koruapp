@@ -46,7 +46,7 @@ export const SUMMON_TAGS = [
 export type SummonTag = (typeof SUMMON_TAGS)[number];
 
 // Tag colors for display
-export const TAG_COLORS: Record<string, string> = {
+export const SUMMON_TAG_COLORS: Record<string, string> = {
   // Web3 related - purple tones
   "Web3": "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
   "DeFi": "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
@@ -97,6 +97,6 @@ export const DEFAULT_TAG_COLOR = "bg-neutral-100 text-neutral-700 dark:bg-neutra
 
 // Get color for a tag
 export function getTagColor(tag: string): string {
-  return TAG_COLORS[tag] || DEFAULT_TAG_COLOR;
+  return SUMMON_TAG_COLORS[tag] || DEFAULT_TAG_COLOR;
 }
 
