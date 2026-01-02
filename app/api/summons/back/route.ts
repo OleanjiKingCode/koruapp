@@ -112,16 +112,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Also add to summon_backers table for backwards compatibility
-    await supabase
-      .from("summon_backers")
-      .insert({
-        summon_id: summon_id,
-        user_id: session.user.dbId,
-        amount: pledgeAmount,
-      })
-      .catch(() => {
-        // Ignore errors - the backers array is the source of truth now
-      });
+    // Ignore errors - the backers array is the source of truth now
+    try {
+      await supabase
+        .from("summon_backers")
+        .insert({
+          summon_id: summon_id,
+          user_id: session.user.dbId,
+          amount: pledgeAmount,
+        });
+    } catch {
+      // Ignore errors
+    }
 
     // Increment user's total_summons_backed count
     await supabase
