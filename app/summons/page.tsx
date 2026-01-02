@@ -1494,14 +1494,14 @@ function ListView({
                             getTagColor(tag)
                           )}
                         >
-                          {tag} <span className="opacity-60">{count}</span>
+                          {tag}
                         </span>
                       ))}
-                    {Object.keys(summon.tags).length > 3 && (
+                    {/* {Object.keys(summon.tags).length > 3 && (
                       <span className="text-xs text-neutral-400">
                         +{Object.keys(summon.tags).length - 3}
                       </span>
-                    )}
+                    )} */}
                   </div>
                 ) : (
                   <Badge variant="outline" className="shrink-0 text-xs">
