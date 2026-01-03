@@ -148,14 +148,7 @@ export function LoginModal({
                 isDark ? "text-neutral-500" : "text-neutral-500"
               )}
             >
-              By continuing, you agree to our{" "}
-              <a href="/terms" className="underline hover:text-koru-purple">
-                Terms of Service
-              </a>{" "}
-              and{" "}
-              <a href="/privacy" className="underline hover:text-koru-purple">
-                Privacy Policy
-              </a>
+              By continuing, you agree to our terms and conditions.
             </motion.p>
           </div>
         </div>

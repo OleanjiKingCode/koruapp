@@ -340,9 +340,6 @@ export default function FAQPage() {
               <Button asChild variant="outline" size="lg">
                 <Link href="/contact">Contact Support</Link>
               </Button>
-              <Button asChild size="lg">
-                <Link href="/privacy">Privacy Policy</Link>
-              </Button>
             </div>
           </div>
         </motion.div>

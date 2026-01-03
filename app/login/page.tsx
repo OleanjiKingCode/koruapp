@@ -258,14 +258,7 @@ function LoginContent() {
             isDark ? "text-neutral-500" : "text-neutral-500"
           )}
         >
-          By continuing, you agree to our{" "}
-          <a href="/terms" className="underline hover:text-koru-purple transition-colors">
-            Terms of Service
-          </a>{" "}
-          and{" "}
-          <a href="/privacy" className="underline hover:text-koru-purple transition-colors">
-            Privacy Policy
-          </a>
+          By continuing, you agree to our terms and conditions.
         </motion.p>
       </motion.div>
     </div>

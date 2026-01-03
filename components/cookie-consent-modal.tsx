@@ -211,11 +211,7 @@ export function CookieConsentModal() {
 
               <div className="rounded-2xl border border-koru-purple/20 bg-koru-purple/5 p-4">
                 <p className="text-sm text-foreground/90">
-                  <strong>Learn more:</strong> Read our{" "}
-                  <a href="/privacy#cookies" className="text-koru-purple hover:underline">
-                    Privacy Policy
-                  </a>
-                  {" "}for detailed information about how we use cookies and manage your data.
+                  <strong>Learn more:</strong> For detailed information about how we use cookies and manage your data, please contact support.
                 </p>
               </div>
             </div>

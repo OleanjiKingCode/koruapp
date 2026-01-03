@@ -31,10 +31,10 @@ const footerLinks = {
     { name: "FAQs", href: "/faq" },
     { name: "Contact", href: "/contact" },
   ],
-  legal: [
-    { name: "Privacy Policy", href: "/privacy" },
-    { name: "Terms of Service", href: "/terms" },
-  ],
+  // legal: [
+  //   { name: "Privacy Policy", href: "/privacy" },
+  //   { name: "Terms of Service", href: "/terms" },
+  // ],
 };
 
 const socials = [
@@ -206,7 +206,7 @@ export function Footer() {
                   </div>
 
                   {/* Links */}
-                  <div className="grid grid-cols-3 gap-8 md:gap-12">
+                  <div className="grid grid-cols-2 gap-8 md:gap-12">
                     <div>
                       <h3
                         className={cn(
@@ -261,7 +261,8 @@ export function Footer() {
                         ))}
                       </ul>
                     </div>
-                    <div>
+                    {/* Legal section commented out */}
+                    {/* <div>
                       <h3
                         className={cn(
                           "text-sm   font-semibold mb-3",
@@ -287,7 +288,7 @@ export function Footer() {
                           </li>
                         ))}
                       </ul>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
 
