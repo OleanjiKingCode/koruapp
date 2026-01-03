@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { ModalProvider } from "@/lib/contexts/modal-context";
 import { AppShell } from "@/components/shared";
+import { CookieConsentModal } from "@/components/cookie-consent-modal";
 import "./globals.css";
 
 const quicksand = Quicksand({
@@ -107,6 +108,7 @@ export default function RootLayout({
           >
             <ModalProvider>
               <AppShell>{children}</AppShell>
+              <CookieConsentModal />
             </ModalProvider>
           </ThemeProvider>
         </AuthProvider>

@@ -324,7 +324,7 @@ function SearchStatusIndicator({
         <span className="text-sm text-neutral-600 dark:text-neutral-400">
           Results for &ldquo;{searchQuery}&rdquo;
         </span>
-        {source && (
+        {/* {source && (
           <span
             className={cn(
               "text-xs px-2 py-0.5 rounded-full",
@@ -335,7 +335,7 @@ function SearchStatusIndicator({
           >
             {source === "cache" ? "Cached" : "Live"}
           </span>
-        )}
+        )} */}
       </div>
       <span className="text-sm text-neutral-500">
         {resultCount} profile{resultCount !== 1 ? "s" : ""} found

@@ -24,18 +24,16 @@ const kayaPositions = [
 const footerLinks = {
   product: [
     { name: "Discover", href: "/discover" },
-    { name: "Appeals", href: "/appeals" },
+    { name: "Summons", href: "/summons" },
     { name: "How it works", href: "/how-it-works" },
   ],
   support: [
-    { name: "FAQs", href: "#" },
-    { name: "Help Center", href: "#" },
-    { name: "Contact", href: "#" },
+    { name: "FAQs", href: "/faq" },
+    { name: "Contact", href: "/contact" },
   ],
   legal: [
-    { name: "Privacy Policy", href: "#" },
-    { name: "Terms of Service", href: "#" },
-    { name: "Cookie Policy", href: "#" },
+    { name: "Privacy Policy", href: "/privacy" },
+    { name: "Terms of Service", href: "/terms" },
   ],
 };
 
@@ -67,25 +65,25 @@ export function Footer() {
 
     // Calculate how far from the actual bottom the user is (in pixels)
     const distanceFromBottom = documentHeight - windowHeight - scrollTop;
-    
+
     // Be very strict - only show when within 30px of bottom
     const pixelThreshold = 30;
-    
+
     // Calculate scrollable height
     const scrollableHeight = documentHeight - windowHeight;
-    
+
     // Only show footer when:
     // 1. User is within 30px of the true bottom AND has scrolled significantly
-    // 2. OR page is truly short (content less than viewport) AND document is less than 1.2x viewport
-    //    This prevents showing footer on pages that use min-h-screen but have little actual content
+    // 2. OR page is truly short (content less than viewport) AND document is less than 1.1x viewport
+    //    AND user has scrolled at least 100px (to prevent showing on initial load)
     const nearBottom = distanceFromBottom <= pixelThreshold;
-    const hasScrolledEnough = scrollTop > 150;
-    const pageIsTrulyShort = scrollableHeight <= 30 && documentHeight < windowHeight * 1.2;
-    
-    setIsVisible(
-      (nearBottom && hasScrolledEnough) || 
-      pageIsTrulyShort
-    );
+    const hasScrolledEnough = scrollTop > 200;
+    const pageIsTrulyShort =
+      scrollableHeight <= 30 &&
+      documentHeight < windowHeight * 1.1 &&
+      scrollTop > 100;
+
+    setIsVisible((nearBottom && hasScrolledEnough) || pageIsTrulyShort);
   }, []);
 
   useEffect(() => {
