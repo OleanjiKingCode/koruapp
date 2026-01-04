@@ -48,7 +48,8 @@ export function parseTransactionError(error: any): TransactionError {
     return {
       code: "USER_REJECTED",
       message: errorString,
-      userFriendlyMessage: "Transaction was cancelled. Please try again when you're ready.",
+      userFriendlyMessage:
+        "Transaction was cancelled. Please try again when you're ready.",
       isInsufficientFunds: false,
       isUserRejected: true,
       isNetworkError: false,
@@ -86,42 +87,6 @@ export function parseTransactionError(error: any): TransactionError {
 }
 
 /**
- * Check if account has sufficient balance for transaction
- * This should be called before attempting a transaction
- */
-export async function checkSufficientBalance(
-  address: string,
-  amount: bigint,
-  gasEstimate: bigint,
-  gasPrice: bigint,
-  getBalance: (address: string) => Promise<bigint>
-): Promise<{ sufficient: boolean; balance: bigint; required: bigint; shortfall: bigint }> {
-  try {
-    const balance = await getBalance(address);
-    const gasCost = gasEstimate * gasPrice;
-    const required = amount + gasCost;
-    const sufficient = balance >= required;
-    const shortfall = sufficient ? 0n : required - balance;
-
-    return {
-      sufficient,
-      balance,
-      required,
-      shortfall,
-    };
-  } catch (error) {
-    console.error("Error checking balance:", error);
-    // If we can't check balance, assume insufficient to be safe
-    return {
-      sufficient: false,
-      balance: 0n,
-      required: amount + gasEstimate * gasPrice,
-      shortfall: amount + gasEstimate * gasPrice,
-    };
-  }
-}
-
-/**
  * Format error message for display to user
  */
 export function formatTransactionErrorMessage(error: TransactionError): string {
@@ -139,7 +104,8 @@ export function getErrorAction(error: TransactionError): {
   if (error.isInsufficientFunds) {
     return {
       action: "Add Funds",
-      description: "You need to add more tokens to your wallet to complete this transaction.",
+      description:
+        "You need to add more tokens to your wallet to complete this transaction.",
       link: "#",
     };
   }
@@ -147,14 +113,16 @@ export function getErrorAction(error: TransactionError): {
   if (error.isUserRejected) {
     return {
       action: "Try Again",
-      description: "Please approve the transaction in your wallet when prompted.",
+      description:
+        "Please approve the transaction in your wallet when prompted.",
     };
   }
 
   if (error.isNetworkError) {
     return {
       action: "Retry",
-      description: "The network may be experiencing issues. Please try again in a moment.",
+      description:
+        "The network may be experiencing issues. Please try again in a moment.",
     };
   }
 
@@ -177,7 +145,7 @@ export async function safeTransaction<T>(
     return { success: true, data };
   } catch (error: any) {
     const parsedError = parseTransactionError(error);
-    
+
     if (onError) {
       onError(parsedError);
     }
@@ -188,4 +156,3 @@ export async function safeTransaction<T>(
     };
   }
 }
-
