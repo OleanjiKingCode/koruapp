@@ -5,7 +5,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "next-themes";
-import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -48,13 +47,6 @@ export function Footer() {
   const [isVisible, setIsVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { theme } = useTheme();
-  const pathname = usePathname();
-
-  // Pages where footer should always be visible
-  const alwaysShowFooter = ["/summons", "/discover", "/faq", "/contact"];
-  const shouldAlwaysShow = alwaysShowFooter.some((route) =>
-    pathname.startsWith(route)
-  );
 
   // Random Kaya selection - picked once per page load
   const kayaVariant = useMemo(
@@ -79,12 +71,6 @@ export function Footer() {
 
     // Calculate scrollable height
     const scrollableHeight = documentHeight - windowHeight;
-
-    // For pages that should always show footer, show it after initial scroll
-    if (shouldAlwaysShow) {
-      setIsVisible(scrollTop > 100 || scrollableHeight <= 50);
-      return;
-    }
 
     // Only show footer when:
     // 1. User is within 30px of the true bottom AND has scrolled significantly
@@ -150,7 +136,7 @@ export function Footer() {
       mutationObserver.disconnect();
       clearInterval(intervalId);
     };
-  }, [mounted, checkVisibility, shouldAlwaysShow]);
+  }, [mounted, checkVisibility]);
 
   if (!mounted) return null;
 

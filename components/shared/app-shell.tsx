@@ -12,9 +12,10 @@ const NO_FOOTER_ROUTES = ["/chat"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  
+
   const showNav = !EXCLUDED_ROUTES.includes(pathname);
-  const showFooter = showNav && !NO_FOOTER_ROUTES.some(route => pathname.startsWith(route));
+  const showFooter =
+    showNav && !NO_FOOTER_ROUTES.some((route) => pathname.startsWith(route));
 
   return (
     <>
@@ -24,4 +25,3 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     </>
   );
 }
-

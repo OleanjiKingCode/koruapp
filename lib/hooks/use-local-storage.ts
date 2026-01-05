@@ -155,7 +155,8 @@ export const DEFAULT_AVAILABILITY: AvailabilityData = {
 };
 
 export function useAvailability() {
-  const [availability, setAvailabilityState] = useState<AvailabilityData>(DEFAULT_AVAILABILITY);
+  const [availability, setAvailabilityState] =
+    useState<AvailabilityData>(DEFAULT_AVAILABILITY);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -170,17 +171,22 @@ export function useAvailability() {
             // Merge with defaults to ensure all required fields exist
             const dbAvailability = data.user.availability;
             setAvailabilityState({
-              timezone: dbAvailability.timezone || DEFAULT_AVAILABILITY.timezone,
-              slots: dbAvailability.slots?.length > 0 
-                ? dbAvailability.slots.map((slot: Partial<AvailabilitySlot>, index: number) => ({
-                    id: slot.id || index + 1,
-                    name: slot.name || "",
-                    duration: slot.duration || 30,
-                    times: slot.times || [],
-                    price: slot.price ?? 50,
-                    selectedDates: slot.selectedDates || defaultSelectedDates,
-                  }))
-                : DEFAULT_AVAILABILITY.slots,
+              timezone:
+                dbAvailability.timezone || DEFAULT_AVAILABILITY.timezone,
+              slots:
+                dbAvailability.slots?.length > 0
+                  ? dbAvailability.slots.map(
+                      (slot: Partial<AvailabilitySlot>, index: number) => ({
+                        id: slot.id || index + 1,
+                        name: slot.name || "",
+                        duration: slot.duration || 30,
+                        times: slot.times || [],
+                        price: slot.price ?? 50,
+                        selectedDates:
+                          slot.selectedDates || defaultSelectedDates,
+                      })
+                    )
+                  : DEFAULT_AVAILABILITY.slots,
             });
           }
         }
@@ -195,32 +201,40 @@ export function useAvailability() {
   }, []);
 
   // Save availability to database
-  const setAvailability = useCallback(async (newAvailability: AvailabilityData | ((prev: AvailabilityData) => AvailabilityData)) => {
-    const valueToSave = typeof newAvailability === "function" 
-      ? newAvailability(availability) 
-      : newAvailability;
-    
-    // Update local state immediately for responsive UI
-    setAvailabilityState(valueToSave);
-    setIsSaving(true);
+  const setAvailability = useCallback(
+    async (
+      newAvailability:
+        | AvailabilityData
+        | ((prev: AvailabilityData) => AvailabilityData)
+    ) => {
+      const valueToSave =
+        typeof newAvailability === "function"
+          ? newAvailability(availability)
+          : newAvailability;
 
-    try {
-      const response = await fetch("/api/user/update", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ availability: valueToSave }),
-      });
+      // Update local state immediately for responsive UI
+      setAvailabilityState(valueToSave);
+      setIsSaving(true);
 
-      if (!response.ok) {
-        console.error("Failed to save availability");
-        // Optionally revert on error
+      try {
+        const response = await fetch("/api/user/update", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ availability: valueToSave }),
+        });
+
+        if (!response.ok) {
+          console.error("Failed to save availability");
+          // Optionally revert on error
+        }
+      } catch (error) {
+        console.error("Error saving availability:", error);
+      } finally {
+        setIsSaving(false);
       }
-    } catch (error) {
-      console.error("Error saving availability:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  }, [availability]);
+    },
+    [availability]
+  );
 
   const filledSlots = availability.slots.filter(
     (s) => s.name && s.times.length > 0

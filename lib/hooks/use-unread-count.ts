@@ -126,7 +126,9 @@ export function useUnreadCount(): UnreadCounts & {
     ).length;
 
     // Sent count is for reference only, not shown in badge
-    const sentCount = data.chats.filter((c) => c.requester_id === userId).length;
+    const sentCount = data.chats.filter(
+      (c) => c.requester_id === userId
+    ).length;
 
     return {
       // Badge only shows unseen inbox chats

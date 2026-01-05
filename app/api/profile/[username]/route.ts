@@ -3,7 +3,121 @@ import {
   getUserByUsername,
   getProfileByUsername,
   getUserAvailabilitySlots,
+  supabase,
+  CachedTwitterProfile,
 } from "@/lib/supabase";
+import {
+  parseTwitterSearchResponse,
+  type TwitterSearchResponse,
+} from "@/lib/types/twitter";
+
+const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
+const RAPIDAPI_HOST = "twitter241.p.rapidapi.com";
+const API_TIMEOUT = 5000; // 5 second timeout
+
+async function fetchProfileFromTwitter(username: string): Promise<{
+  profile_image_url?: string;
+  banner_url?: string;
+  bio?: string;
+  followers_count?: number;
+  following_count?: number;
+  verified?: boolean;
+  name?: string;
+  twitter_id?: string;
+} | null> {
+  if (!RAPIDAPI_KEY) return null;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+
+  try {
+    const response = await fetch(
+      `https://${RAPIDAPI_HOST}/search?` +
+        new URLSearchParams({
+          type: "People",
+          count: "5",
+          query: username,
+        }),
+      {
+        method: "GET",
+        headers: {
+          "x-rapidapi-key": RAPIDAPI_KEY,
+          "x-rapidapi-host": RAPIDAPI_HOST,
+        },
+        signal: controller.signal,
+      }
+    );
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) return null;
+
+    const data: TwitterSearchResponse = await response.json();
+    const profiles = parseTwitterSearchResponse(data);
+
+    // Find exact username match (case-insensitive)
+    const matchedProfile = profiles.find(
+      (p) => p.username.toLowerCase() === username.toLowerCase()
+    );
+
+    if (!matchedProfile) return null;
+
+    return {
+      twitter_id: matchedProfile.twitterId,
+      profile_image_url: matchedProfile.profileImageUrl || undefined,
+      banner_url: matchedProfile.bannerUrl || undefined,
+      bio: matchedProfile.bio || undefined,
+      followers_count: matchedProfile.followersCount,
+      following_count: matchedProfile.followingCount,
+      verified: matchedProfile.verified,
+      name: matchedProfile.name,
+    };
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === "AbortError") {
+      console.log(`Twitter API timeout for ${username}`);
+    } else {
+      console.error(`Error fetching profile ${username}:`, error);
+    }
+    return null;
+  }
+}
+
+async function updateCachedProfile(
+  profile: CachedTwitterProfile,
+  freshData: NonNullable<Awaited<ReturnType<typeof fetchProfileFromTwitter>>>,
+  tableName: "featured_profiles" | "twitter_profiles"
+): Promise<void> {
+  const updateData: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (freshData.profile_image_url)
+    updateData.profile_image_url = freshData.profile_image_url;
+  if (freshData.banner_url) updateData.banner_url = freshData.banner_url;
+  if (freshData.bio) updateData.bio = freshData.bio;
+  if (freshData.followers_count !== undefined)
+    updateData.followers_count = freshData.followers_count;
+  if (freshData.following_count !== undefined)
+    updateData.following_count = freshData.following_count;
+  if (freshData.verified !== undefined)
+    updateData.verified = freshData.verified;
+  if (freshData.name) updateData.name = freshData.name;
+
+  // Update in background
+  supabase
+    .from(tableName)
+    .update(updateData)
+    .eq("id", profile.id)
+    .then(({ error }) => {
+      if (error) {
+        console.error(
+          `Error updating ${tableName} for ${profile.username}:`,
+          error
+        );
+      }
+    });
+}
 
 export async function GET(
   request: NextRequest,
@@ -19,10 +133,9 @@ export async function GET(
       );
     }
 
-    // First check if user is registered on Koru
+    // First check if user is registered on Koru (these users manage their own profiles)
     const koruUser = await getUserByUsername(username);
     if (koruUser) {
-      // Fetch availability slots if user is a creator
       let availabilitySlots = null;
       if (koruUser.is_creator) {
         availabilitySlots = await getUserAvailabilitySlots(koruUser.id);
@@ -42,7 +155,6 @@ export async function GET(
           tags: koruUser.tags || undefined,
           location: koruUser.location || undefined,
           isOnKoru: true,
-          // Creator-specific data
           isCreator: koruUser.is_creator,
           pricePerMessage: koruUser.price_per_message,
           responseTimeHours: koruUser.response_time_hours,
@@ -52,32 +164,65 @@ export async function GET(
       });
     }
 
-    // Check featured profiles or search cache
-    const cached = await getProfileByUsername(username);
-    if (cached) {
+    // For non-Koru users: Try Twitter API first, fall back to cache
+    const [freshData, cachedProfile] = await Promise.all([
+      fetchProfileFromTwitter(username),
+      getProfileByUsername(username),
+    ]);
+
+    console.log({ freshData });
+
+    // If we got fresh data from API
+    if (freshData && freshData.name) {
+      // Update cache in background if we have a cached version
+      if (cachedProfile) {
+        const tableName = cachedProfile.is_featured
+          ? "featured_profiles"
+          : "twitter_profiles";
+        updateCachedProfile(cachedProfile, freshData, tableName);
+      }
+
       return NextResponse.json({
         profile: {
-          twitterId: cached.twitter_id,
-          name: cached.name,
-          handle: cached.username,
-          bio: cached.bio || undefined,
-          profileImageUrl: cached.profile_image_url || undefined,
-          bannerUrl: cached.banner_url || undefined,
-          followersCount: cached.followers_count || undefined,
-          followingCount: cached.following_count || undefined,
-          isVerified: cached.verified,
-          category: cached.category || undefined,
-          tags: cached.tags || undefined,
+          twitterId: freshData.twitter_id,
+          name: freshData.name,
+          handle: username,
+          bio: freshData.bio || undefined,
+          profileImageUrl: freshData.profile_image_url || undefined,
+          bannerUrl: freshData.banner_url || undefined,
+          followersCount: freshData.followers_count || undefined,
+          followingCount: freshData.following_count || undefined,
+          isVerified: freshData.verified || false,
+          // Preserve category/tags from cache if available
+          category: cachedProfile?.category || undefined,
+          tags: cachedProfile?.tags || undefined,
           isOnKoru: false,
         },
       });
     }
 
-    // Not found
-    return NextResponse.json(
-      { error: "Profile not found" },
-      { status: 404 }
-    );
+    // API failed/timed out - fall back to cached data
+    if (cachedProfile) {
+      return NextResponse.json({
+        profile: {
+          twitterId: cachedProfile.twitter_id,
+          name: cachedProfile.name,
+          handle: cachedProfile.username,
+          bio: cachedProfile.bio || undefined,
+          profileImageUrl: cachedProfile.profile_image_url || undefined,
+          bannerUrl: cachedProfile.banner_url || undefined,
+          followersCount: cachedProfile.followers_count || undefined,
+          followingCount: cachedProfile.following_count || undefined,
+          isVerified: cachedProfile.verified,
+          category: cachedProfile.category || undefined,
+          tags: cachedProfile.tags || undefined,
+          isOnKoru: false,
+        },
+      });
+    }
+
+    // Not found anywhere
+    return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   } catch (error) {
     console.error("Error fetching profile:", error);
     return NextResponse.json(
@@ -86,4 +231,3 @@ export async function GET(
     );
   }
 }
-

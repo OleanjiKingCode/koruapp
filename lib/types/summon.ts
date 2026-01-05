@@ -57,6 +57,3 @@ export interface TreemapItem {
 // For backwards compatibility, export aliases
 export type Appeal = Summon;
 export type UserAppeal = UserSummon;
-
-
-

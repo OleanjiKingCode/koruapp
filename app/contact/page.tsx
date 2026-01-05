@@ -11,15 +11,15 @@ import { cn } from "@/lib/utils";
 function ContactForm() {
   const searchParams = useSearchParams();
   const type = searchParams.get("type");
-  const source = searchParams.get("source");
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     subject: type === "refund-dispute" ? "Refund Dispute" : "",
-    message: type === "refund-dispute" 
-      ? "I would like to dispute a refund. Please provide:\n- Summon ID or transaction ID\n- Date of the Summon\n- Reason for dispute\n\nDetails:\n"
-      : "",
+    message:
+      type === "refund-dispute"
+        ? "I would like to dispute a refund. Please provide:\n- Summon ID or transaction ID\n- Date of the Summon\n- Reason for dispute\n\nDetails:\n"
+        : "",
     category: type || "general",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,7 +79,8 @@ function ContactForm() {
               Message sent!
             </h1>
             <p className="text-lg text-muted-foreground sm:text-xl">
-              We'll get back to you as soon as possible, usually within 24 hours.
+              We'll get back to you as soon as possible, usually within 24
+              hours.
             </p>
             <div className="flex gap-3 justify-center pt-4">
               <Button asChild variant="outline">
@@ -106,10 +107,46 @@ function ContactForm() {
         >
           {/* Header */}
           <div className="text-center space-y-4">
-            <h1 className="text-5xl font-bold text-foreground">Contact Support</h1>
+            <h1 className="text-5xl font-bold text-foreground">
+              Contact Support
+            </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Have a question or need help? We're here for you. Most inquiries get a response within 24 hours.
+              Have a question or need help? We're here for you.
             </p>
+          </div>
+
+          {/* Quick Contact Options */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a
+              href="https://x.com/koruapp"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 font-medium hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+              Message us on X
+            </a>
+            <Link
+              href="/faq"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-koru-lime text-neutral-900 font-medium hover:bg-koru-lime/90 transition-colors"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              View FAQs
+            </Link>
           </div>
 
           {/* Form */}
@@ -117,7 +154,10 @@ function ContactForm() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid gap-6 sm:grid-cols-2">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-medium text-foreground mb-2"
+                  >
                     Name *
                   </label>
                   <Input
@@ -130,7 +170,10 @@ function ContactForm() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-foreground mb-2"
+                  >
                     Email *
                   </label>
                   <Input
@@ -146,7 +189,10 @@ function ContactForm() {
               </div>
 
               <div>
-                <label htmlFor="category" className="block text-sm font-medium text-foreground mb-2">
+                <label
+                  htmlFor="category"
+                  className="block text-sm font-medium text-foreground mb-2"
+                >
                   Category *
                 </label>
                 <select
@@ -169,7 +215,10 @@ function ContactForm() {
               </div>
 
               <div>
-                <label htmlFor="subject" className="block text-sm font-medium text-foreground mb-2">
+                <label
+                  htmlFor="subject"
+                  className="block text-sm font-medium text-foreground mb-2"
+                >
                   Subject *
                 </label>
                 <Input
@@ -183,7 +232,10 @@ function ContactForm() {
               </div>
 
               <div>
-                <label htmlFor="message" className="block text-sm font-medium text-foreground mb-2">
+                <label
+                  htmlFor="message"
+                  className="block text-sm font-medium text-foreground mb-2"
+                >
                   Message *
                 </label>
                 <textarea
@@ -204,35 +256,24 @@ function ContactForm() {
               <div className="flex flex-col sm:flex-row gap-4 justify-between items-center pt-4">
                 <p className="text-sm text-muted-foreground">
                   Need quick answers? Check out our{" "}
-                  <Link href="/faq" className="text-koru-purple hover:underline">
+                  <Link
+                    href="/faq"
+                    className="text-koru-purple hover:underline"
+                  >
                     FAQ page
                   </Link>
                   .
                 </p>
-                <Button type="submit" size="lg" isLoading={isSubmitting} disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  size="lg"
+                  isLoading={isSubmitting}
+                  disabled={isSubmitting}
+                >
                   {isSubmitting ? "Sending..." : "Send Message"}
                 </Button>
               </div>
             </form>
-          </div>
-
-          {/* Help Section */}
-          <div className="bg-white/60 dark:bg-neutral-900/60 rounded-2xl p-6 border border-white/20 dark:border-neutral-800">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Other ways to get help</h3>
-            <Link
-              href="/faq"
-              className="flex items-center gap-3 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-4 py-3 text-left transition hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
-            >
-              <div className="rounded-full bg-koru-purple/10 p-2">
-                <svg className="w-5 h-5 text-koru-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="font-medium text-foreground">FAQ</p>
-                <p className="text-sm text-muted-foreground">Find quick answers</p>
-              </div>
-            </Link>
           </div>
         </motion.div>
       </main>
@@ -242,13 +283,15 @@ function ContactForm() {
 
 export default function ContactPage() {
   return (
-    <Suspense fallback={
-      <main className="min-h-screen pb-24 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </main>
-    }>
+    <Suspense
+      fallback={
+        <main className="min-h-screen pb-24 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </main>
+      }
+    >
       <ContactForm />
     </Suspense>
   );

@@ -543,7 +543,7 @@ export default function ViewProfilePage() {
 
       const { chat } = await response.json();
       setBookingModalOpen(false);
-      
+
       // Navigate to the new chat using the chat ID
       router.push(ROUTES.CHAT(chat.id));
     } catch (error) {
@@ -855,7 +855,8 @@ export default function ViewProfilePage() {
                   Bring {profile.name.split(" ")[0]} to Koru
                 </h3>
                 <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                  {profile.name.split(" ")[0]} isn't on Koru yet. Create a Summon to invite them!
+                  {profile.name.split(" ")[0]} isn't on Koru yet. Create a
+                  Summon to invite them!
                 </p>
               </div>
               <Button

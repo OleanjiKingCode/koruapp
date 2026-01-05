@@ -77,7 +77,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
+      <head suppressHydrationWarning>
         {/* Additional Twitter meta tags for better compatibility */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:title" content="Koru" />

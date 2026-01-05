@@ -578,7 +578,8 @@ export async function updateUser(
 export async function getUserChats(userId: string): Promise<Chat[]> {
   const { data, error } = await supabase
     .from("chats")
-    .select(`
+    .select(
+      `
       *,
       requester:users!requester_id (
         id,
@@ -592,12 +593,13 @@ export async function getUserChats(userId: string): Promise<Chat[]> {
         username,
         profile_image_url
       )
-    `)
+    `
+    )
     .or(`requester_id.eq.${userId},creator_id.eq.${userId}`)
     .order("updated_at", { ascending: false });
 
   if (error || !data) return [];
-  
+
   // Transform to include otherParty based on the current user
   return data.map((chat: any) => {
     const isRequester = chat.requester_id === userId;
@@ -637,7 +639,9 @@ export async function createChat(chat: {
       amount: chat.amount,
       slot_name: chat.slot_name,
       slot_duration: chat.slot_duration,
-      deadline_at: chat.deadline_at || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      deadline_at:
+        chat.deadline_at ||
+        new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       status: "active",
     })
     .select()
@@ -806,7 +810,8 @@ export async function getSummonBackers(
   // Try appeal_backers first, then summon_backers
   const { data, error } = await supabase
     .from("appeal_backers")
-    .select(`
+    .select(
+      `
       id,
       user_id,
       amount,
@@ -817,7 +822,8 @@ export async function getSummonBackers(
         username,
         profile_image_url
       )
-    `)
+    `
+    )
     .eq("appeal_id", summonId)
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -826,7 +832,8 @@ export async function getSummonBackers(
     // Try summon_backers table as fallback
     const { data: summonBackers, error: sbError } = await supabase
       .from("summon_backers")
-      .select(`
+      .select(
+        `
         id,
         user_id,
         amount,
@@ -837,7 +844,8 @@ export async function getSummonBackers(
           username,
           profile_image_url
         )
-      `)
+      `
+      )
       .eq("summon_id", summonId)
       .order("created_at", { ascending: false })
       .limit(limit);
@@ -851,7 +859,7 @@ export async function getSummonBackers(
   }
 
   // Transform array user to single object
-  return (data as any[] || []).map((b) => ({
+  return ((data as any[]) || []).map((b) => ({
     ...b,
     user: Array.isArray(b.user) ? b.user[0] : b.user,
   }));
@@ -1084,7 +1092,8 @@ export async function getChatMessages(
 ): Promise<Message[]> {
   const { data, error } = await supabase
     .from("messages")
-    .select(`
+    .select(
+      `
       *,
       sender:users!sender_id (
         id,
@@ -1092,7 +1101,8 @@ export async function getChatMessages(
         username,
         profile_image_url
       )
-    `)
+    `
+    )
     .eq("chat_id", chatId)
     .order("created_at", { ascending: true })
     .limit(limit);
@@ -1117,7 +1127,8 @@ export async function sendMessage(
       sender_id: senderId,
       content: content.trim(),
     })
-    .select(`
+    .select(
+      `
       *,
       sender:users!sender_id (
         id,
@@ -1125,7 +1136,8 @@ export async function sendMessage(
         username,
         profile_image_url
       )
-    `)
+    `
+    )
     .single();
 
   if (error) {

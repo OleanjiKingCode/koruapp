@@ -2,13 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -22,22 +15,20 @@ const COOKIE_STORAGE_KEY = "koru-cookie-preferences";
 const COOKIE_CONSENT_KEY = "koru-cookie-consent-given";
 
 export function CookieConsentModal() {
-  const [open, setOpen] = useState(false);
+  const [showBanner, setShowBanner] = useState(false);
+  const [showPreferences, setShowPreferences] = useState(false);
   const [preferences, setPreferences] = useState<CookiePreferences>({
-    necessary: true, // Always true, cannot be disabled
+    necessary: true,
     analytics: false,
     marketing: false,
   });
 
   useEffect(() => {
-    // Check if user has already given consent
     const consentGiven = localStorage.getItem(COOKIE_CONSENT_KEY);
     if (!consentGiven) {
-      // Show modal after a short delay
-      const timer = setTimeout(() => setOpen(true), 1000);
+      const timer = setTimeout(() => setShowBanner(true), 1000);
       return () => clearTimeout(timer);
     } else {
-      // Load saved preferences
       const saved = localStorage.getItem(COOKIE_STORAGE_KEY);
       if (saved) {
         try {
@@ -51,9 +42,9 @@ export function CookieConsentModal() {
   }, []);
 
   useEffect(() => {
-    // Listen for custom event to open preferences
     const handleOpenPreferences = () => {
-      setOpen(true);
+      setShowBanner(true);
+      setShowPreferences(true);
     };
 
     window.addEventListener("koru-open-cookie-preferences", handleOpenPreferences);
@@ -62,7 +53,7 @@ export function CookieConsentModal() {
     };
   }, []);
 
-  const handleAcceptAll = () => {
+  const handleAccept = () => {
     const allAccepted: CookiePreferences = {
       necessary: true,
       analytics: true,
@@ -70,10 +61,11 @@ export function CookieConsentModal() {
     };
     setPreferences(allAccepted);
     savePreferences(allAccepted);
-    setOpen(false);
+    setShowBanner(false);
+    setShowPreferences(false);
   };
 
-  const handleRejectAll = () => {
+  const handleDecline = () => {
     const onlyNecessary: CookiePreferences = {
       necessary: true,
       analytics: false,
@@ -81,167 +73,177 @@ export function CookieConsentModal() {
     };
     setPreferences(onlyNecessary);
     savePreferences(onlyNecessary);
-    setOpen(false);
+    setShowBanner(false);
+    setShowPreferences(false);
   };
 
   const handleSavePreferences = () => {
     savePreferences(preferences);
-    setOpen(false);
+    setShowBanner(false);
+    setShowPreferences(false);
   };
 
   const savePreferences = (prefs: CookiePreferences) => {
     localStorage.setItem(COOKIE_STORAGE_KEY, JSON.stringify(prefs));
     localStorage.setItem(COOKIE_CONSENT_KEY, "true");
-    
-    // Here you would typically initialize/update your analytics and marketing tools
-    // based on the preferences
+
     if (prefs.analytics) {
-      // Initialize analytics
       console.log("Analytics enabled");
     }
     if (prefs.marketing) {
-      // Initialize marketing tools
       console.log("Marketing enabled");
     }
   };
 
   const togglePreference = (key: keyof CookiePreferences) => {
-    if (key === "necessary") return; // Cannot toggle necessary cookies
+    if (key === "necessary") return;
     setPreferences((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   return (
     <AnimatePresence>
-      {open && (
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-semibold text-foreground">
-                Cookie Preferences
-              </DialogTitle>
-              <DialogDescription className="text-base text-muted-foreground">
-                We use cookies to enhance your experience, analyze site usage, and assist in marketing efforts. 
-                You can choose which cookies to accept.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-6 py-4">
-              {/* Necessary Cookies */}
-              <div className="rounded-2xl border border-white/10 bg-white/60 p-4 dark:bg-white/5">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-foreground">Necessary Cookies</h3>
-                      <span className="rounded-full bg-koru-purple/15 px-2 py-1 text-xs text-koru-purple font-medium">
-                        Always Active
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      These cookies are essential for the Service to function. They enable core features like 
-                      authentication, security, and session management. They cannot be disabled.
-                    </p>
+      {showBanner && (
+        <motion.div
+          initial={{ opacity: 0, y: 100 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 100 }}
+          transition={{ type: "spring", stiffness: 100, damping: 20 }}
+          className="fixed bottom-0 left-0 right-0 z-50 p-4"
+        >
+          <div className="max-w-7xl mx-auto">
+            <div
+              className={cn(
+                "bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800",
+                "rounded-xl shadow-lg px-6 py-4"
+              )}
+            >
+              {!showPreferences ? (
+                // Main banner
+                <div className="flex flex-col md:flex-row md:items-center gap-4">
+                  <div className="flex-1 text-sm text-neutral-600 dark:text-neutral-400">
+                    We use essential cookies to make our site work. With your consent, we may also use non-essential
+                    cookies to improve user experience and analyze website traffic. For these reasons, we may share
+                    your site usage data with our social media and analytics partners. By clicking &quot;Accept&quot;,
+                    you agree to our website&apos;s cookie use as described in our{" "}
+                    <button
+                      onClick={() => setShowPreferences(true)}
+                      className="text-koru-purple hover:underline font-medium"
+                    >
+                      Cookie Policy
+                    </button>
+                    . You can change your cookie settings at any time by clicking &quot;
+                    <button
+                      onClick={() => setShowPreferences(true)}
+                      className="text-koru-purple hover:underline font-medium"
+                    >
+                      Preferences
+                    </button>
+                    &quot;.
                   </div>
-                  <div className="flex items-center">
-                    <div className="relative inline-flex h-6 w-11 items-center rounded-full bg-koru-purple cursor-not-allowed opacity-60">
-                      <span className="inline-block h-4 w-4 translate-x-6 rounded-full bg-white transition" />
-                    </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <Button
+                      variant="outline"
+                      onClick={handleDecline}
+                      className="min-w-[100px]"
+                    >
+                      Decline
+                    </Button>
+                    <Button
+                      onClick={handleAccept}
+                      className="min-w-[100px]"
+                    >
+                      Accept
+                    </Button>
                   </div>
                 </div>
-              </div>
-
-              {/* Analytics Cookies */}
-              <div className="rounded-2xl border border-white/10 bg-white/60 p-4 dark:bg-white/5">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-foreground">Analytics Cookies</h3>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      These cookies help us understand how visitors interact with the Service by collecting and 
-                      reporting information anonymously. This helps us improve the user experience.
-                    </p>
+              ) : (
+                // Preferences panel
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-foreground">Cookie Preferences</h3>
+                    <button
+                      onClick={() => setShowPreferences(false)}
+                      className="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => togglePreference("analytics")}
-                    className={cn(
-                      "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-koru-purple focus:ring-offset-2",
-                      preferences.analytics ? "bg-koru-purple" : "bg-neutral-300 dark:bg-neutral-700"
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "inline-block h-4 w-4 rounded-full bg-white transition-transform",
-                        preferences.analytics ? "translate-x-6" : "translate-x-1"
-                      )}
-                    />
-                  </button>
-                </div>
-              </div>
 
-              {/* Marketing Cookies */}
-              <div className="rounded-2xl border border-white/10 bg-white/60 p-4 dark:bg-white/5">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-foreground">Marketing Cookies</h3>
+                  <div className="grid gap-3 md:grid-cols-3">
+                    {/* Necessary */}
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
+                      <div>
+                        <p className="font-medium text-sm text-foreground">Necessary</p>
+                        <p className="text-xs text-neutral-500">Always active</p>
+                      </div>
+                      <div className="relative inline-flex h-5 w-9 items-center rounded-full bg-koru-purple cursor-not-allowed opacity-60">
+                        <span className="inline-block h-3.5 w-3.5 translate-x-5 rounded-full bg-white transition" />
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      These cookies are used to deliver personalized advertisements and track campaign performance. 
-                      They may be set by our advertising partners.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => togglePreference("marketing")}
-                    className={cn(
-                      "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-koru-purple focus:ring-offset-2",
-                      preferences.marketing ? "bg-koru-purple" : "bg-neutral-300 dark:bg-neutral-700"
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "inline-block h-4 w-4 rounded-full bg-white transition-transform",
-                        preferences.marketing ? "translate-x-6" : "translate-x-1"
-                      )}
-                    />
-                  </button>
-                </div>
-              </div>
 
-              <div className="rounded-2xl border border-koru-purple/20 bg-koru-purple/5 p-4">
-                <p className="text-sm text-foreground/90">
-                  <strong>Learn more:</strong> For detailed information about how we use cookies and manage your data, please contact support.
-                </p>
-              </div>
+                    {/* Analytics */}
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
+                      <div>
+                        <p className="font-medium text-sm text-foreground">Analytics</p>
+                        <p className="text-xs text-neutral-500">Site usage data</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => togglePreference("analytics")}
+                        className={cn(
+                          "relative inline-flex h-5 w-9 items-center rounded-full transition-colors",
+                          preferences.analytics ? "bg-koru-purple" : "bg-neutral-300 dark:bg-neutral-600"
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform",
+                            preferences.analytics ? "translate-x-5" : "translate-x-0.5"
+                          )}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Marketing */}
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
+                      <div>
+                        <p className="font-medium text-sm text-foreground">Marketing</p>
+                        <p className="text-xs text-neutral-500">Personalized ads</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => togglePreference("marketing")}
+                        className={cn(
+                          "relative inline-flex h-5 w-9 items-center rounded-full transition-colors",
+                          preferences.marketing ? "bg-koru-purple" : "bg-neutral-300 dark:bg-neutral-600"
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform",
+                            preferences.marketing ? "translate-x-5" : "translate-x-0.5"
+                          )}
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-2">
+                    <Button variant="outline" onClick={handleDecline}>
+                      Decline All
+                    </Button>
+                    <Button onClick={handleSavePreferences}>
+                      Save Preferences
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-white/10">
-              <Button
-                variant="outline"
-                onClick={handleRejectAll}
-                className="flex-1"
-              >
-                Reject All
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleSavePreferences}
-                className="flex-1"
-              >
-                Save Preferences
-              </Button>
-              <Button
-                onClick={handleAcceptAll}
-                className="flex-1"
-              >
-                Accept All
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+          </div>
+        </motion.div>
       )}
     </AnimatePresence>
   );
 }
-

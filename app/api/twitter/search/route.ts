@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // First, check Supabase cache for matching profiles
-    if (useCache) {
+    if (useCache && !RAPIDAPI_KEY) {
       const cachedProfiles = await getCachedProfilesByQuery(query);
       if (cachedProfiles.length >= 3) {
         // Only use cache if we have at least 3 results

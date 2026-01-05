@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useMemo, useEffect, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 
 // UI Components
@@ -21,7 +22,7 @@ import {
   RankBadge,
   SortableHeader,
 } from "@/components/discover";
-import { CrownIcon, SearchIcon, UsersIcon } from "@/components/icons";
+import { SearchIcon } from "@/components/icons";
 
 // Hooks
 import {
@@ -32,10 +33,9 @@ import {
 } from "@/lib/hooks";
 
 // Utils, Constants & Types
-import { cn } from "@/lib/utils";
 import { formatFollowerCount } from "@/lib/utils/format";
 import { getTagColor, deduplicateTags } from "@/lib/utils/tags";
-import { ROUTES, type TabValue, MIN_SEARCH_LENGTH } from "@/lib/constants";
+import { type TabValue, MIN_SEARCH_LENGTH } from "@/lib/constants";
 import type { FeaturedProfile } from "@/lib/supabase";
 import {
   formatFollowerCount as formatTwitterFollowers,
@@ -43,15 +43,42 @@ import {
 } from "@/lib/types/twitter";
 import type { SortField } from "@/lib/types";
 
-export default function DiscoverPage() {
+function DiscoverContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Initialize search query from URL
+  const initialSearch = searchParams.get("search") || "";
 
   // UI state
   const [activeTab, setActiveTab] = useState<TabValue>("hot");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("highest_earned");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  // Update URL when search query changes
+  const updateSearchUrl = useCallback(
+    (query: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (query.length >= MIN_SEARCH_LENGTH) {
+        params.set("search", query);
+      } else {
+        params.delete("search");
+      }
+      const newUrl = params.toString() ? `?${params.toString()}` : "/discover";
+      router.replace(newUrl, { scroll: false });
+    },
+    [router, searchParams]
+  );
+
+  // Sync URL when search query changes (debounced)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      updateSearchUrl(searchQuery);
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, updateSearchUrl]);
 
   // Featured profiles from DB
   const {
@@ -106,7 +133,6 @@ export default function DiscoverPage() {
     isLoading: isSearching,
     isValidating,
     isError,
-    source,
   } = useTwitterSearch(searchQuery, {
     type: "People",
     count: 20,
@@ -235,7 +261,6 @@ export default function DiscoverPage() {
         {isShowingSearchResults && !isActivelySearching && hasSearchResults && (
           <SearchStatusIndicator
             searchQuery={searchQuery}
-            source={source}
             resultCount={sortedTwitterProfiles.length}
           />
         )}
@@ -306,11 +331,9 @@ export default function DiscoverPage() {
 
 function SearchStatusIndicator({
   searchQuery,
-  source,
   resultCount,
 }: {
   searchQuery: string;
-  source?: "cache" | "api";
   resultCount: number;
 }) {
   return (
@@ -324,18 +347,6 @@ function SearchStatusIndicator({
         <span className="text-sm text-neutral-600 dark:text-neutral-400">
           Results for &ldquo;{searchQuery}&rdquo;
         </span>
-        {/* {source && (
-          <span
-            className={cn(
-              "text-xs px-2 py-0.5 rounded-full",
-              source === "cache"
-                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-            )}
-          >
-            {source === "cache" ? "Cached" : "Live"}
-          </span>
-        )} */}
       </div>
       <span className="text-sm text-neutral-500">
         {resultCount} profile{resultCount !== 1 ? "s" : ""} found
@@ -373,21 +384,23 @@ function TwitterResultsGrid({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
     >
-      {profiles.map((profile, index) => (
-        <motion.div
-          key={profile.id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.05 }}
-        >
-          <TwitterProfileCard
-            profile={profile}
-            onView={() => onView(profile)}
-          />
-        </motion.div>
-      ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {profiles.map((profile, index) => (
+          <motion.div
+            key={profile.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+          >
+            <TwitterProfileCard
+              profile={profile}
+              onView={() => onView(profile)}
+            />
+          </motion.div>
+        ))}
+      </div>
+      <CantFindProfileCTA />
     </motion.div>
   );
 }
@@ -405,89 +418,91 @@ function TwitterResultsTable({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden"
     >
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-neutral-200 dark:border-neutral-800">
-              <th className="text-left p-4 font-semibold text-neutral-600 dark:text-neutral-400">
-                Rank
-              </th>
-              <th className="text-left p-4 font-semibold text-neutral-600 dark:text-neutral-400">
-                Profile
-              </th>
-              <th className="text-left p-4 font-semibold text-neutral-600 dark:text-neutral-400">
-                Followers
-              </th>
-              <th className="text-left p-4 font-semibold text-neutral-600 dark:text-neutral-400">
-                Following
-              </th>
-              <th className="text-left p-4 font-semibold text-neutral-600 dark:text-neutral-400">
-                Verified
-              </th>
-              <th className="p-4"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {profiles.map((profile, index) => (
-              <motion.tr
-                key={profile.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: index * 0.03 }}
-                className="border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors"
-              >
-                <td className="p-4">
-                  <RankBadge rank={index + 1} />
-                </td>
-                <td className="p-4">
-                  <div className="flex items-center gap-3">
-                    {profile.profileImageUrl ? (
-                      <img
-                        src={profile.profileImageUrl}
-                        alt={profile.name}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <AvatarGenerator seed={profile.username} size={40} />
-                    )}
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <p className="font-semibold text-neutral-900 dark:text-neutral-100">
-                          {profile.name}
+      <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-neutral-200 dark:border-neutral-800">
+                <th className="text-left p-4 font-semibold text-neutral-600 dark:text-neutral-400">
+                  Rank
+                </th>
+                <th className="text-left p-4 font-semibold text-neutral-600 dark:text-neutral-400">
+                  Profile
+                </th>
+                <th className="text-left p-4 font-semibold text-neutral-600 dark:text-neutral-400">
+                  Followers
+                </th>
+                <th className="text-left p-4 font-semibold text-neutral-600 dark:text-neutral-400">
+                  Following
+                </th>
+                <th className="text-left p-4 font-semibold text-neutral-600 dark:text-neutral-400">
+                  Verified
+                </th>
+                <th className="p-4"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {profiles.map((profile, index) => (
+                <motion.tr
+                  key={profile.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: index * 0.03 }}
+                  className="border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors"
+                >
+                  <td className="p-4">
+                    <RankBadge rank={index + 1} />
+                  </td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-3">
+                      {profile.profileImageUrl ? (
+                        <img
+                          src={profile.profileImageUrl}
+                          alt={profile.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <AvatarGenerator seed={profile.username} size={40} />
+                      )}
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-semibold text-neutral-900 dark:text-neutral-100">
+                            {profile.name}
+                          </p>
+                          {profile.verified && <VerifiedBadge />}
+                        </div>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                          @{profile.username}
                         </p>
-                        {profile.verified && <VerifiedBadge />}
                       </div>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                        @{profile.username}
-                      </p>
                     </div>
-                  </div>
-                </td>
-                <td className="p-4 text-neutral-700 dark:text-neutral-300 font-medium">
-                  {formatTwitterFollowers(profile.followersCount)}
-                </td>
-                <td className="p-4 text-neutral-700 dark:text-neutral-300">
-                  {formatTwitterFollowers(profile.followingCount)}
-                </td>
-                <td className="p-4">
-                  {profile.verified ? (
-                    <span className="text-blue-500">✓</span>
-                  ) : (
-                    <span className="text-neutral-400">—</span>
-                  )}
-                </td>
-                <td className="p-4">
-                  <Button size="sm" onClick={() => onView(profile)}>
-                    View
-                  </Button>
-                </td>
-              </motion.tr>
-            ))}
-          </tbody>
-        </table>
+                  </td>
+                  <td className="p-4 text-neutral-700 dark:text-neutral-300 font-medium">
+                    {formatTwitterFollowers(profile.followersCount)}
+                  </td>
+                  <td className="p-4 text-neutral-700 dark:text-neutral-300">
+                    {formatTwitterFollowers(profile.followingCount)}
+                  </td>
+                  <td className="p-4">
+                    {profile.verified ? (
+                      <span className="text-blue-500">✓</span>
+                    ) : (
+                      <span className="text-neutral-400">—</span>
+                    )}
+                  </td>
+                  <td className="p-4">
+                    <Button size="sm" onClick={() => onView(profile)}>
+                      View
+                    </Button>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+      <CantFindProfileCTA />
     </motion.div>
   );
 }
@@ -730,5 +745,47 @@ function EmptyFiltersState({
         secondaryCtaHref="/summons"
       />
     </motion.div>
+  );
+}
+
+function CantFindProfileCTA() {
+  return (
+    <div className="mt-8 flex flex-col items-center gap-3">
+      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+        Can&apos;t find the profile you&apos;re looking for?
+      </p>
+      <Link
+        href="/contact"
+        className="inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-koru-purple text-white font-medium text-sm hover:bg-koru-purple/90 transition-colors"
+      >
+        Reach out to us
+      </Link>
+    </div>
+  );
+}
+
+function DiscoverLoading() {
+  return (
+    <div className="min-h-screen pb-32">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="animate-pulse space-y-8">
+          <div className="h-12 bg-neutral-200 dark:bg-neutral-800 rounded-xl w-1/3" />
+          <div className="h-10 bg-neutral-200 dark:bg-neutral-800 rounded-xl" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-64 bg-neutral-200 dark:bg-neutral-800 rounded-2xl" />
+            ))}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default function DiscoverPage() {
+  return (
+    <Suspense fallback={<DiscoverLoading />}>
+      <DiscoverContent />
+    </Suspense>
   );
 }
