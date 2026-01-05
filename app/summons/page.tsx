@@ -37,8 +37,8 @@ import {
   TrendUpIcon,
   TrendDownIcon,
   ShareIcon,
+  LoadingIcon,
 } from "@/components/icons";
-import { LoadingSpinner } from "@/components/shared/filter-bar";
 
 type ViewMode = "treemap" | "list";
 
@@ -596,7 +596,7 @@ export default function SummonsPage() {
                                   {isActivelySearching &&
                                     targetSearch.length >= 2 && (
                                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                        <LoadingSpinner className=" w-4 h-4 text-koru-purple" />
+                                        <LoadingIcon className="animate-spin w-4 h-4 text-koru-purple" />
                                       </div>
                                     )}
                                   {/* Search Results Dropdown */}

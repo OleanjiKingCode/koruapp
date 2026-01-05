@@ -22,7 +22,7 @@ import {
   RankBadge,
   SortableHeader,
 } from "@/components/discover";
-import { SearchIcon } from "@/components/icons";
+import { FireIcon, SearchIcon } from "@/components/icons";
 
 // Hooks
 import {
@@ -217,7 +217,7 @@ function DiscoverContent() {
                 value="hot"
                 className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700 data-[state=active]:shadow-sm"
               >
-                🔥 Hot
+                <FireIcon className="mr-1 size-4" /> Hot
               </TabsTrigger>
               <TabsTrigger
                 value="daily"
@@ -773,7 +773,10 @@ function DiscoverLoading() {
           <div className="h-10 bg-neutral-200 dark:bg-neutral-800 rounded-xl" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-64 bg-neutral-200 dark:bg-neutral-800 rounded-2xl" />
+              <div
+                key={i}
+                className="h-64 bg-neutral-200 dark:bg-neutral-800 rounded-2xl"
+              />
             ))}
           </div>
         </div>
