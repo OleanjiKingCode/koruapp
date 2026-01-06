@@ -338,6 +338,7 @@ export interface User {
   following_count: number;
   is_verified: boolean;
   location: string | null;
+  website: string | null;
 
   // Creator settings
   is_creator: boolean;

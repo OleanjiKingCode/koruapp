@@ -53,7 +53,7 @@ export function useUser() {
         responseTimeHours: dbUser?.response_time_hours || 24,
         email: dbUser?.email || null,
         tags: dbUser?.tags || [],
-        website: (dbUser as any)?.website || null,
+        website: dbUser?.website || null,
         // Balance info
         balance: dbUser?.balance || 0,
         pendingBalance: dbUser?.pending_balance || 0,

@@ -513,10 +513,10 @@ function FeaturedProfilesGrid({
   sentinelRef,
   onView,
 }: {
-  profiles: any[];
+  profiles: FeaturedProfile[];
   isLoading: boolean;
   sentinelRef: React.RefObject<HTMLDivElement>;
-  onView: (profile: any) => void;
+  onView: (profile: FeaturedProfile) => void;
 }) {
   return (
     <motion.div

@@ -161,7 +161,7 @@ export default function EditProfilePage() {
         username: user.username || "",
         displayName: user.name || "",
         bio: user.bio || "",
-        website: (user as any).website || "",
+        website: user.website || "",
         twitterHandle: user.username || "",
       });
       setIsFormInitialized(true);

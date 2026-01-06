@@ -154,10 +154,10 @@ export function ShareModal({
   const handleShareToX = useCallback(async () => {
     const text =
       type === "profile"
-        ? `Check out my Koru profile! 🌀\n\n${userData?.points.toLocaleString()} points • ${
+        ? `Check out my Koru profile!\n\n${userData?.points.toLocaleString()} points | ${
             userData?.level
-          } level • ${userData?.badges.length} badges\n\n`
-        : `🔔 Appeal for @${appeal?.targetHandle} on Koru!\n\n"${
+          } level | ${userData?.badges.length} badges\n\n`
+        : `Appeal for @${appeal?.targetHandle} on Koru!\n\n"${
             appeal?.request
           }"\n\n$${appeal?.totalPledged.toLocaleString()} pledged by ${
             appeal?.backers
@@ -177,7 +177,7 @@ export function ShareModal({
     {
       id: "twitter",
       icon: TwitterIcon,
-      label: "Share on X",
+      label: "Share",
       onClick: handleShareToX,
       className: "bg-black text-white hover:bg-neutral-800",
       activeIcon: null,
@@ -198,7 +198,7 @@ export function ShareModal({
     {
       id: "download",
       icon: DownloadIcon,
-      label: "Download",
+      label: "Save",
       onClick: handleDownload,
       className:
         "bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-700",
@@ -207,20 +207,6 @@ export function ShareModal({
       isActive: downloaded,
     },
   ];
-
-  // Mobile bottom drawer animation variants
-  const mobileDrawerVariants = {
-    hidden: { y: "100%", opacity: 1 },
-    visible: { y: 0, opacity: 1 },
-    exit: { y: "100%", opacity: 1 },
-  };
-
-  // Desktop centered modal animation variants
-  const desktopModalVariants = {
-    hidden: { opacity: 0, scale: 0.95 },
-    visible: { opacity: 1, scale: 1 },
-    exit: { opacity: 0, scale: 0.95 },
-  };
 
   return (
     <AnimatePresence>
@@ -232,67 +218,81 @@ export function ShareModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
             onClick={() => onOpenChange(false)}
           />
 
-          {/* Modal Container - Bottom drawer on mobile, centered on desktop */}
+          {/* Modal Container */}
           <motion.div
-            initial={isDesktop ? desktopModalVariants.hidden : mobileDrawerVariants.hidden}
-            animate={isDesktop ? desktopModalVariants.visible : mobileDrawerVariants.visible}
-            exit={isDesktop ? desktopModalVariants.exit : mobileDrawerVariants.exit}
-            transition={{ 
-              type: isDesktop ? "spring" : "spring",
+            initial={isDesktop ? { opacity: 0, scale: 0.95 } : { y: "100%" }}
+            animate={isDesktop ? { opacity: 1, scale: 1 } : { y: 0 }}
+            exit={isDesktop ? { opacity: 0, scale: 0.95 } : { y: "100%" }}
+            transition={{
+              type: "spring",
               damping: 25,
               stiffness: 300,
             }}
             className={`
-              fixed z-50 bg-white dark:bg-neutral-900 
-              ${isDesktop 
-                ? "inset-0 m-auto w-fit h-fit max-w-[90vw] max-h-[90vh] rounded-3xl shadow-2xl" 
-                : "bottom-0 left-0 right-0 rounded-t-3xl shadow-2xl max-h-[90vh]"
+              fixed z-50 bg-white dark:bg-neutral-900
+              ${
+                isDesktop
+                  ? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-3xl shadow-2xl max-w-lg w-full mx-4"
+                  : "bottom-0 left-0 right-0 rounded-t-3xl shadow-2xl max-h-[85vh]"
               }
             `}
           >
             {/* Drawer handle for mobile */}
             {!isDesktop && (
-              <div className="flex justify-center pt-3 pb-2">
+              <div className="flex justify-center pt-3 pb-1 sticky top-0 bg-white dark:bg-neutral-900 rounded-t-3xl z-10">
                 <div className="w-10 h-1 bg-neutral-300 dark:bg-neutral-700 rounded-full" />
               </div>
             )}
 
-            <div className={`flex flex-col items-center gap-4 overflow-y-auto ${isDesktop ? 'p-6' : 'px-4 pb-8 pt-2'}`}>
+            <div
+              className={`
+                flex flex-col items-center overflow-y-auto
+                ${isDesktop ? "p-6 max-h-[85vh]" : "px-4 pb-6 pt-2"}
+              `}
+              style={{ maxHeight: isDesktop ? "85vh" : "calc(85vh - 16px)" }}
+            >
               {/* Close Button - Top right on desktop */}
               {isDesktop && (
-                <motion.button
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                <button
                   onClick={() => onOpenChange(false)}
-                  className="absolute top-4 right-4 w-10 h-10 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
+                  className="absolute top-4 right-4 w-9 h-9 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors z-10"
                 >
-                  <CloseIcon className="w-5 h-5" />
-                </motion.button>
+                  <CloseIcon className="w-4 h-4" />
+                </button>
               )}
 
-              {/* Style Selector Pills */}
-              <div className="flex items-center gap-2 bg-neutral-100 dark:bg-neutral-800 rounded-full p-1.5">
-                {variants.map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => setSelectedVariant(v)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                      selectedVariant === v
-                        ? "bg-koru-purple text-white shadow-lg shadow-koru-purple/30"
-                        : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"
-                    }`}
-                  >
-                    {variantLabels[v]}
-                  </button>
-                ))}
+              {/* Style Selector Pills - Scrollable on mobile */}
+              <div className="w-full mb-4">
+                <div className="overflow-x-auto scrollbar-hide pb-1">
+                  <div className="flex items-center gap-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full p-1 w-fit mx-auto min-w-max">
+                    {variants.map((v) => (
+                      <button
+                        key={v}
+                        onClick={() => setSelectedVariant(v)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+                          selectedVariant === v
+                            ? "bg-koru-purple text-white shadow-md"
+                            : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                        }`}
+                      >
+                        {variantLabels[v]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              {/* Card Preview */}
-              <div className="relative">
+              {/* Card Preview - Scaled on mobile */}
+              <div
+                className={`
+                  relative flex-shrink-0 mb-4
+                  ${!isDesktop ? "w-full flex justify-center" : ""}
+                `}
+              >
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={selectedVariant}
@@ -300,7 +300,12 @@ export function ShareModal({
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
-                    className="shadow-2xl shadow-black/20 rounded-2xl overflow-hidden"
+                    className="shadow-xl shadow-black/20 rounded-xl overflow-hidden"
+                    style={{
+                      transform: !isDesktop ? "scale(0.65)" : "scale(0.85)",
+                      transformOrigin: "top center",
+                      marginBottom: !isDesktop ? "-80px" : "-40px",
+                    }}
                   >
                     {type === "profile" && userData && (
                       <ProfileShareCard
@@ -316,25 +321,26 @@ export function ShareModal({
                         }
                       />
                     )}
-                    {(type === "summon" || type === "appeal") && activeSummon && (
-                      <AppealShareCard
-                        ref={cardRef}
-                        appeal={activeSummon}
-                        variant={
-                          selectedVariant as
-                            | "default"
-                            | "compact"
-                            | "vibrant"
-                            | "dark"
-                        }
-                      />
-                    )}
+                    {(type === "summon" || type === "appeal") &&
+                      activeSummon && (
+                        <AppealShareCard
+                          ref={cardRef}
+                          appeal={activeSummon}
+                          variant={
+                            selectedVariant as
+                              | "default"
+                              | "compact"
+                              | "vibrant"
+                              | "dark"
+                          }
+                        />
+                      )}
                   </motion.div>
                 </AnimatePresence>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-3 flex-wrap justify-center">
+              {/* Action Buttons - Horizontal row */}
+              <div className="flex items-center justify-center gap-2 w-full">
                 {actionButtons.map((button) => {
                   const Icon =
                     button.isActive && button.activeIcon
@@ -351,8 +357,8 @@ export function ShareModal({
                       onClick={button.onClick}
                       disabled={isGenerating}
                       className={`
-                        flex items-center gap-2 px-5 py-3 rounded-full font-medium
-                        shadow-lg shadow-black/5 transition-all
+                        flex items-center justify-center gap-2 px-4 py-2.5 rounded-full font-medium
+                        shadow-sm transition-all flex-1 max-w-[120px]
                         disabled:opacity-50 disabled:cursor-not-allowed
                         ${button.className}
                         ${
@@ -362,18 +368,18 @@ export function ShareModal({
                         }
                       `}
                     >
-                      <Icon className="w-5 h-5" />
+                      <Icon className="w-4 h-4" />
                       <span className="text-sm">{label}</span>
                     </button>
                   );
                 })}
               </div>
 
-              {/* Close Button for mobile */}
+              {/* Cancel Button for mobile */}
               {!isDesktop && (
                 <button
                   onClick={() => onOpenChange(false)}
-                  className="w-full py-3 text-neutral-500 font-medium hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
+                  className="w-full py-3 mt-3 text-neutral-500 text-sm font-medium hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
                 >
                   Cancel
                 </button>
@@ -383,13 +389,13 @@ export function ShareModal({
               <AnimatePresence>
                 {isGenerating && (
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    className="absolute inset-0 flex items-center justify-center pointer-events-none bg-white/80 dark:bg-neutral-900/80 rounded-3xl"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none bg-white/90 dark:bg-neutral-900/90 rounded-3xl z-20"
                   >
-                    <div className="bg-white dark:bg-neutral-800 rounded-2xl px-6 py-4 shadow-2xl flex items-center gap-3">
-                      <div className="w-6 h-6 rounded-full border-2 border-koru-purple/20 border-t-koru-purple animate-spin" />
+                    <div className="bg-white dark:bg-neutral-800 rounded-2xl px-5 py-3 shadow-xl flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-full border-2 border-koru-purple/20 border-t-koru-purple animate-spin" />
                       <span className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
                         Generating...
                       </span>
