@@ -136,17 +136,47 @@ export function ShareModal({
     return () => window.removeEventListener("keydown", handleEscape);
   }, [open, onOpenChange]);
 
+  // Convert external images to base64 to avoid CORS issues
+  const convertImagesToBase64 = useCallback(async (element: HTMLElement) => {
+    const images = element.querySelectorAll("img");
+    const promises = Array.from(images).map(async (img) => {
+      if (img.src.startsWith("data:")) return; // Already base64
+      if (img.src.startsWith("/")) return; // Local images are fine
+      
+      try {
+        // Fetch through a proxy or use crossOrigin
+        const response = await fetch(img.src);
+        const blob = await response.blob();
+        const base64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+        img.src = base64;
+      } catch {
+        // If fetch fails, keep original src - it might still work
+        console.warn("Could not convert image to base64:", img.src);
+      }
+    });
+    await Promise.all(promises);
+  }, []);
+
   const generateImage = useCallback(async () => {
     if (!cardRef.current) return null;
 
     setIsGenerating(true);
     try {
+      // Wait for images to load
       await new Promise((resolve) => setTimeout(resolve, 100));
+      
+      // Try to convert external images to base64
+      await convertImagesToBase64(cardRef.current);
 
       const dataUrl = await toPng(cardRef.current, {
         quality: 1,
         pixelRatio: 2,
         cacheBust: true,
+        skipFonts: true, // Skip external fonts to avoid issues
       });
 
       return dataUrl;
@@ -156,7 +186,7 @@ export function ShareModal({
     } finally {
       setIsGenerating(false);
     }
-  }, []);
+  }, [convertImagesToBase64]);
 
   const handleDownload = useCallback(async () => {
     const dataUrl = await generateImage();
@@ -166,13 +196,13 @@ export function ShareModal({
     link.download =
       type === "profile"
         ? `koru-profile-${userData?.username || "card"}.png`
-        : `koru-appeal-${appeal?.targetHandle || "card"}.png`;
+        : `koru-summon-${activeSummon?.targetHandle || "card"}.png`;
     link.href = dataUrl;
     link.click();
 
     setDownloaded(true);
     setTimeout(() => setDownloaded(false), 2000);
-  }, [generateImage, type, userData, appeal]);
+  }, [generateImage, type, userData, activeSummon]);
 
   const handleCopyImage = useCallback(async () => {
     const dataUrl = await generateImage();
@@ -202,21 +232,21 @@ export function ShareModal({
         ? `Check out my Koru profile!\n\n${userData?.points.toLocaleString()} points • ${
             userData?.level
           } level | ${userData?.badges.length} badges\n\n`
-        : `Summon for @${appeal?.targetHandle} on Koru!\n\n"${
-            appeal?.request
-          }"\n\n$${appeal?.totalPledged.toLocaleString()} pledged by ${
-            appeal?.backers
+        : `Summon for @${activeSummon?.targetHandle} on Koru!\n\n"${
+            activeSummon?.request
+          }"\n\n$${activeSummon?.totalPledged.toLocaleString()} pledged by ${
+            activeSummon?.backers
           } backers\n\n`;
 
     const url = `https://koruapp.xyz/${
-      type === "profile" ? "profile" : "appeals"
+      type === "profile" ? "profile" : "summons"
     }`;
     const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
       text
     )}&url=${encodeURIComponent(url)}`;
 
     window.open(tweetUrl, "_blank", "width=550,height=420");
-  }, [type, userData, appeal]);
+  }, [type, userData, activeSummon]);
 
   const actionButtons = [
     {

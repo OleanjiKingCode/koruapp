@@ -1,11 +1,54 @@
 "use client";
 
 import { forwardRef } from "react";
-import { TrendUpIcon, TrendDownIcon, CheckIcon } from "@/components/icons";
-import type { Appeal } from "@/lib/types";
+import { TrendUpIcon, TrendDownIcon } from "@/components/icons";
+import { AvatarGenerator } from "@/components/ui/avatar-generator";
+import type { Summon } from "@/lib/types";
+
+// Simple inline tag colors for the share card (don't need dark mode since cards are static images)
+const TAG_COLORS: Record<string, { bg: string; text: string }> = {
+  Web3: { bg: "#f3e8ff", text: "#7c3aed" },
+  DeFi: { bg: "#f3e8ff", text: "#7c3aed" },
+  NFTs: { bg: "#ede9fe", text: "#6d28d9" },
+  DAOs: { bg: "#f3e8ff", text: "#7c3aed" },
+  Crypto: { bg: "#fef3c7", text: "#b45309" },
+  AI: { bg: "#dbeafe", text: "#1d4ed8" },
+  Tech: { bg: "#cffafe", text: "#0891b2" },
+  Startup: { bg: "#e0f2fe", text: "#0284c7" },
+  Investing: { bg: "#d1fae5", text: "#059669" },
+  Podcast: { bg: "#fce7f3", text: "#be185d" },
+  Interview: { bg: "#ffe4e6", text: "#be123c" },
+  AMA: { bg: "#fae8ff", text: "#a21caf" },
+  Content: { bg: "#fce7f3", text: "#be185d" },
+  Memes: { bg: "#ffedd5", text: "#c2410c" },
+  Education: { bg: "#e0e7ff", text: "#4338ca" },
+  Gaming: { bg: "#fee2e2", text: "#b91c1c" },
+  Music: { bg: "#ede9fe", text: "#6d28d9" },
+  Sports: { bg: "#dcfce7", text: "#15803d" },
+  Fashion: { bg: "#fce7f3", text: "#be185d" },
+  Food: { bg: "#ffedd5", text: "#c2410c" },
+  Health: { bg: "#ccfbf1", text: "#0d9488" },
+  Finance: { bg: "#d1fae5", text: "#059669" },
+  Personal: { bg: "#f1f5f9", text: "#475569" },
+  Business: { bg: "#f3f4f6", text: "#4b5563" },
+  Advice: { bg: "#fef9c3", text: "#a16207" },
+  Collaboration: { bg: "#ecfccb", text: "#65a30d" },
+  Networking: { bg: "#cffafe", text: "#0891b2" },
+  Mentorship: { bg: "#e0e7ff", text: "#4338ca" },
+  Community: { bg: "#dbeafe", text: "#1d4ed8" },
+  Charity: { bg: "#ffe4e6", text: "#be123c" },
+  Politics: { bg: "#fee2e2", text: "#b91c1c" },
+  Culture: { bg: "#fef3c7", text: "#b45309" },
+};
+
+const DEFAULT_TAG_COLOR = { bg: "#f3f4f6", text: "#4b5563" };
+
+function getTagStyle(tag: string) {
+  return TAG_COLORS[tag] || DEFAULT_TAG_COLOR;
+}
 
 interface AppealShareCardProps {
-  appeal: Appeal;
+  appeal: Summon;
   variant?: "default" | "compact" | "vibrant" | "dark";
   className?: string;
 }
@@ -21,11 +64,19 @@ function formatNumber(num: number): string {
   return num.toString();
 }
 
-// The main Appeal Share Card component
+// The main Summon Share Card component
 export const AppealShareCard = forwardRef<HTMLDivElement, AppealShareCardProps>(
   ({ appeal, variant = "default", className }, ref) => {
     const TrendIcon = appeal.trend === "up" ? TrendUpIcon : TrendDownIcon;
     const trendColor = appeal.trend === "up" ? "#9deb61" : "#ef4444";
+
+    // Get top tags sorted by count
+    const topTags = appeal.tags
+      ? Object.entries(appeal.tags)
+          .sort(([, a], [, b]) => b - a)
+          .slice(0, 3)
+          .map(([tag]) => tag)
+      : [];
 
     if (variant === "compact") {
       return (
@@ -43,43 +94,59 @@ export const AppealShareCard = forwardRef<HTMLDivElement, AppealShareCardProps>(
           <div className="relative z-10 h-full p-6 flex flex-col">
             {/* Header */}
             <div className="flex items-start justify-between mb-4">
-              <div>
-                <p className="text-xs text-neutral-400 uppercase tracking-wider mb-1">
-                  Appeal for
-                </p>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-bold text-neutral-900">
+              <div className="flex items-center gap-3">
+                {/* Target Profile Image */}
+                {appeal.targetProfileImage ? (
+                  <img
+                    src={appeal.targetProfileImage}
+                    alt={appeal.targetName}
+                    className="w-12 h-12 rounded-xl object-cover"
+                    crossOrigin="anonymous"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-xl overflow-hidden">
+                    <AvatarGenerator seed={appeal.targetHandle} size={48} />
+                  </div>
+                )}
+                <div>
+                  <p className="text-xs text-neutral-400 uppercase tracking-wider mb-0.5">
+                    Summon for
+                  </p>
+                  <h2 className="text-lg font-bold text-neutral-900">
                     @{appeal.targetHandle}
                   </h2>
-                  <span
-                    className="px-2 py-0.5 rounded-md text-xs font-semibold"
-                    style={{ background: "#c385ee20", color: "#c385ee" }}
-                  >
-                    {appeal.category}
-                  </span>
+                  <p className="text-xs text-neutral-500">
+                    {appeal.targetName}
+                  </p>
                 </div>
-                <p className="text-sm text-neutral-500 mt-1">
-                  {appeal.targetName}
-                </p>
               </div>
 
-              <div className="text-right">
-                <div
-                  className="flex items-center gap-1.5 justify-end"
-                  style={{ color: trendColor }}
-                >
-                  <TrendIcon className="w-4 h-4" />
-                  <span className="text-sm font-bold">
-                    +{appeal.trendValue}%
-                  </span>
-                </div>
+              <div
+                className="flex items-center gap-1.5 justify-end"
+                style={{ color: trendColor }}
+              >
+                <TrendIcon className="w-4 h-4" />
+                <span className="text-sm font-bold">+{appeal.trendValue}%</span>
               </div>
             </div>
 
-            {/* Request */}
-            <p className="text-sm text-neutral-600 line-clamp-2 flex-1">
-              "{appeal.request}"
-            </p>
+            {/* Tags */}
+            {topTags.length > 0 && (
+              <div className="flex items-center gap-1.5 mb-3 flex-1">
+                {topTags.map((tag) => {
+                  const style = getTagStyle(tag);
+                  return (
+                    <span
+                      key={tag}
+                      className="px-2 py-0.5 rounded-full text-xs font-medium"
+                      style={{ background: style.bg, color: style.text }}
+                    >
+                      {tag}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Stats bar */}
             <div className="flex items-center justify-between pt-4 border-t border-neutral-200">
@@ -98,13 +165,48 @@ export const AppealShareCard = forwardRef<HTMLDivElement, AppealShareCardProps>(
                 </div>
               </div>
 
+              {/* Backer avatars */}
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-[#c385ee] to-[#9deb61] flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">K</span>
-                </div>
-                <span className="text-neutral-400 text-sm font-medium">
-                  koru
-                </span>
+                {appeal.backersData && appeal.backersData.length > 0 && (
+                  <div className="flex -space-x-1.5">
+                    {appeal.backersData.slice(0, 5).map((backer, idx) => (
+                      <div
+                        key={backer.id || idx}
+                        className="w-6 h-6 rounded-full overflow-hidden"
+                        style={{ border: "2px solid #f0f0f0" }}
+                      >
+                        {backer.profileImageUrl ? (
+                          <img
+                            src={backer.profileImageUrl}
+                            alt={backer.name}
+                            className="w-full h-full object-cover"
+                            crossOrigin="anonymous"
+                          />
+                        ) : (
+                          <AvatarGenerator seed={backer.username} size={20} />
+                        )}
+                      </div>
+                    ))}
+                    {appeal.backers > 5 && (
+                      <div
+                        className="w-6 h-6 rounded-full flex items-center justify-center"
+                        style={{
+                          background: "#e5e5e5",
+                          border: "2px solid #f0f0f0",
+                        }}
+                      >
+                        <span className="text-[8px] font-bold text-neutral-600">
+                          +{appeal.backers - 5}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <img
+                  src="/logo.png"
+                  alt="Koru"
+                  className="w-6 h-6 rounded-lg object-cover"
+                />
               </div>
             </div>
           </div>
@@ -116,7 +218,7 @@ export const AppealShareCard = forwardRef<HTMLDivElement, AppealShareCardProps>(
       return (
         <div
           ref={ref}
-          className={`w-[480px] h-[330px] relative overflow-hidden rounded-3xl ${className}`}
+          className={`w-[480px] h-[280px] relative overflow-hidden rounded-3xl ${className}`}
           style={{
             background:
               "linear-gradient(135deg, #c385ee 0%, #8b5cf6 50%, #6366f1 100%)",
@@ -140,9 +242,23 @@ export const AppealShareCard = forwardRef<HTMLDivElement, AppealShareCardProps>(
             {/* Header */}
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl font-bold text-white">
-                  {appeal.targetName.charAt(0)}
-                </div>
+                {/* Target Profile Image */}
+                {appeal.targetProfileImage ? (
+                  <img
+                    src={appeal.targetProfileImage}
+                    alt={appeal.targetName}
+                    className="w-14 h-14 rounded-2xl object-cover"
+                    style={{ border: "2px solid rgba(255,255,255,0.3)" }}
+                    crossOrigin="anonymous"
+                  />
+                ) : (
+                  <div
+                    className="w-14 h-14 rounded-2xl overflow-hidden"
+                    style={{ border: "2px solid rgba(255,255,255,0.3)" }}
+                  >
+                    <AvatarGenerator seed={appeal.targetHandle} size={56} />
+                  </div>
+                )}
                 <div>
                   <h2 className="text-2xl font-black text-white">
                     @{appeal.targetHandle}
@@ -151,25 +267,25 @@ export const AppealShareCard = forwardRef<HTMLDivElement, AppealShareCardProps>(
                 </div>
               </div>
 
-              <div
-                className="px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider"
-                style={{ background: "rgba(255,255,255,0.2)", color: "white" }}
-              >
-                {appeal.category}
-              </div>
-            </div>
-
-            {/* Request quote */}
-            <div className="flex-1 flex items-center">
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/20">
-                <p className="text-lg text-white font-medium leading-relaxed">
-                  "{appeal.request}"
-                </p>
+              {/* Tags */}
+              <div className="flex flex-wrap gap-1.5 max-w-[140px] justify-end">
+                {topTags.slice(0, 2).map((tag) => (
+                  <span
+                    key={tag}
+                    className="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+                    style={{
+                      background: "rgba(255,255,255,0.2)",
+                      color: "white",
+                    }}
+                  >
+                    {tag}
+                  </span>
+                ))}
               </div>
             </div>
 
             {/* Stats */}
-            <div className="flex items-end justify-between pt-4">
+            <div className="flex-1 flex items-end justify-between">
               <div className="flex gap-8">
                 <div>
                   <p className="text-4xl font-black text-white">
@@ -188,6 +304,29 @@ export const AppealShareCard = forwardRef<HTMLDivElement, AppealShareCardProps>(
               </div>
 
               <div className="flex items-center gap-3">
+                {/* Backer avatars */}
+                {appeal.backersData && appeal.backersData.length > 0 && (
+                  <div className="flex -space-x-2">
+                    {appeal.backersData.slice(0, 4).map((backer, idx) => (
+                      <div
+                        key={backer.id || idx}
+                        className="w-8 h-8 rounded-full overflow-hidden"
+                        style={{ border: "2px solid rgba(255,255,255,0.3)" }}
+                      >
+                        {backer.profileImageUrl ? (
+                          <img
+                            src={backer.profileImageUrl}
+                            alt={backer.name}
+                            className="w-full h-full object-cover"
+                            crossOrigin="anonymous"
+                          />
+                        ) : (
+                          <AvatarGenerator seed={backer.username} size={28} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20">
                   <span
                     style={{
@@ -205,9 +344,11 @@ export const AppealShareCard = forwardRef<HTMLDivElement, AppealShareCardProps>(
 
             {/* Footer */}
             <div className="flex items-center gap-2 pt-4 mt-4 border-t border-white/10">
-              <div className="w-6 h-6 rounded-lg bg-white flex items-center justify-center">
-                <span className="text-[#c385ee] text-xs font-bold">K</span>
-              </div>
+              <img
+                src="/logo.png"
+                alt="Koru"
+                className="w-6 h-6 rounded-lg object-cover"
+              />
               <span className="text-white/60 text-sm font-medium">
                 koruapp.xyz
               </span>
@@ -221,7 +362,7 @@ export const AppealShareCard = forwardRef<HTMLDivElement, AppealShareCardProps>(
       return (
         <div
           ref={ref}
-          className={`w-[480px] h-[350px] relative overflow-hidden rounded-3xl ${className}`}
+          className={`w-[480px] h-[280px] relative overflow-hidden rounded-3xl ${className}`}
           style={{
             background: "#0a0a0a",
             fontFamily: "system-ui, sans-serif",
@@ -248,27 +389,45 @@ export const AppealShareCard = forwardRef<HTMLDivElement, AppealShareCardProps>(
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-[#dab079] animate-pulse" />
                 <span className="text-xs text-white/40 uppercase tracking-widest font-medium">
-                  Live Appeal
+                  Live Summon
                 </span>
               </div>
-              <span
-                className="px-3 py-1 rounded-lg text-xs font-bold"
-                style={{
-                  background: "rgba(218,176,121,0.15)",
-                  color: "#dab079",
-                }}
-              >
-                {appeal.category}
-              </span>
+              {/* Tags */}
+              <div className="flex items-center gap-1.5">
+                {topTags.slice(0, 2).map((tag) => (
+                  <span
+                    key={tag}
+                    className="px-2.5 py-1 rounded-lg text-xs font-bold"
+                    style={{
+                      background: "rgba(218,176,121,0.15)",
+                      color: "#dab079",
+                    }}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
             </div>
 
             {/* Main content */}
             <div className="flex items-start gap-5 mb-6">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#dab079]/20 to-[#c385ee]/20 flex items-center justify-center border border-white/5">
-                <span className="text-3xl font-black text-[#dab079]">
-                  {appeal.targetName.charAt(0)}
-                </span>
-              </div>
+              {/* Target Profile Image */}
+              {appeal.targetProfileImage ? (
+                <img
+                  src={appeal.targetProfileImage}
+                  alt={appeal.targetName}
+                  className="w-16 h-16 rounded-2xl object-cover"
+                  style={{ border: "1px solid rgba(255,255,255,0.05)" }}
+                  crossOrigin="anonymous"
+                />
+              ) : (
+                <div
+                  className="w-16 h-16 rounded-2xl overflow-hidden"
+                  style={{ border: "1px solid rgba(255,255,255,0.05)" }}
+                >
+                  <AvatarGenerator seed={appeal.targetHandle} size={64} />
+                </div>
+              )}
 
               <div className="flex-1">
                 <h2 className="text-2xl font-bold text-white mb-1">
@@ -285,14 +444,6 @@ export const AppealShareCard = forwardRef<HTMLDivElement, AppealShareCardProps>(
                 <TrendIcon className="w-5 h-5" />
                 <span className="text-lg font-bold">+{appeal.trendValue}%</span>
               </div>
-            </div>
-
-            {/* Request */}
-            <div className="bg-white/[0.03] rounded-xl p-4 border border-white/5 mb-6">
-              <p className="text-sm text-white/60 mb-2 uppercase tracking-wider">
-                Request
-              </p>
-              <p className="text-white font-medium">"{appeal.request}"</p>
             </div>
 
             {/* Stats */}
@@ -313,14 +464,35 @@ export const AppealShareCard = forwardRef<HTMLDivElement, AppealShareCardProps>(
                   </div>
                 </div>
 
-                {/* Koru branding */}
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#c385ee] via-[#dab079] to-[#9deb61] flex items-center justify-center">
-                    <span className="text-black text-sm font-bold">K</span>
-                  </div>
-                  <span className="text-white/50 text-sm font-medium">
-                    koru
-                  </span>
+                {/* Backer avatars and Koru branding */}
+                <div className="flex items-center gap-3">
+                  {appeal.backersData && appeal.backersData.length > 0 && (
+                    <div className="flex -space-x-2">
+                      {appeal.backersData.slice(0, 4).map((backer, idx) => (
+                        <div
+                          key={backer.id || idx}
+                          className="w-7 h-7 rounded-full overflow-hidden"
+                          style={{ border: "2px solid #0a0a0a" }}
+                        >
+                          {backer.profileImageUrl ? (
+                            <img
+                              src={backer.profileImageUrl}
+                              alt={backer.name}
+                              className="w-full h-full object-cover"
+                              crossOrigin="anonymous"
+                            />
+                          ) : (
+                            <AvatarGenerator seed={backer.username} size={24} />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <img
+                    src="/logo.png"
+                    alt="Koru"
+                    className="w-8 h-8 rounded-xl object-cover"
+                  />
                 </div>
               </div>
             </div>
@@ -333,7 +505,7 @@ export const AppealShareCard = forwardRef<HTMLDivElement, AppealShareCardProps>(
     return (
       <div
         ref={ref}
-        className={`w-[480px] h-[300px] relative overflow-hidden rounded-3xl ${className}`}
+        className={`w-[480px] h-[240px] relative overflow-hidden rounded-3xl ${className}`}
         style={{
           background: "linear-gradient(145deg, #fefefe 0%, #f8f8f8 100%)",
           fontFamily: "system-ui, sans-serif",
@@ -350,12 +522,19 @@ export const AppealShareCard = forwardRef<HTMLDivElement, AppealShareCardProps>(
           {/* Header */}
           <div className="flex items-start justify-between mb-5">
             <div className="flex items-center gap-4">
-              {/* Avatar circle */}
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#dab079] to-[#c385ee] flex items-center justify-center shadow-lg">
-                <span className="text-2xl font-black text-white">
-                  {appeal.targetName.charAt(0)}
-                </span>
-              </div>
+              {/* Target Profile Image */}
+              {appeal.targetProfileImage ? (
+                <img
+                  src={appeal.targetProfileImage}
+                  alt={appeal.targetName}
+                  className="w-14 h-14 rounded-2xl object-cover shadow-lg"
+                  crossOrigin="anonymous"
+                />
+              ) : (
+                <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-lg">
+                  <AvatarGenerator seed={appeal.targetHandle} size={56} />
+                </div>
+              )}
 
               <div>
                 <div className="flex items-center gap-2">
@@ -368,12 +547,30 @@ export const AppealShareCard = forwardRef<HTMLDivElement, AppealShareCardProps>(
             </div>
 
             <div className="flex flex-col items-end gap-2">
-              <span
-                className="px-3 py-1 rounded-lg text-xs font-semibold"
-                style={{ background: "#c385ee15", color: "#c385ee" }}
-              >
-                {appeal.category}
-              </span>
+              {/* Tags */}
+              {topTags.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5 justify-end">
+                  {topTags.slice(0, 2).map((tag) => {
+                    const style = getTagStyle(tag);
+                    return (
+                      <span
+                        key={tag}
+                        className="px-2.5 py-1 rounded-lg text-xs font-semibold"
+                        style={{ background: style.bg, color: style.text }}
+                      >
+                        {tag}
+                      </span>
+                    );
+                  })}
+                </div>
+              ) : (
+                <span
+                  className="px-3 py-1 rounded-lg text-xs font-semibold"
+                  style={{ background: "#c385ee15", color: "#c385ee" }}
+                >
+                  {appeal.category}
+                </span>
+              )}
               <div
                 className="flex items-center gap-1"
                 style={{ color: trendColor }}
@@ -382,13 +579,6 @@ export const AppealShareCard = forwardRef<HTMLDivElement, AppealShareCardProps>(
                 <span className="text-sm font-bold">+{appeal.trendValue}%</span>
               </div>
             </div>
-          </div>
-
-          {/* Request */}
-          <div className="bg-neutral-50 rounded-xl p-4 mb-5 border border-neutral-100">
-            <p className="text-neutral-700 font-medium leading-relaxed">
-              "{appeal.request}"
-            </p>
           </div>
 
           {/* Stats */}
@@ -409,14 +599,48 @@ export const AppealShareCard = forwardRef<HTMLDivElement, AppealShareCardProps>(
                 </div>
               </div>
 
-              {/* Branding */}
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#c385ee] via-[#dab079] to-[#9deb61] flex items-center justify-center shadow-md">
-                  <span className="text-white text-sm font-black">K</span>
-                </div>
-                <span className="text-neutral-400 text-sm font-semibold">
-                  koruapp.xyz
-                </span>
+              {/* Backer avatars and Branding */}
+              <div className="flex items-center gap-3">
+                {appeal.backersData && appeal.backersData.length > 0 && (
+                  <div className="flex -space-x-2">
+                    {appeal.backersData.slice(0, 4).map((backer, idx) => (
+                      <div
+                        key={backer.id || idx}
+                        className="w-8 h-8 rounded-full overflow-hidden"
+                        style={{ border: "2px solid #f8f8f8" }}
+                      >
+                        {backer.profileImageUrl ? (
+                          <img
+                            src={backer.profileImageUrl}
+                            alt={backer.name}
+                            className="w-full h-full object-cover"
+                            crossOrigin="anonymous"
+                          />
+                        ) : (
+                          <AvatarGenerator seed={backer.username} size={28} />
+                        )}
+                      </div>
+                    ))}
+                    {appeal.backers > 4 && (
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center"
+                        style={{
+                          background: "#e5e5e5",
+                          border: "2px solid #f8f8f8",
+                        }}
+                      >
+                        <span className="text-[10px] font-bold text-neutral-600">
+                          +{appeal.backers - 4}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <img
+                  src="/logo.png"
+                  alt="Koru"
+                  className="w-8 h-8 rounded-xl object-cover shadow-md"
+                />
               </div>
             </div>
           </div>
