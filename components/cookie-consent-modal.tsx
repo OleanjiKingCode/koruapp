@@ -4,15 +4,13 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { STORAGE_KEYS, APP_CONFIG } from "@/lib/constants";
 
 type CookiePreferences = {
   necessary: boolean;
   analytics: boolean;
   marketing: boolean;
 };
-
-const COOKIE_STORAGE_KEY = "koru-cookie-preferences";
-const COOKIE_CONSENT_KEY = "koru-cookie-consent-given";
 
 export function CookieConsentModal() {
   const [showBanner, setShowBanner] = useState(false);
@@ -24,12 +22,12 @@ export function CookieConsentModal() {
   });
 
   useEffect(() => {
-    const consentGiven = localStorage.getItem(COOKIE_CONSENT_KEY);
+    const consentGiven = localStorage.getItem(STORAGE_KEYS.COOKIE_CONSENT);
     if (!consentGiven) {
-      const timer = setTimeout(() => setShowBanner(true), 1000);
+      const timer = setTimeout(() => setShowBanner(true), APP_CONFIG.COOKIE_MODAL_DELAY_MS);
       return () => clearTimeout(timer);
     } else {
-      const saved = localStorage.getItem(COOKIE_STORAGE_KEY);
+      const saved = localStorage.getItem(STORAGE_KEYS.COOKIE_PREFERENCES);
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
@@ -84,8 +82,8 @@ export function CookieConsentModal() {
   };
 
   const savePreferences = (prefs: CookiePreferences) => {
-    localStorage.setItem(COOKIE_STORAGE_KEY, JSON.stringify(prefs));
-    localStorage.setItem(COOKIE_CONSENT_KEY, "true");
+    localStorage.setItem(STORAGE_KEYS.COOKIE_PREFERENCES, JSON.stringify(prefs));
+    localStorage.setItem(STORAGE_KEYS.COOKIE_CONSENT, "true");
 
     if (prefs.analytics) {
       console.log("Analytics enabled");

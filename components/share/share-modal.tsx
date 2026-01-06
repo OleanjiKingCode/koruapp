@@ -5,15 +5,61 @@ import { motion, AnimatePresence } from "motion/react";
 import { toPng } from "html-to-image";
 import { ProfileShareCard } from "./profile-share-card";
 import { AppealShareCard } from "./appeal-share-card";
-import {
-  CheckIcon,
-  TwitterIcon,
-  DownloadIcon,
-  CopyIcon,
-  CloseIcon,
-} from "@/components/icons";
-import { useMediaQuery } from "@/lib/hooks/use-media-query";
+import { CheckIcon, TwitterIcon } from "@/components/icons";
 import type { UserData, Summon, Appeal } from "@/lib/types";
+
+// Custom icons
+function DownloadIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" x2="12" y1="15" y2="3" />
+    </svg>
+  );
+}
+
+function CopyIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+    </svg>
+  );
+}
+
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  );
+}
 
 type CardType = "profile" | "summon" | "appeal"; // appeal for backwards compatibility
 type CardVariant =
@@ -49,7 +95,6 @@ export function ShareModal({
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
-  const isDesktop = useMediaQuery("(min-width: 640px)");
 
   // Use summon or appeal (for backwards compatibility)
   const activeSummon = summon || appeal;
@@ -154,10 +199,10 @@ export function ShareModal({
   const handleShareToX = useCallback(async () => {
     const text =
       type === "profile"
-        ? `Check out my Koru profile!\n\n${userData?.points.toLocaleString()} points | ${
+        ? `Check out my Koru profile!\n\n${userData?.points.toLocaleString()} points • ${
             userData?.level
           } level | ${userData?.badges.length} badges\n\n`
-        : `Appeal for @${appeal?.targetHandle} on Koru!\n\n"${
+        : `Summon for @${appeal?.targetHandle} on Koru!\n\n"${
             appeal?.request
           }"\n\n$${appeal?.totalPledged.toLocaleString()} pledged by ${
             appeal?.backers
@@ -198,7 +243,7 @@ export function ShareModal({
     {
       id: "download",
       icon: DownloadIcon,
-      label: "Save",
+      label: "Download",
       onClick: handleDownload,
       className:
         "bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-700",
@@ -218,80 +263,46 @@ export function ShareModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
             onClick={() => onOpenChange(false)}
           />
 
-          {/* Modal Container */}
-          <motion.div
-            initial={isDesktop ? { opacity: 0, scale: 0.95 } : { y: "100%" }}
-            animate={isDesktop ? { opacity: 1, scale: 1 } : { y: 0 }}
-            exit={isDesktop ? { opacity: 0, scale: 0.95 } : { y: "100%" }}
-            transition={{
-              type: "spring",
-              damping: 25,
-              stiffness: 300,
-            }}
-            className={`
-              fixed z-50 bg-white dark:bg-neutral-900
-              ${
-                isDesktop
-                  ? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-3xl shadow-2xl max-w-lg w-full mx-4"
-                  : "bottom-0 left-0 right-0 rounded-t-3xl shadow-2xl max-h-[85vh]"
-              }
-            `}
-          >
-            {/* Drawer handle for mobile */}
-            {!isDesktop && (
-              <div className="flex justify-center pt-3 pb-1 sticky top-0 bg-white dark:bg-neutral-900 rounded-t-3xl z-10">
-                <div className="w-10 h-1 bg-neutral-300 dark:bg-neutral-700 rounded-full" />
-              </div>
-            )}
+          {/* Floating Container */}
+          <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center p-4">
+            <div className="pointer-events-auto flex flex-col items-center gap-4 max-h-[90vh] overflow-y-auto">
+              {/* Style Selector Pills */}
+              <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 20, scale: 0.9 }}
+                transition={{ duration: 0.3, delay: 0.05 }}
+                className="flex items-center gap-2 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl rounded-full p-1.5 shadow-2xl shadow-black/20"
+              >
+                {variants.map((v, index) => (
+                  <motion.button
+                    key={v}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 + index * 0.03 }}
+                    onClick={() => setSelectedVariant(v)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      selectedVariant === v
+                        ? "bg-koru-purple text-white shadow-lg shadow-koru-purple/30"
+                        : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    }`}
+                  >
+                    {variantLabels[v]}
+                  </motion.button>
+                ))}
+              </motion.div>
 
-            <div
-              className={`
-                flex flex-col items-center overflow-y-auto
-                ${isDesktop ? "p-6 max-h-[85vh]" : "px-4 pb-6 pt-2"}
-              `}
-              style={{ maxHeight: isDesktop ? "85vh" : "calc(85vh - 16px)" }}
-            >
-              {/* Close Button - Top right on desktop */}
-              {isDesktop && (
-                <button
-                  onClick={() => onOpenChange(false)}
-                  className="absolute top-4 right-4 w-9 h-9 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors z-10"
-                >
-                  <CloseIcon className="w-4 h-4" />
-                </button>
-              )}
-
-              {/* Style Selector Pills - Scrollable on mobile */}
-              <div className="w-full mb-4">
-                <div className="overflow-x-auto scrollbar-hide pb-1">
-                  <div className="flex items-center gap-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full p-1 w-fit mx-auto min-w-max">
-                    {variants.map((v) => (
-                      <button
-                        key={v}
-                        onClick={() => setSelectedVariant(v)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
-                          selectedVariant === v
-                            ? "bg-koru-purple text-white shadow-md"
-                            : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"
-                        }`}
-                      >
-                        {variantLabels[v]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Card Preview - Scaled on mobile */}
-              <div
-                className={`
-                  relative flex-shrink-0 mb-4
-                  ${!isDesktop ? "w-full flex justify-center" : ""}
-                `}
+              {/* Card Preview */}
+              <motion.div
+                initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 30, scale: 0.9 }}
+                transition={{ duration: 0.35, delay: 0.1 }}
+                className="relative"
               >
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -300,12 +311,7 @@ export function ShareModal({
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
-                    className="shadow-xl shadow-black/20 rounded-xl overflow-hidden"
-                    style={{
-                      transform: !isDesktop ? "scale(0.65)" : "scale(0.85)",
-                      transformOrigin: "top center",
-                      marginBottom: !isDesktop ? "-80px" : "-40px",
-                    }}
+                    className="shadow-2xl shadow-black/30 rounded-3xl overflow-hidden"
                   >
                     {type === "profile" && userData && (
                       <ProfileShareCard
@@ -337,11 +343,17 @@ export function ShareModal({
                       )}
                   </motion.div>
                 </AnimatePresence>
-              </div>
+              </motion.div>
 
-              {/* Action Buttons - Horizontal row */}
-              <div className="flex items-center justify-center gap-2 w-full">
-                {actionButtons.map((button) => {
+              {/* Action Buttons */}
+              <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 20, scale: 0.9 }}
+                transition={{ duration: 0.3, delay: 0.15 }}
+                className="flex items-center gap-3"
+              >
+                {actionButtons.map((button, index) => {
                   const Icon =
                     button.isActive && button.activeIcon
                       ? button.activeIcon
@@ -352,13 +364,16 @@ export function ShareModal({
                       : button.label;
 
                   return (
-                    <button
+                    <motion.button
                       key={button.id}
+                      initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      transition={{ delay: 0.2 + index * 0.05 }}
                       onClick={button.onClick}
                       disabled={isGenerating}
                       className={`
-                        flex items-center justify-center gap-2 px-4 py-2.5 rounded-full font-medium
-                        shadow-sm transition-all flex-1 max-w-[120px]
+                        flex items-center gap-2 px-5 py-3 rounded-full font-medium
+                        shadow-xl shadow-black/10 transition-all
                         disabled:opacity-50 disabled:cursor-not-allowed
                         ${button.className}
                         ${
@@ -368,34 +383,36 @@ export function ShareModal({
                         }
                       `}
                     >
-                      <Icon className="w-4 h-4" />
+                      <Icon className="w-5 h-5" />
                       <span className="text-sm">{label}</span>
-                    </button>
+                    </motion.button>
                   );
                 })}
-              </div>
+              </motion.div>
 
-              {/* Cancel Button for mobile */}
-              {!isDesktop && (
-                <button
-                  onClick={() => onOpenChange(false)}
-                  className="w-full py-3 mt-3 text-neutral-500 text-sm font-medium hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
-                >
-                  Cancel
-                </button>
-              )}
+              {/* Close Button */}
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ delay: 0.3 }}
+                onClick={() => onOpenChange(false)}
+                className="w-12 h-12 rounded-full bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl shadow-xl shadow-black/10 flex items-center justify-center text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
+              >
+                <CloseIcon className="w-5 h-5" />
+              </motion.button>
 
               {/* Loading Indicator */}
               <AnimatePresence>
                 {isGenerating && (
                   <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="absolute inset-0 flex items-center justify-center pointer-events-none bg-white/90 dark:bg-neutral-900/90 rounded-3xl z-20"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
                   >
-                    <div className="bg-white dark:bg-neutral-800 rounded-2xl px-5 py-3 shadow-xl flex items-center gap-3">
-                      <div className="w-5 h-5 rounded-full border-2 border-koru-purple/20 border-t-koru-purple animate-spin" />
+                    <div className="bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl rounded-2xl px-6 py-4 shadow-2xl flex items-center gap-3">
+                      <div className="w-6 h-6 rounded-full border-2 border-koru-purple/20 border-t-koru-purple animate-spin" />
                       <span className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
                         Generating...
                       </span>
@@ -404,7 +421,7 @@ export function ShareModal({
                 )}
               </AnimatePresence>
             </div>
-          </motion.div>
+          </div>
         </>
       )}
     </AnimatePresence>

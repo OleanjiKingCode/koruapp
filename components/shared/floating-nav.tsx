@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "next-themes";
 import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
-import { NAV_ITEMS, FONT_OPTIONS, LANGUAGE_OPTIONS } from "@/lib/constants";
+import { NAV_ITEMS, FONT_OPTIONS, LANGUAGE_OPTIONS, STORAGE_KEYS } from "@/lib/constants";
 import {
   useMounted,
   useScrollPosition,
@@ -118,7 +118,7 @@ export function FloatingNav() {
     }
 
     const savedFont =
-      JSON.parse(localStorage.getItem("koru-font") || '"quicksand"') ??
+      JSON.parse(localStorage.getItem(STORAGE_KEYS.FONT_PREFERENCE) || '"quicksand"') ??
       "quicksand";
     applyFont(savedFont, true);
   }, [pathname, mounted, applyFont]);

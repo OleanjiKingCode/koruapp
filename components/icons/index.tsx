@@ -149,6 +149,24 @@ export const LoadingIcon = createHugeIcon(HugeLoading02Icon);
 
 export const FireIcon = createHugeIcon(HugeFireIcon);
 
+// Custom SVG Icons
+export function MegaphoneIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m3 11 18-5v12L3 13v-2z" />
+      <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
+    </svg>
+  );
+}
+
 // Icon map for dynamic rendering
 export const ICON_MAP = {
   home: HomeIcon,
@@ -206,6 +224,7 @@ export const ICON_MAP = {
   globe: GlobeIcon,
   sort: SortIcon,
   loading: LoadingIcon,
+  megaphone: MegaphoneIcon,
 } as const;
 
 export type IconName = keyof typeof ICON_MAP;

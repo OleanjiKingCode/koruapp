@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { getBookingStorageKey } from "@/lib/constants";
 import type {
   AvailabilitySlot,
   AvailabilityData,
@@ -172,7 +173,7 @@ export function BookingModal({
 
       // Store booking info in localStorage for the chat page
       localStorage.setItem(
-        `koru-booking-${personId}`,
+        getBookingStorageKey(personId),
         JSON.stringify({
           slotName: selectedSlot.name,
           price: selectedSlot.price,

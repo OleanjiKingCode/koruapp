@@ -3,7 +3,7 @@
 import { useMemo, useCallback, useEffect } from "react";
 import useSWR, { mutate as globalMutate } from "swr";
 import { useSession } from "next-auth/react";
-import { API_ROUTES } from "@/lib/constants";
+import { API_ROUTES, STORAGE_KEYS } from "@/lib/constants";
 
 export interface UnreadCounts {
   chats: number;
@@ -23,13 +23,11 @@ interface ChatFromAPI {
   updated_at: string;
 }
 
-const SEEN_CHATS_KEY = "koru-seen-chats";
-
 // Get seen chat IDs from localStorage
 function getSeenChatIds(): Set<string> {
   if (typeof window === "undefined") return new Set();
   try {
-    const stored = localStorage.getItem(SEEN_CHATS_KEY);
+    const stored = localStorage.getItem(STORAGE_KEYS.SEEN_CHATS);
     if (stored) {
       const data = JSON.parse(stored);
       return new Set(data.ids || []);
@@ -47,7 +45,7 @@ function markChatsAsSeen(chatIds: string[]) {
     const existing = getSeenChatIds();
     chatIds.forEach((id) => existing.add(id));
     localStorage.setItem(
-      SEEN_CHATS_KEY,
+      STORAGE_KEYS.SEEN_CHATS,
       JSON.stringify({
         ids: Array.from(existing),
         updatedAt: new Date().toISOString(),
@@ -65,7 +63,7 @@ function clearSeenChat(chatId: string) {
     const existing = getSeenChatIds();
     existing.delete(chatId);
     localStorage.setItem(
-      SEEN_CHATS_KEY,
+      STORAGE_KEYS.SEEN_CHATS,
       JSON.stringify({
         ids: Array.from(existing),
         updatedAt: new Date().toISOString(),

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { FONT_OPTIONS } from "@/lib/constants";
+import { FONT_OPTIONS, STORAGE_KEYS } from "@/lib/constants";
 
 /**
  * Hook to sync state with localStorage
@@ -49,7 +49,7 @@ export function useLocalStorage<T>(
  * Hook specifically for font preference
  */
 export function useFontPreference(defaultFont = "quicksand") {
-  const [font, setFont] = useLocalStorage("koru-font", defaultFont);
+  const [font, setFont] = useLocalStorage(STORAGE_KEYS.FONT_PREFERENCE, defaultFont);
   const pathname = usePathname();
 
   const applySelectedOption = useCallback(
