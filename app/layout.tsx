@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { Quicksand, Tenor_Sans, Caveat } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/components/providers/auth-provider";
+import { ModalProvider } from "@/lib/contexts/modal-context";
+import { AppShell } from "@/components/shared";
+import { CookieConsentModal } from "@/components/cookie-consent-modal";
 import "./globals.css";
 
 const quicksand = Quicksand({
@@ -30,6 +35,8 @@ export const metadata: Metadata = {
   description: "Pay for access. Earn for time.",
   icons: {
     icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
   },
   openGraph: {
     title: "Koru",
@@ -70,7 +77,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
+      <head suppressHydrationWarning>
         {/* Additional Twitter meta tags for better compatibility */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:title" content="Koru" />
@@ -92,14 +99,20 @@ export default function RootLayout({
       <body
         className={`${quicksand.variable} ${tenorSans.variable} ${lemonTuesday.variable} antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange={false}
-        >
-          {children}
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange={false}
+          >
+            <ModalProvider>
+              <AppShell>{children}</AppShell>
+              <CookieConsentModal />
+            </ModalProvider>
+          </ThemeProvider>
+        </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );
