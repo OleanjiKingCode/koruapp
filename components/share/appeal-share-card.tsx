@@ -299,7 +299,7 @@ export const AppealShareCard = forwardRef<HTMLDivElement, AppealShareCardProps>(
                   <p className="text-4xl font-black text-[#9deb61]">
                     {appeal.backers}
                   </p>
-                  <p className="text-sm text-white/50 font-medium">Backers</p>
+                  <p className="text-sm text-white/50 font-medium">Backer(s)</p>
                 </div>
               </div>
 

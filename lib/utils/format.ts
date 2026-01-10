@@ -11,10 +11,12 @@ export function formatCurrency(
 
   if (compact) {
     if (amount >= 1000000) {
-      return `$${(amount / 1000000).toFixed(1)}M`;
+      const value = amount / 1000000;
+      return `$${value % 1 === 0 ? value.toFixed(0) : value.toFixed(1)}M`;
     }
     if (amount >= 1000) {
-      return `$${(amount / 1000).toFixed(1)}K`;
+      const value = amount / 1000;
+      return `$${value % 1 === 0 ? value.toFixed(0) : value.toFixed(1)}K`;
     }
   }
 

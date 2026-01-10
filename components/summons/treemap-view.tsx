@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { motion } from "motion/react";
-import { cn, calculateTreemapLayout } from "@/lib/utils";
+import { cn, calculateTreemapLayout, formatCurrency } from "@/lib/utils";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { CrownIcon, ShareIcon } from "@/components/icons";
 import type { Summon } from "@/lib/types";
@@ -152,7 +152,7 @@ export function TreemapView({
                 </p>
                 {(isLarge || isMedium) && (
                   <p className="text-[10px] sm:text-xs text-white/70 ">
-                    ${(summon.totalPledged / 1000).toFixed(0)}K
+                    {formatCurrency(summon.totalPledged, { compact: true })}
                   </p>
                 )}
               </div>

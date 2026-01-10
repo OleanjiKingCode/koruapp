@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -121,7 +121,7 @@ export function ListView({
               {/* First row: Amount, Trend, Back, Share */}
               <div className="flex items-center gap-2 sm:gap-3">
                 <p className="text-lg text-koru-golden">
-                  ${(summon.totalPledged / 1000).toFixed(1)}K
+                  {formatCurrency(summon.totalPledged, { compact: true })}
                 </p>
                 <div
                   className={cn(
