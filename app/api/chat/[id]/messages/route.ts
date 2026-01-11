@@ -6,6 +6,7 @@ import {
   sendMessage,
   markMessagesAsRead,
 } from "@/lib/supabase";
+import { notifyNewMessage } from "@/lib/notifications";
 
 // GET - Fetch messages for a chat
 export async function GET(
@@ -96,6 +97,26 @@ export async function POST(
         { error: "Failed to send message" },
         { status: 500 }
       );
+    }
+
+    // Notify the other user about the new message
+    const recipientId = chat.requester_id === userId ? chat.creator_id : chat.requester_id;
+    const sender = chat.requester_id === userId ? chat.requester : chat.creator;
+    
+    if (recipientId && sender) {
+      try {
+        await notifyNewMessage(
+          recipientId,
+          sender.name || sender.username,
+          sender.username,
+          sender.profile_image_url || null,
+          content,
+          chatId
+        );
+      } catch (notifyError) {
+        console.error("Error sending notification:", notifyError);
+        // Don't fail the request if notification fails
+      }
     }
 
     return NextResponse.json({ message }, { status: 201 });
