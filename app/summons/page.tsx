@@ -12,7 +12,7 @@ import {
 } from "@/components/shared";
 import { ShareModal } from "@/components/share";
 import { LoginModal } from "@/components/auth";
-import { TreemapView, ListView } from "@/components/summons";
+import { TreemapView, ListView, SummonDetailsModal } from "@/components/summons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -87,6 +87,10 @@ export default function SummonsPage() {
   // Share modal state
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [selectedSummon, setSelectedSummon] = useState<Summon | null>(null);
+
+  // Details modal state
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [summonToView, setSummonToView] = useState<Summon | null>(null);
 
   // Back modal state
   const [backModalOpen, setBackModalOpen] = useState(false);
@@ -169,6 +173,11 @@ export default function SummonsPage() {
     setBackError(null);
     setBackSelectedTags([]);
     setBackModalOpen(true);
+  };
+
+  const handleViewDetails = (summon: Summon) => {
+    setSummonToView(summon);
+    setDetailsModalOpen(true);
   };
 
   const handleSubmitBacking = async () => {
@@ -948,6 +957,7 @@ export default function SummonsPage() {
               summons={filteredSummons}
               totalPledged={totalPledged}
               onShare={handleShareSummon}
+              onViewDetails={handleViewDetails}
             />
           ) : (
             <ListView
@@ -955,6 +965,7 @@ export default function SummonsPage() {
               summons={filteredSummons}
               onShare={handleShareSummon}
               onBack={handleBackSummon}
+              onViewDetails={handleViewDetails}
               currentUserId={session?.user?.dbId}
             />
           )}
@@ -970,6 +981,16 @@ export default function SummonsPage() {
           summon={selectedSummon}
         />
       )}
+
+      {/* Summon Details Modal */}
+      <SummonDetailsModal
+        open={detailsModalOpen}
+        onOpenChange={setDetailsModalOpen}
+        summon={summonToView}
+        onShare={handleShareSummon}
+        onBack={handleBackSummon}
+        currentUserId={session?.user?.dbId}
+      />
 
       {/* Back Modal */}
       <AnimatePresence>

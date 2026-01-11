@@ -11,12 +11,14 @@ interface TreemapViewProps {
   summons: Summon[];
   totalPledged: number;
   onShare: (summon: Summon) => void;
+  onViewDetails?: (summon: Summon) => void;
 }
 
 export function TreemapView({
   summons,
   totalPledged,
   onShare,
+  onViewDetails,
 }: TreemapViewProps) {
   // Calculate treemap layout using imported utility
   const treemapRects = useMemo(() => {
@@ -45,6 +47,7 @@ export function TreemapView({
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: index * 0.03, duration: 0.3 }}
             whileHover={{ zIndex: 50 }}
+            onClick={() => onViewDetails?.(summon)}
             className={cn(
               "absolute cursor-pointer group overflow-hidden",
               "border border-white/20",

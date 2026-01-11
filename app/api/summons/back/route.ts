@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { notifySummonBacked } from "@/lib/notifications";
 
 interface BackerInfo {
   user_id: string;
@@ -40,10 +41,10 @@ export async function POST(request: NextRequest) {
     // Tags selected by this backer (array of strings)
     const selectedTags: string[] = backerTags || [];
 
-    // Get the summon with current backers array and tags
+    // Get the summon with current backers array, tags, and creator info
     const { data: summon, error: fetchError } = await supabase
       .from("summons")
-      .select("total_backed, backers_count, backers, tags")
+      .select("total_backed, backers_count, backers, tags, creator_id, target_username")
       .eq("id", summon_id)
       .single();
 
@@ -135,6 +136,24 @@ export async function POST(request: NextRequest) {
         total_summons_backed: (userData.total_summons_backed || 0) + 1,
       })
       .eq("id", session.user.dbId);
+
+    // Notify the summon creator that someone backed their summon
+    if (summon.creator_id && summon.creator_id !== session.user.dbId) {
+      try {
+        await notifySummonBacked(
+          summon.creator_id,
+          userData.name,
+          userData.username,
+          userData.profile_image_url,
+          pledgeAmount,
+          summon.target_username || "",
+          summon_id
+        );
+      } catch (notifyError) {
+        console.error("Error sending notification:", notifyError);
+        // Don't fail the request if notification fails
+      }
+    }
 
     return NextResponse.json({
       success: true,

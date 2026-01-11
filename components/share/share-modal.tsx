@@ -238,9 +238,12 @@ export function ShareModal({
             activeSummon?.backers
           } backers\n\n`;
 
-    const url = `https://koruapp.xyz/${
-      type === "profile" ? "profile" : "summons"
-    }`;
+    // Use the specific summon page URL when sharing a summon
+    const url =
+      type === "profile"
+        ? `https://koruapp.xyz/profile`
+        : `https://koruapp.xyz/summons/${activeSummon?.id}`;
+
     const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
       text
     )}&url=${encodeURIComponent(url)}`;

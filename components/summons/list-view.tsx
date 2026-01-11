@@ -17,6 +17,7 @@ interface ListViewProps {
   summons: Summon[];
   onShare: (summon: Summon) => void;
   onBack: (summon: Summon) => void;
+  onViewDetails: (summon: Summon) => void;
   currentUserId?: string;
 }
 
@@ -24,6 +25,7 @@ export function ListView({
   summons,
   onShare,
   onBack,
+  onViewDetails,
   currentUserId,
 }: ListViewProps) {
   // Check if user has already backed a summon
@@ -45,6 +47,7 @@ export function ListView({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.05 }}
+          onClick={() => onViewDetails(summon)}
           className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-5 hover:border-koru-purple/30 dark:hover:border-koru-purple/30 transition-all cursor-pointer group"
         >
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
