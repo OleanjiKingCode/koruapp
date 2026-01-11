@@ -1,12 +1,24 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 // Server-side notification creation helper
 // Use this in API routes to create notifications
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy initialization to avoid build-time errors when env vars aren't available
+let supabaseInstance: SupabaseClient | null = null;
+
+function getSupabase(): SupabaseClient {
+  if (!supabaseInstance) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!url || !key) {
+      throw new Error("Supabase URL and service role key are required for notifications");
+    }
+
+    supabaseInstance = createClient(url, key);
+  }
+  return supabaseInstance;
+}
 
 export type NotificationType =
   | "message"
@@ -43,7 +55,7 @@ export async function createNotification({
   metadata = {},
 }: CreateNotificationParams): Promise<string | null> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from("notifications")
       .insert({
         user_id: userId,

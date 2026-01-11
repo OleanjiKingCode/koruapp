@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy initialization to avoid build-time errors
+let supabaseInstance: SupabaseClient | null = null;
+
+function getSupabase(): SupabaseClient {
+  if (!supabaseInstance) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) {
+      throw new Error("Supabase URL and service role key are required");
+    }
+    supabaseInstance = createClient(url, key);
+  }
+  return supabaseInstance;
+}
 
 export interface NotificationResponse {
   id: string;
@@ -48,7 +58,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "50");
     const unreadOnly = searchParams.get("unread") === "true";
 
-    let query = supabase
+    let query = getSupabase()
       .from("notifications")
       .select("*")
       .eq("user_id", session.user.id)
@@ -84,7 +94,7 @@ export async function GET(request: NextRequest) {
     }));
 
     // Get unread count
-    const { count: unreadCount } = await supabase
+    const { count: unreadCount } = await getSupabase()
       .from("notifications")
       .select("*", { count: "exact", head: true })
       .eq("user_id", session.user.id)
@@ -116,7 +126,7 @@ export async function PATCH(request: NextRequest) {
 
     if (markAllRead) {
       // Mark all notifications as read
-      const { error } = await supabase
+      const { error } = await getSupabase()
         .from("notifications")
         .update({ read: true })
         .eq("user_id", session.user.id)
@@ -135,7 +145,7 @@ export async function PATCH(request: NextRequest) {
 
     if (notificationId) {
       // Mark single notification as read
-      const { error } = await supabase
+      const { error } = await getSupabase()
         .from("notifications")
         .update({ read: true })
         .eq("id", notificationId)
