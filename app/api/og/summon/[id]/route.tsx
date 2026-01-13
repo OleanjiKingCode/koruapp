@@ -14,7 +14,7 @@ function formatNumber(num: number): string {
   return num.toString();
 }
 
-// Tag colors
+// Tag colors matching the Premium variant
 const TAG_COLORS: Record<string, { bg: string; text: string }> = {
   Web3: { bg: "#f3e8ff", text: "#7c3aed" },
   DeFi: { bg: "#f3e8ff", text: "#7c3aed" },
@@ -89,11 +89,11 @@ export async function GET(
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
+            background: "linear-gradient(145deg, #fefefe 0%, #f8f8f8 100%)",
             fontFamily: "system-ui, sans-serif",
           }}
         >
-          <div style={{ color: "#fff", fontSize: 48, fontWeight: "bold" }}>
+          <div style={{ color: "#111827", fontSize: 48, fontWeight: "bold" }}>
             Summon Not Found
           </div>
         </div>
@@ -116,17 +116,20 @@ export async function GET(
   );
   const backersCount = summon.backers_count || 0;
   const tags = summon.tags || {};
-  const request_text = summon.message || summon.request || "";
+  const trend = "up";
+  const trendValue = 0;
 
   // Get top tags
   const topTags = Object.entries(tags)
     .sort(([, a], [, b]) => (b as number) - (a as number))
-    .slice(0, 3)
+    .slice(0, 2)
     .map(([tag]) => tag);
 
   // Get backers data
   const backersFromArray: BackerInfo[] = summon.backers || [];
+  const trendColor = trend === "up" ? "#9deb61" : "#ef4444";
 
+  // Premium variant - Clean professional design (matching appeal-share-card.tsx default)
   return new ImageResponse(
     (
       <div
@@ -136,30 +139,50 @@ export async function GET(
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
+          background: "#e5e5e5",
           fontFamily: "system-ui, sans-serif",
           padding: 40,
         }}
       >
-        {/* Card Container */}
+        {/* Card Container - Premium variant */}
         <div
           style={{
             width: 1120,
             height: 550,
-            background: "linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)",
-            borderRadius: 32,
+            background: "linear-gradient(145deg, #fefefe 0%, #f8f8f8 100%)",
+            borderRadius: 48,
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
-            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+            boxShadow: "0 4px 60px rgba(0,0,0,0.08)",
+            position: "relative",
           }}
         >
-          {/* Gradient Header Bar */}
+          {/* Top gradient bar */}
           <div
             style={{
-              height: 8,
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 12,
               background:
-                "linear-gradient(90deg, #c385ee 0%, #dab079 50%, #9deb61 100%)",
+                "linear-gradient(90deg, #dab079 0%, #c385ee 50%, #9deb61 100%)",
+              display: "flex",
+            }}
+          />
+
+          {/* Decorative background shape */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: -80,
+              right: -80,
+              width: 300,
+              height: 300,
+              background:
+                "linear-gradient(135deg, rgba(218,176,121,0.1) 0%, rgba(195,133,238,0.1) 100%)",
+              borderRadius: "50%",
               display: "flex",
             }}
           />
@@ -168,9 +191,11 @@ export async function GET(
           <div
             style={{
               flex: 1,
-              padding: 48,
+              padding: 56,
+              paddingTop: 68,
               display: "flex",
               flexDirection: "column",
+              position: "relative",
             }}
           >
             {/* Header */}
@@ -178,290 +203,334 @@ export async function GET(
               style={{
                 display: "flex",
                 alignItems: "flex-start",
-                gap: 24,
-                marginBottom: 32,
+                justifyContent: "space-between",
+                marginBottom: 48,
               }}
             >
-              {/* Profile Image */}
-              <div
-                style={{
-                  width: 100,
-                  height: 100,
-                  borderRadius: 20,
-                  overflow: "hidden",
-                  display: "flex",
-                  background: "#e5e7eb",
-                  flexShrink: 0,
-                }}
-              >
-                {targetProfileImage ? (
-                  <img
-                    src={targetProfileImage}
-                    alt={targetName}
-                    width={100}
-                    height={100}
-                    style={{ objectFit: "cover" }}
-                  />
-                ) : (
+              {/* Left side - Profile */}
+              <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+                {/* Profile Image */}
+                <div
+                  style={{
+                    width: 120,
+                    height: 120,
+                    borderRadius: 32,
+                    overflow: "hidden",
+                    display: "flex",
+                    background: "#e5e7eb",
+                    boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  {targetProfileImage ? (
+                    <img
+                      src={targetProfileImage}
+                      alt={targetName}
+                      width={120}
+                      height={120}
+                      style={{ objectFit: "cover" }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: 120,
+                        height: 120,
+                        background:
+                          "linear-gradient(135deg, #c385ee 0%, #9deb61 100%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 48,
+                        fontWeight: "bold",
+                        color: "#fff",
+                      }}
+                    >
+                      {targetHandle.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+
+                {/* Profile Info */}
+                <div style={{ display: "flex", flexDirection: "column" }}>
                   <div
                     style={{
-                      width: 100,
-                      height: 100,
-                      background:
-                        "linear-gradient(135deg, #c385ee 0%, #9deb61 100%)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 40,
+                      fontSize: 48,
                       fontWeight: "bold",
-                      color: "#fff",
+                      color: "#111827",
+                      display: "flex",
                     }}
                   >
-                    {targetHandle.charAt(0).toUpperCase()}
+                    @{targetHandle}
                   </div>
-                )}
-              </div>
-
-              {/* Profile Info */}
-              <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-                <div
-                  style={{
-                    fontSize: 14,
-                    color: "#9ca3af",
-                    textTransform: "uppercase",
-                    letterSpacing: 2,
-                    marginBottom: 4,
-                    display: "flex",
-                  }}
-                >
-                  Summon for
-                </div>
-                <div
-                  style={{
-                    fontSize: 42,
-                    fontWeight: "bold",
-                    color: "#111827",
-                    marginBottom: 4,
-                    display: "flex",
-                  }}
-                >
-                  @{targetHandle}
-                </div>
-                <div
-                  style={{
-                    fontSize: 20,
-                    color: "#6b7280",
-                    display: "flex",
-                  }}
-                >
-                  {targetName}
+                  <div
+                    style={{
+                      fontSize: 24,
+                      color: "#6b7280",
+                      display: "flex",
+                      marginTop: 4,
+                    }}
+                  >
+                    {targetName}
+                  </div>
                 </div>
               </div>
 
-              {/* Koru Logo */}
+              {/* Right side - Tags and Trend */}
               <div
                 style={{
                   display: "flex",
-                  alignItems: "center",
-                  gap: 8,
+                  flexDirection: "column",
+                  alignItems: "flex-end",
+                  gap: 16,
                 }}
               >
+                {/* Tags */}
+                {topTags.length > 0 && (
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 12,
+                      justifyContent: "flex-end",
+                    }}
+                  >
+                    {topTags.map((tag) => {
+                      const style = getTagStyle(tag);
+                      return (
+                        <div
+                          key={tag}
+                          style={{
+                            padding: "10px 20px",
+                            borderRadius: 12,
+                            background: style.bg,
+                            color: style.text,
+                            fontSize: 20,
+                            fontWeight: 600,
+                            display: "flex",
+                          }}
+                        >
+                          {tag}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Trend indicator */}
                 <div
                   style={{
-                    fontSize: 28,
-                    fontWeight: "bold",
-                    background:
-                      "linear-gradient(90deg, #c385ee 0%, #dab079 100%)",
-                    backgroundClip: "text",
-                    color: "transparent",
                     display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    color: trendColor,
                   }}
                 >
-                  Koru
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke={trendColor}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+                    <polyline points="16 7 22 7 22 13" />
+                  </svg>
+                  <span style={{ fontSize: 22, fontWeight: "bold" }}>
+                    +{trendValue}%
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Tags */}
-            {topTags.length > 0 && (
-              <div
-                style={{
-                  display: "flex",
-                  gap: 12,
-                  marginBottom: 32,
-                }}
-              >
-                {topTags.map((tag) => {
-                  const style = getTagStyle(tag);
-                  return (
-                    <div
-                      key={tag}
-                      style={{
-                        padding: "8px 16px",
-                        borderRadius: 20,
-                        background: style.bg,
-                        color: style.text,
-                        fontSize: 16,
-                        fontWeight: 600,
-                        display: "flex",
-                      }}
-                    >
-                      {tag}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Request text (if any) */}
-            {request_text && (
-              <div
-                style={{
-                  flex: 1,
-                  padding: 24,
-                  background: "#f9fafb",
-                  borderRadius: 16,
-                  marginBottom: 32,
-                  display: "flex",
-                  alignItems: "flex-start",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 18,
-                    color: "#374151",
-                    lineHeight: 1.5,
-                    display: "flex",
-                    overflow: "hidden",
-                  }}
-                >
-                  &ldquo;
-                  {request_text.length > 200
-                    ? request_text.slice(0, 200) + "..."
-                    : request_text}
-                  &rdquo;
-                </div>
-              </div>
-            )}
-
-            {/* Stats Bar */}
+            {/* Stats - Bottom section */}
             <div
               style={{
+                flex: 1,
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                paddingTop: 24,
-                borderTop: "1px solid #e5e7eb",
-                marginTop: "auto",
+                alignItems: "flex-end",
               }}
             >
-              {/* Stats */}
-              <div style={{ display: "flex", gap: 48 }}>
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <div
-                    style={{
-                      fontSize: 36,
-                      fontWeight: "bold",
-                      color: "#dab079",
-                      display: "flex",
-                    }}
-                  >
-                    ${formatNumber(totalPledged)}
+              <div
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-end",
+                }}
+              >
+                {/* Stats */}
+                <div style={{ display: "flex", gap: 64 }}>
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    <div
+                      style={{
+                        fontSize: 72,
+                        fontWeight: 900,
+                        color: "#111827",
+                        display: "flex",
+                        lineHeight: 1,
+                      }}
+                    >
+                      ${formatNumber(totalPledged)}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 20,
+                        color: "#9ca3af",
+                        display: "flex",
+                        marginTop: 8,
+                      }}
+                    >
+                      Total Pledged
+                    </div>
                   </div>
                   <div
                     style={{
-                      fontSize: 14,
-                      color: "#9ca3af",
                       display: "flex",
+                      flexDirection: "column",
+                      paddingLeft: 64,
+                      borderLeft: "2px solid #e5e7eb",
                     }}
                   >
-                    pledged
+                    <div
+                      style={{
+                        fontSize: 72,
+                        fontWeight: 900,
+                        color: "#c385ee",
+                        display: "flex",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {backersCount}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 20,
+                        color: "#9ca3af",
+                        display: "flex",
+                        marginTop: 8,
+                      }}
+                    >
+                      Backers
+                    </div>
                   </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column" }}>
+
+                {/* Backer avatars and branding */}
+                <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+                  {/* Backer Avatars */}
+                  {backersFromArray.length > 0 && (
+                    <div style={{ display: "flex" }}>
+                      {backersFromArray.slice(0, 4).map((backer, idx) => (
+                        <div
+                          key={backer.user_id || idx}
+                          style={{
+                            width: 56,
+                            height: 56,
+                            borderRadius: 28,
+                            overflow: "hidden",
+                            border: "3px solid #f8f8f8",
+                            marginLeft: idx > 0 ? -16 : 0,
+                            display: "flex",
+                            background: "#e5e7eb",
+                          }}
+                        >
+                          {backer.profile_image_url ? (
+                            <img
+                              src={backer.profile_image_url}
+                              alt={backer.name}
+                              width={56}
+                              height={56}
+                              style={{ objectFit: "cover" }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: 56,
+                                height: 56,
+                                background:
+                                  "linear-gradient(135deg, #c385ee 0%, #9deb61 100%)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 20,
+                                fontWeight: "bold",
+                                color: "#fff",
+                              }}
+                            >
+                              {(backer.username || "U").charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {backersCount > 4 && (
+                        <div
+                          style={{
+                            width: 56,
+                            height: 56,
+                            borderRadius: 28,
+                            background: "#e5e5e5",
+                            border: "3px solid #f8f8f8",
+                            marginLeft: -16,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: 16,
+                              fontWeight: "bold",
+                              color: "#525252",
+                            }}
+                          >
+                            +{backersCount - 4}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Koru branding */}
                   <div
                     style={{
-                      fontSize: 36,
-                      fontWeight: "bold",
-                      color: "#c385ee",
                       display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "12px 20px",
+                      background: "rgba(195,133,238,0.1)",
+                      borderRadius: 16,
                     }}
                   >
-                    {backersCount}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 14,
-                      color: "#9ca3af",
-                      display: "flex",
-                    }}
-                  >
-                    backers
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 12,
+                        background:
+                          "linear-gradient(135deg, #c385ee 0%, #dab079 100%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontWeight: "bold",
+                        color: "#fff",
+                        fontSize: 18,
+                      }}
+                    >
+                      K
+                    </div>
+                    <span
+                      style={{
+                        fontSize: 24,
+                        fontWeight: "bold",
+                        color: "#c385ee",
+                      }}
+                    >
+                      Koru
+                    </span>
                   </div>
                 </div>
               </div>
-
-              {/* Backer Avatars */}
-              {backersFromArray.length > 0 && (
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <div style={{ display: "flex", marginLeft: -8 }}>
-                    {backersFromArray.slice(0, 5).map((backer, idx) => (
-                      <div
-                        key={backer.user_id || idx}
-                        style={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: 20,
-                          overflow: "hidden",
-                          border: "3px solid #ffffff",
-                          marginLeft: idx > 0 ? -12 : 0,
-                          display: "flex",
-                          background: "#e5e7eb",
-                        }}
-                      >
-                        {backer.profile_image_url ? (
-                          <img
-                            src={backer.profile_image_url}
-                            alt={backer.name}
-                            width={40}
-                            height={40}
-                            style={{ objectFit: "cover" }}
-                          />
-                        ) : (
-                          <div
-                            style={{
-                              width: 40,
-                              height: 40,
-                              background:
-                                "linear-gradient(135deg, #c385ee 0%, #9deb61 100%)",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: 14,
-                              fontWeight: "bold",
-                              color: "#fff",
-                            }}
-                          >
-                            {(backer.username || "U").charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  {backersCount > 5 && (
-                    <div
-                      style={{
-                        marginLeft: 8,
-                        fontSize: 14,
-                        color: "#6b7280",
-                        display: "flex",
-                      }}
-                    >
-                      +{backersCount - 5} more
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         </div>

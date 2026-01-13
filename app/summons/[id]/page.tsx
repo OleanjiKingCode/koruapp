@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { headers } from "next/headers";
 import { supabase } from "@/lib/supabase";
 import { SummonDetailClient } from "./client";
 
@@ -112,6 +113,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { id } = await params;
   const summon = await getSummon(id);
 
+  // Get the host from headers
+  const headersList = await headers();
+  const host = headersList.get("host") || "localhost:2396";
+  const protocol = host.includes("localhost") ? "http" : "https";
+  const baseUrl = `${protocol}://${host}`;
+
   if (!summon) {
     return {
       title: "Summon Not Found | Koru",
@@ -132,8 +139,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         .map(([tag]) => tag)
     : [];
 
-  // Use dynamic OG image that shows the summon card
-  const ogImageUrl = `https://koruapp.xyz/api/og/summon/${id}`;
+  // Use dynamic OG image that shows the summon card (Premium variant)
+  const ogImageUrl = `${baseUrl}/api/og/summon/${id}`;
 
   return {
     title,
@@ -143,7 +150,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title,
       description,
       type: "website",
-      url: `https://koruapp.xyz/summons/${id}`,
+      url: `${baseUrl}/summons/${id}`,
       siteName: "Koru",
       images: [
         {

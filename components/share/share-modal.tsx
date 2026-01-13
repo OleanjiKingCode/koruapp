@@ -247,6 +247,7 @@ export function ShareModal({
   }, [generateImage, handleDownload]);
 
   const handleShareToX = useCallback(async () => {
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
     const text =
       type === "profile"
         ? `Check out my Koru profile!\n\n${userData?.points.toLocaleString()} points • ${
@@ -261,8 +262,8 @@ export function ShareModal({
     // Use the specific summon page URL when sharing a summon
     const url =
       type === "profile"
-        ? `https://koruapp.xyz/profile`
-        : `https://koruapp.xyz/summons/${activeSummon?.id}`;
+        ? `${baseUrl}/profile`
+        : `${baseUrl}/summons/${activeSummon?.id}`;
 
     const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
       text
@@ -272,10 +273,11 @@ export function ShareModal({
   }, [type, userData, activeSummon]);
 
   const handleCopyLink = useCallback(async () => {
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
     const url =
       type === "profile"
-        ? `https://koruapp.xyz/profile`
-        : `https://koruapp.xyz/summons/${activeSummon?.id}`;
+        ? `${baseUrl}/profile`
+        : `${baseUrl}/summons/${activeSummon?.id}`;
 
     try {
       await navigator.clipboard.writeText(url);

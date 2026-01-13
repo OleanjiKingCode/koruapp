@@ -201,7 +201,8 @@ export function SummonDetailsModal({
 
   const handleCopyLink = async () => {
     if (!summon) return;
-    const url = `https://koruapp.xyz/summons/${summon.id}`;
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    const url = `${baseUrl}/summons/${summon.id}`;
     try {
       await navigator.clipboard.writeText(url);
       setLinkCopied(true);
