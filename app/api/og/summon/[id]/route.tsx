@@ -1,5 +1,4 @@
 import { ImageResponse } from "next/og";
-import { supabase } from "@/lib/supabase";
 
 export const runtime = "edge";
 
@@ -71,14 +70,48 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  // Fetch summon data
-  const { data: summon, error } = await supabase
-    .from("summons")
-    .select("*")
-    .eq("id", id)
-    .single();
+  // Use direct fetch to Supabase REST API for edge runtime compatibility
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (error || !summon) {
+  if (!supabaseUrl || !supabaseKey) {
+    return new ImageResponse(
+      (
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "linear-gradient(145deg, #fefefe 0%, #f8f8f8 100%)",
+            fontFamily: "system-ui, sans-serif",
+          }}
+        >
+          <div style={{ color: "#111827", fontSize: 48, fontWeight: "bold" }}>
+            Configuration Error
+          </div>
+        </div>
+      ),
+      { width: 1200, height: 630 }
+    );
+  }
+
+  // Fetch summon data via REST API
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/summons?id=eq.${id}&select=*`,
+    {
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+      },
+    }
+  );
+
+  const data = await response.json();
+  const summon = data?.[0];
+
+  if (!summon) {
     // Return a default OG image for not found
     return new ImageResponse(
       (
@@ -116,7 +149,6 @@ export async function GET(
   );
   const backersCount = summon.backers_count || 0;
   const tags = summon.tags || {};
-  const trend = "up";
   const trendValue = 0;
 
   // Get top tags
@@ -127,7 +159,7 @@ export async function GET(
 
   // Get backers data
   const backersFromArray: BackerInfo[] = summon.backers || [];
-  const trendColor = trend === "up" ? "#9deb61" : "#ef4444";
+  const trendColor = "#9deb61";
 
   // Premium variant - Clean professional design (matching appeal-share-card.tsx default)
   return new ImageResponse(
