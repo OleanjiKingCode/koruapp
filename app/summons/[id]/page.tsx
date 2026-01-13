@@ -132,6 +132,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         .map(([tag]) => tag)
     : [];
 
+  // Use dynamic OG image that shows the summon card
+  const ogImageUrl = `https://koruapp.xyz/api/og/summon/${id}`;
+
   return {
     title,
     description,
@@ -144,7 +147,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       siteName: "Koru",
       images: [
         {
-          url: summon.targetProfileImage || `https://koruapp.xyz/og-default.png`,
+          url: ogImageUrl,
           width: 1200,
           height: 630,
           alt: `Summon for @${summon.targetHandle}`,
@@ -155,7 +158,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       card: "summary_large_image",
       title,
       description,
-      images: [summon.targetProfileImage || `https://koruapp.xyz/og-default.png`],
+      images: [ogImageUrl],
     },
   };
 }

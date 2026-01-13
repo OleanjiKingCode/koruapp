@@ -72,6 +72,23 @@ type CardVariant =
   | "vibrant"
   | "dark";
 
+function LinkIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+    </svg>
+  );
+}
+
 interface ShareModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -79,6 +96,7 @@ interface ShareModalProps {
   userData?: UserData;
   summon?: Summon;
   appeal?: Appeal; // Backwards compatibility alias
+  hideShareButton?: boolean; // Hide the Twitter share button (for details modal)
 }
 
 export function ShareModal({
@@ -88,12 +106,14 @@ export function ShareModal({
   userData,
   summon,
   appeal, // Backwards compatibility
+  hideShareButton = false,
 }: ShareModalProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [selectedVariant, setSelectedVariant] =
     useState<CardVariant>("default");
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
 
   // Use summon or appeal (for backwards compatibility)
@@ -251,7 +271,22 @@ export function ShareModal({
     window.open(tweetUrl, "_blank", "width=550,height=420");
   }, [type, userData, activeSummon]);
 
-  const actionButtons = [
+  const handleCopyLink = useCallback(async () => {
+    const url =
+      type === "profile"
+        ? `https://koruapp.xyz/profile`
+        : `https://koruapp.xyz/summons/${activeSummon?.id}`;
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch (error) {
+      console.error("Error copying link:", error);
+    }
+  }, [type, activeSummon]);
+
+  const allActionButtons = [
     {
       id: "twitter",
       icon: TwitterIcon,
@@ -261,17 +296,31 @@ export function ShareModal({
       activeIcon: null,
       activeLabel: null,
       isActive: false,
+      hidden: hideShareButton,
+    },
+    {
+      id: "copyLink",
+      icon: LinkIcon,
+      label: "Copy Link",
+      onClick: handleCopyLink,
+      className:
+        "bg-koru-purple text-white hover:bg-koru-purple/90",
+      activeIcon: CheckIcon,
+      activeLabel: "Copied!",
+      isActive: linkCopied,
+      hidden: false,
     },
     {
       id: "copy",
       icon: CopyIcon,
-      label: "Copy",
+      label: "Copy Image",
       onClick: handleCopyImage,
       className:
         "bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-700",
       activeIcon: CheckIcon,
       activeLabel: "Copied!",
       isActive: copied,
+      hidden: false,
     },
     {
       id: "download",
@@ -283,8 +332,11 @@ export function ShareModal({
       activeIcon: CheckIcon,
       activeLabel: "Done!",
       isActive: downloaded,
+      hidden: false,
     },
   ];
+
+  const actionButtons = allActionButtons.filter((button) => !button.hidden);
 
   return (
     <AnimatePresence>

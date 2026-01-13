@@ -987,7 +987,6 @@ export default function SummonsPage() {
         open={detailsModalOpen}
         onOpenChange={setDetailsModalOpen}
         summon={summonToView}
-        onShare={handleShareSummon}
         onBack={handleBackSummon}
         currentUserId={session?.user?.dbId}
       />
