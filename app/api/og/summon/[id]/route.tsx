@@ -98,18 +98,27 @@ export async function GET(
   }
 
   // Fetch summon data via REST API
-  const response = await fetch(
-    `${supabaseUrl}/rest/v1/summons?id=eq.${id}&select=*`,
-    {
-      headers: {
-        apikey: supabaseKey,
-        Authorization: `Bearer ${supabaseKey}`,
-      },
-    }
-  );
+  let summon = null;
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/summons?id=eq.${id}&select=*`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+      }
+    );
 
-  const data = await response.json();
-  const summon = data?.[0];
+    if (!response.ok) {
+      console.error("Supabase fetch failed:", response.status, response.statusText);
+    } else {
+      const data = await response.json();
+      summon = data?.[0];
+    }
+  } catch (error) {
+    console.error("Error fetching summon:", error);
+  }
 
   if (!summon) {
     // Return a default OG image for not found
