@@ -355,15 +355,15 @@ export function ShareModal({
           />
 
           {/* Floating Container */}
-          <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center p-4">
-            <div className="pointer-events-auto flex flex-col items-center gap-4 max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center p-2 sm:p-4">
+            <div className="pointer-events-auto flex flex-col items-center gap-3 sm:gap-4 max-h-[90vh] overflow-y-auto">
               {/* Style Selector Pills */}
               <motion.div
                 initial={{ opacity: 0, y: 20, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 20, scale: 0.9 }}
                 transition={{ duration: 0.3, delay: 0.05 }}
-                className="flex items-center gap-2 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl rounded-full p-1.5 shadow-2xl shadow-black/20"
+                className="flex items-center gap-1.5 sm:gap-2 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl rounded-full p-1 sm:p-1.5 shadow-2xl shadow-black/20"
               >
                 {variants.map((v, index) => (
                   <motion.button
@@ -372,7 +372,7 @@ export function ShareModal({
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.1 + index * 0.03 }}
                     onClick={() => setSelectedVariant(v)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                    className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
                       selectedVariant === v
                         ? "bg-koru-purple text-white shadow-lg shadow-koru-purple/30"
                         : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
@@ -438,7 +438,7 @@ export function ShareModal({
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 20, scale: 0.9 }}
                 transition={{ duration: 0.3, delay: 0.15 }}
-                className="flex items-center gap-3"
+                className="flex flex-wrap items-center justify-center gap-2 sm:gap-3"
               >
                 {actionButtons.map((button, index) => {
                   const Icon =
@@ -459,7 +459,7 @@ export function ShareModal({
                       onClick={button.onClick}
                       disabled={isGenerating}
                       className={`
-                        flex items-center gap-2 px-5 py-3 rounded-full font-medium
+                        flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-3 rounded-full font-medium
                         shadow-xl shadow-black/10 transition-all
                         disabled:opacity-50 disabled:cursor-not-allowed
                         ${button.className}
@@ -470,8 +470,8 @@ export function ShareModal({
                         }
                       `}
                     >
-                      <Icon className="w-5 h-5" />
-                      <span className="text-sm">{label}</span>
+                      <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span className="text-xs sm:text-sm">{label}</span>
                     </motion.button>
                   );
                 })}
@@ -484,9 +484,9 @@ export function ShareModal({
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ delay: 0.3 }}
                 onClick={() => onOpenChange(false)}
-                className="w-12 h-12 rounded-full bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl shadow-xl shadow-black/10 flex items-center justify-center text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl shadow-xl shadow-black/10 flex items-center justify-center text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
               >
-                <CloseIcon className="w-5 h-5" />
+                <CloseIcon className="w-4 h-4 sm:w-5 sm:h-5" />
               </motion.button>
 
               {/* Loading Indicator */}

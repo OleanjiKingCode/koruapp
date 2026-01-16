@@ -71,14 +71,14 @@ export function Footer() {
     // Calculate how far from the actual bottom the user is (in pixels)
     const distanceFromBottom = documentHeight - windowHeight - scrollTop;
 
-    // Be very strict - only show when within 30px of bottom
-    const pixelThreshold = 30;
+    // Show footer when within 200px of bottom (matching floating nav threshold)
+    const pixelThreshold = 200;
 
     // Calculate scrollable height
     const scrollableHeight = documentHeight - windowHeight;
 
     // Only show footer when:
-    // 1. User is within 30px of the true bottom AND has scrolled significantly
+    // 1. User is within 200px of the true bottom AND has scrolled significantly
     // 2. OR page is truly short (content less than viewport) AND document is less than 1.1x viewport
     //    AND user has scrolled at least 100px (to prevent showing on initial load)
     const nearBottom = distanceFromBottom <= pixelThreshold;
@@ -151,10 +151,10 @@ export function Footer() {
     <AnimatePresence>
       {isVisible && (
         <motion.footer
-          initial={{ opacity: 0, y: 50 }}
+          initial={{ opacity: 0, y: 100 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 50 }}
-          transition={{ type: "spring", stiffness: 100, damping: 20 }}
+          exit={{ opacity: 0, y: 100 }}
+          transition={{ type: "spring", stiffness: 120, damping: 20 }}
           className="fixed bottom-0 left-0 right-0 z-30"
         >
           <div className="mx-4 mb-4">

@@ -62,7 +62,7 @@ export function FloatingNav() {
 
   // Use custom hooks
   const mounted = useMounted();
-  const { isNearBottom } = useScrollPosition({ bottomThreshold: 90 });
+  const { isNearBottom } = useScrollPosition({ bottomThreshold: 200 });
   const { font: selectedFont, applyFont } = useFontPreference();
   const unreadCounts = useUnreadCount();
   const { isModalOpen } = useModalContext();
