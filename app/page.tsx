@@ -3,6 +3,7 @@
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
+import Link from "next/link";
 import { KoruText } from "@/components/koru-text";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AboutModal } from "@/components/about-modal";
@@ -88,19 +89,32 @@ export default function Home() {
         <div className="relative z-10 flex flex-col items-center gap-12">
           <KoruText />
 
-          {/* Know More button */}
-          <motion.button
-            onClick={() => setIsAboutOpen(true)}
+          {/* Buttons */}
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1, duration: 0.5 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="px-8 py-3 rounded-full border-2 border-neutral-400 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 font-quicksand text-lg hover:border-neutral-600 dark:hover:border-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors duration-300"
+            className="flex flex-col sm:flex-row gap-4"
           >
-            Know more →
-          </motion.button>
 
+            <Link href="/discover">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-8 py-3 rounded-full bg-koru-purple text-white font-quicksand text-lg hover:bg-koru-purple/90 hover:shadow-lg hover:shadow-koru-purple/25 transition-all duration-300"
+              >
+                Get Started →
+              </motion.button>
+            </Link>
+            <motion.button
+              onClick={() => setIsAboutOpen(true)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-8 py-3 rounded-full border-2 border-neutral-400 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 font-quicksand text-lg hover:border-neutral-600 dark:hover:border-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors duration-300"
+            >
+              Know more
+            </motion.button>
+          </motion.div>
           {/* Social Links */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
