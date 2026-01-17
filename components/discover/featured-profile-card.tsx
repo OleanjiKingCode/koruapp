@@ -41,7 +41,7 @@ export function FeaturedProfileCard({
           <div className="relative shrink-0">
             {hasValidImage ? (
               <img
-                src={profile.profile_image_url}
+                src={profile.profile_image_url || ""}
                 alt={profile.name}
                 className="w-14 h-14 rounded-full object-cover border-2 border-neutral-200 dark:border-neutral-700"
                 onError={() => setImageError(true)}
