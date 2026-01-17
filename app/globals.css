@@ -8,8 +8,8 @@
     --koru-purple: #c385ee;
     --koru-golden: #dab079;
     --koru-lime: #9deb61;
-    --koru-deep: #1A1446;
-    
+    --koru-deep: #1a1446;
+
     /* Light mode - clean, airy, professional */
     --background: 45 30% 98%;
     --foreground: 240 10% 10%;
@@ -97,28 +97,55 @@ body.font-lemon *:not(.font-quicksand):not(.font-tenor):not(.font-lemon) {
 
 /* Light mode background */
 .light {
-  background: 
-    radial-gradient(ellipse at 0% 0%, rgba(195, 133, 238, 0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 100% 100%, rgba(218, 176, 121, 0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 50%, rgba(157, 235, 97, 0.03) 0%, transparent 60%),
+  background: radial-gradient(
+      ellipse at 0% 0%,
+      rgba(195, 133, 238, 0.06) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 100% 100%,
+      rgba(218, 176, 121, 0.06) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 50% 50%,
+      rgba(157, 235, 97, 0.03) 0%,
+      transparent 60%
+    ),
     linear-gradient(180deg, hsl(45, 30%, 98%) 0%, hsl(45, 25%, 96%) 100%);
   background-attachment: fixed;
 }
 
 /* Dark mode background - richer and more premium */
 .dark {
-  background: 
-    radial-gradient(ellipse at 0% 0%, rgba(195, 133, 238, 0.12) 0%, transparent 50%),
-    radial-gradient(ellipse at 100% 0%, rgba(218, 176, 121, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 100%, rgba(157, 235, 97, 0.05) 0%, transparent 50%),
+  background: radial-gradient(
+      ellipse at 0% 0%,
+      rgba(195, 133, 238, 0.12) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 100% 0%,
+      rgba(218, 176, 121, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 50% 100%,
+      rgba(157, 235, 97, 0.05) 0%,
+      transparent 50%
+    ),
     linear-gradient(180deg, hsl(250, 25%, 6%) 0%, hsl(250, 30%, 4%) 100%);
   background-attachment: fixed;
 }
 
 /* Cursor blink animation */
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 
 .animate-blink-cursor {
@@ -177,13 +204,12 @@ body.font-lemon *:not(.font-quicksand):not(.font-tenor):not(.font-lemon) {
 /* Purple glow effect */
 .glow-purple {
   box-shadow: 0 0 40px rgba(195, 133, 238, 0.3),
-              0 0 80px rgba(195, 133, 238, 0.1);
+    0 0 80px rgba(195, 133, 238, 0.1);
 }
 
 /* Dark mode specific enhancements */
 .dark .card-glow {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3),
-              0 0 40px rgba(195, 133, 238, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 40px rgba(195, 133, 238, 0.05);
 }
 
 /* Scrollbar styling */
@@ -215,17 +241,17 @@ body.font-lemon *:not(.font-quicksand):not(.font-tenor):not(.font-lemon) {
 
 /* Crown colors */
 .crown-gold {
-  color: #FFD700;
+  color: #ffd700;
   filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.5));
 }
 
 .crown-silver {
-  color: #C0C0C0;
+  color: #c0c0c0;
   filter: drop-shadow(0 0 4px rgba(192, 192, 192, 0.5));
 }
 
 .crown-bronze {
-  color: #CD7F32;
+  color: #cd7f32;
   filter: drop-shadow(0 0 4px rgba(205, 127, 50, 0.5));
 }
 
@@ -262,4 +288,64 @@ body.font-lemon *:not(.font-quicksand):not(.font-tenor):not(.font-lemon) {
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* Decorative koru-dotted background elements */
+.koru-bg-decoration {
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url("/koru-dotted.png");
+  background-repeat: no-repeat;
+  background-size: cover;
+  opacity: 0.4;
+}
+
+.koru-bg-top-left {
+  top: -10%;
+  left: -10%;
+  width: 50vw;
+  height: 50vw;
+  max-width: 600px;
+  max-height: 600px;
+  mask-image: radial-gradient(
+    ellipse at 0% 0%,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0.5) 40%,
+    rgba(0, 0, 0, 0.01) 70%
+  );
+  -webkit-mask-image: radial-gradient(
+    ellipse at 0% 0%,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0.5) 40%,
+    rgba(0, 0, 0, 0.01) 70%
+  );
+}
+
+.koru-bg-bottom-right {
+  bottom: -10%;
+  right: -10%;
+  width: 50vw;
+  height: 50vw;
+  max-width: 600px;
+  max-height: 600px;
+  background-position: 0% 100%;
+  transform: scaleX(-1);
+  mask-image: radial-gradient(
+    ellipse at 0% 100%,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0.5) 50%,
+    rgba(0, 0, 0, 0.01) 73%
+  );
+  -webkit-mask-image: radial-gradient(
+    ellipse at 0% 100%,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0.5) 50%,
+    rgba(0, 0, 0, 0.01) 73%
+  );
+}
+
+/* Adjust opacity for dark mode */
+.dark .koru-bg-decoration {
+  opacity: 0.25;
 }

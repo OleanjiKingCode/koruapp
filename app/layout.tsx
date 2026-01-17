@@ -99,6 +99,9 @@ export default function RootLayout({
       <body
         className={`${quicksand.variable} ${tenorSans.variable} ${lemonTuesday.variable} antialiased`}
       >
+        <div className="koru-bg-decoration koru-bg-top-left" aria-hidden="true" />
+        <div className="koru-bg-decoration koru-bg-bottom-right" aria-hidden="true" />
+        
         <AuthProvider>
           <ThemeProvider
             attribute="class"

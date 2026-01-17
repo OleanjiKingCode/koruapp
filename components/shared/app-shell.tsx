@@ -20,7 +20,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       {/* Add bottom padding to account for footer height (~400px) */}
-      <div className={showFooter ? "pb-[420px]" : ""}>
+      <div className={`relative z-10 ${showFooter ? "pb-[420px]" : ""}`}>
         {children}
       </div>
       {showNav && <FloatingNav />}

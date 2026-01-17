@@ -15,7 +15,7 @@ function SafeImage({
   size,
   className,
 }: {
-  src?: string;
+  src?: string | null;
   alt: string;
   seed: string;
   size: number;
