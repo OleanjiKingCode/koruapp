@@ -43,7 +43,7 @@ const FAQS: FAQItem[] = [
     category: "Getting started",
     question: "What is Kōru?",
     answer:
-      "Kōru is a platform that helps you get the attention of experts, creators, and thought leaders you want to connect with. Use Summons to publicly show how much you'd pay to bring someone to the platform, or directly message Hosts who are already here.",
+      "Kōru is a pay-for-attention platform that connects you with experts, creators, and thought leaders. Use Summons to publicly pledge how much you'd pay to bring someone to the platform, or directly message Hosts who are already here for guaranteed responses.",
     slug: "what-is-koru",
   },
   {
