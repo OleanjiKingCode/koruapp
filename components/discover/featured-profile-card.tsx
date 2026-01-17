@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
@@ -20,12 +21,26 @@ export function FeaturedProfileCard({
   onView,
 }: FeaturedProfileCardProps) {
   const tags = deduplicateTags(profile.tags || []);
+  const [imageError, setImageError] = useState(false);
+  const hasValidImage = profile.profile_image_url && !imageError;
 
   return (
     <motion.div
       whileHover={{ y: -4 }}
-      className="group relative bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft transition-all duration-300 hover:shadow-xl hover:border-koru-purple/30 dark:hover:border-koru-purple/30"
+      className="group relative bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft transition-all duration-300 hover:shadow-xl hover:border-koru-purple/30 dark:hover:border-koru-purple/30 overflow-hidden"
     >
+      {/* Decorative background image - top right corner (mobile) */}
+      {hasValidImage && (
+        <div className="absolute -top-8 -right-8 w-32 h-32 sm:hidden pointer-events-none">
+          <img
+            src={profile.profile_image_url}
+            alt=""
+            className="w-full h-full rounded-full object-cover opacity-[0.08] dark:opacity-[0.12] blur-[1px]"
+            aria-hidden="true"
+          />
+        </div>
+      )}
+
       {/* Gold shimmer on hover */}
       <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none overflow-hidden">
         <div className="absolute inset-0 border-2 border-transparent rounded-2xl shimmer-gold" />
@@ -36,11 +51,12 @@ export function FeaturedProfileCard({
         <div className="flex items-start gap-4">
           {/* Avatar */}
           <div className="relative shrink-0">
-            {profile.profile_image_url ? (
+            {hasValidImage ? (
               <img
                 src={profile.profile_image_url}
                 alt={profile.name}
                 className="w-14 h-14 rounded-full object-cover border-2 border-neutral-200 dark:border-neutral-700"
+                onError={() => setImageError(true)}
               />
             ) : (
               <AvatarGenerator seed={profile.username} size={56} />

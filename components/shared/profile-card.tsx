@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,8 @@ export function ProfileCard({
   className,
   onView,
 }: ProfileCardProps) {
+  const [imageError, setImageError] = useState(false);
+
   if (isLoading) {
     return <ProfileCardSkeleton className={className} />;
   }
@@ -45,17 +48,31 @@ export function ProfileCard({
       .toUpperCase()
       .slice(0, 2);
 
+  const hasValidImage = avatarUrl && !imageError;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4 }}
       className={cn(
-        "group relative bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft transition-all duration-300",
+        "group relative bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft transition-all duration-300 overflow-hidden",
         "hover:shadow-xl hover:border-koru-purple/30 dark:hover:border-koru-purple/30",
         className
       )}
     >
+      {/* Decorative background image - top right corner (mobile) */}
+      {hasValidImage && (
+        <div className="absolute -top-8 -right-8 w-32 h-32 sm:hidden pointer-events-none">
+          <img
+            src={avatarUrl}
+            alt=""
+            className="w-full h-full rounded-full object-cover opacity-[0.08] dark:opacity-[0.12] blur-[1px]"
+            aria-hidden="true"
+          />
+        </div>
+      )}
+
       {/* Gold shimmer on hover */}
       <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none overflow-hidden">
         <div className="absolute inset-0 border-2 border-transparent rounded-2xl shimmer-gold" />
@@ -70,11 +87,12 @@ export function ProfileCard({
               <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-neutral-200 dark:border-neutral-700">
                 {avatarComponent}
               </div>
-            ) : avatarUrl ? (
+            ) : hasValidImage ? (
               <img
                 src={avatarUrl}
                 alt={name}
                 className="w-14 h-14 rounded-full object-cover border-2 border-neutral-200 dark:border-neutral-700"
+                onError={() => setImageError(true)}
               />
             ) : (
               <div className="w-14 h-14 rounded-full bg-gradient-to-br from-koru-purple/20 to-koru-golden/20 flex items-center justify-center border-2 border-koru-purple/30">

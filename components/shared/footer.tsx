@@ -358,4 +358,3 @@ export function Footer() {
     </AnimatePresence>
   );
 }
-

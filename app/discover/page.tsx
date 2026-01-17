@@ -297,6 +297,7 @@ function DiscoverContent() {
               <FeaturedProfilesGrid
                 profiles={featuredProfiles}
                 isLoading={isLoadingFeatured}
+                hasMore={hasMore}
                 sentinelRef={sentinelRef}
                 onView={(profile) =>
                   router.push(`/profile/${profile.username}`)
@@ -510,11 +511,13 @@ function TwitterResultsTable({
 function FeaturedProfilesGrid({
   profiles,
   isLoading,
+  hasMore,
   sentinelRef,
   onView,
 }: {
   profiles: FeaturedProfile[];
   isLoading: boolean;
+  hasMore: boolean;
   sentinelRef: React.RefObject<HTMLDivElement>;
   onView: (profile: FeaturedProfile) => void;
 }) {
@@ -524,33 +527,46 @@ function FeaturedProfilesGrid({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
     >
-      {profiles.map((profile, index) => (
-        <motion.div
-          key={profile.id || profile.username}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: Math.min(index * 0.05, 0.5) }}
-        >
-          <FeaturedProfileCard
-            profile={profile}
-            onView={() => onView(profile)}
-          />
-        </motion.div>
-      ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {profiles.map((profile, index) => (
+          <motion.div
+            key={profile.id || profile.username}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: Math.min(index * 0.05, 0.5) }}
+          >
+            <FeaturedProfileCard
+              profile={profile}
+              onView={() => onView(profile)}
+            />
+          </motion.div>
+        ))}
+      </div>
 
       {/* Scroll sentinel for infinite scroll */}
-      <div ref={sentinelRef} className="col-span-full h-20" />
+      <div ref={sentinelRef} className="h-10" />
 
       {/* Loading indicator for infinite scroll */}
-      {isLoading && (
-        <div className="col-span-full flex justify-center py-8">
-          <div className="flex items-center gap-3">
-            <div className="animate-spin rounded-full h-5 w-5 border-2 border-koru-purple border-t-transparent" />
-            <span className="text-neutral-500">Loading...</span>
+      {(isLoading || hasMore) && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex flex-col items-center justify-center py-12 gap-4"
+        >
+          <div className="relative">
+            <div className="w-12 h-12 rounded-full border-4 border-neutral-200 dark:border-neutral-700" />
+            <div className="absolute top-0 left-0 w-12 h-12 rounded-full border-4 border-koru-purple border-t-transparent animate-spin" />
           </div>
-        </div>
+          <div className="text-center">
+            <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              Loading more profiles...
+            </p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+              Discovering amazing people for you
+            </p>
+          </div>
+        </motion.div>
       )}
     </motion.div>
   );

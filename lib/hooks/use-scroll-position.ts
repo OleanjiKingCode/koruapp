@@ -10,16 +10,18 @@ interface ScrollPosition {
 }
 
 interface UseScrollPositionOptions {
-  bottomThreshold?: number; // Percentage (0-100) to consider "near bottom"
+  /** Pixel distance from bottom to consider "near bottom" (default: 200) */
+  bottomThreshold?: number;
 }
 
 /**
  * Hook to track scroll position and detect when near bottom of page
+ * Uses pixel-based threshold (distance from bottom in pixels)
  */
 export function useScrollPosition(
   options: UseScrollPositionOptions = {}
 ): ScrollPosition {
-  const { bottomThreshold = 90 } = options;
+  const { bottomThreshold = 200 } = options;
 
   const [scrollPosition, setScrollPosition] = useState<ScrollPosition>({
     scrollY: 0,
@@ -38,7 +40,11 @@ export function useScrollPosition(
     const scrolledPercentage =
       scrollableHeight > 0 ? (scrollTop / scrollableHeight) * 100 : 100;
 
-    const nearBottom = scrolledPercentage >= bottomThreshold;
+    // Calculate distance from bottom in pixels
+    const distanceFromBottom = documentHeight - windowHeight - scrollTop;
+    
+    // Near bottom when within threshold pixels of bottom AND has scrolled enough
+    const nearBottom = distanceFromBottom <= bottomThreshold && scrollTop > 200;
     const cannotScroll = scrollableHeight <= 50;
 
     setScrollPosition({
