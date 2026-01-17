@@ -62,7 +62,7 @@ export default function HowItWorksPage() {
       content: (
         <div>
           <p className="text-koru-purple font-semibold text-sm mb-2">
-            Find the right person
+            Search for anyone
           </p>
           <p
             className={cn(
@@ -70,8 +70,9 @@ export default function HowItWorksPage() {
               isDark ? "text-neutral-300" : "text-neutral-600"
             )}
           >
-            Search and browse experts by topic, check their bio, rates, and
-            credibility signals to find the perfect match for your needs.
+            Search for people by name or X handle. If they're on Kōru, message
+            them directly. If not, create a Summon to bring them to the
+            platform.
           </p>
           <div className="flex flex-wrap gap-3">
             <div
@@ -83,7 +84,7 @@ export default function HowItWorksPage() {
               )}
             >
               <SearchIcon className="w-4 h-4 text-koru-purple" />
-              Browse by topic
+              Search by name
             </div>
             <div
               className={cn(
@@ -93,8 +94,8 @@ export default function HowItWorksPage() {
                   : "bg-neutral-100 text-neutral-600"
               )}
             >
-              <StarIcon className="w-4 h-4 text-koru-golden" />
-              Check ratings
+              <UserIcon className="w-4 h-4 text-koru-golden" />
+              On Kōru? Message directly
             </div>
             <div
               className={cn(
@@ -104,19 +105,19 @@ export default function HowItWorksPage() {
                   : "bg-neutral-100 text-neutral-600"
               )}
             >
-              <UserIcon className="w-4 h-4 text-koru-lime" />
-              View profiles
+              <SparkleIcon className="w-4 h-4 text-koru-lime" />
+              Not on Kōru? Create a Summon
             </div>
           </div>
         </div>
       ),
     },
     {
-      title: "Book & Pay",
+      title: "Summon or Pay",
       content: (
         <div>
           <p className="text-koru-golden font-semibold text-sm mb-2">
-            Secure your session
+            Two paths to connect
           </p>
           <p
             className={cn(
@@ -124,8 +125,9 @@ export default function HowItWorksPage() {
               isDark ? "text-neutral-300" : "text-neutral-600"
             )}
           >
-            Pick an available slot, submit a clear request, and pay upfront.
-            Your funds are held safely until the session completes.
+            <strong>Summon:</strong> Pledge how much you'd pay to bring someone
+            here (no charge upfront). <strong>Direct:</strong> Pay to message a
+            Host already on Kōru — funds held in escrow.
           </p>
           <div
             className={cn(
@@ -137,7 +139,7 @@ export default function HowItWorksPage() {
           >
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-xl bg-koru-golden/20 flex items-center justify-center">
-                <CalendarIcon className="w-5 h-5 text-koru-golden" />
+                <SparkleIcon className="w-5 h-5 text-koru-golden" />
               </div>
               <div>
                 <p
@@ -146,7 +148,7 @@ export default function HowItWorksPage() {
                     isDark ? "text-white" : "text-neutral-900"
                   )}
                 >
-                  Select a time slot
+                  Summon = Pledge (free)
                 </p>
                 <p
                   className={cn(
@@ -154,7 +156,7 @@ export default function HowItWorksPage() {
                     isDark ? "text-neutral-500" : "text-neutral-500"
                   )}
                 >
-                  Choose from available times
+                  State what you'd pay if they join
                 </p>
               </div>
             </div>
@@ -169,7 +171,7 @@ export default function HowItWorksPage() {
                     isDark ? "text-white" : "text-neutral-900"
                   )}
                 >
-                  Payment held in escrow
+                  Direct = Pay (escrow)
                 </p>
                 <p
                   className={cn(
@@ -177,7 +179,7 @@ export default function HowItWorksPage() {
                     isDark ? "text-neutral-500" : "text-neutral-500"
                   )}
                 >
-                  Safe until session completes
+                  Funds held safely until complete
                 </p>
               </div>
             </div>
@@ -259,7 +261,7 @@ export default function HowItWorksPage() {
       content: (
         <div>
           <p className="text-koru-purple font-semibold text-sm mb-2">
-            Guaranteed outcome
+            Smart contract protection
           </p>
           <p
             className={cn(
@@ -267,8 +269,8 @@ export default function HowItWorksPage() {
               isDark ? "text-neutral-300" : "text-neutral-600"
             )}
           >
-            Payment releases to host after completion. If they miss the session,
-            you get an automatic refund. Zero risk.
+            Host has 24hrs to accept. You have 48hrs to review and release or
+            dispute. Funds auto-release after the dispute window. Zero risk.
           </p>
           <div className="space-y-3">
             <div className="flex items-center gap-3">
@@ -281,7 +283,7 @@ export default function HowItWorksPage() {
                   isDark ? "text-neutral-300" : "text-neutral-600"
                 )}
               >
-                Session completed → Payment released
+                Satisfied? Release funds to Host
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -294,7 +296,20 @@ export default function HowItWorksPage() {
                   isDark ? "text-neutral-300" : "text-neutral-600"
                 )}
               >
-                No-show → Automatic refund
+                No accept in 24hrs? Reclaim your funds
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 rounded-full bg-koru-purple flex items-center justify-center">
+                <ShieldIcon className="w-4 h-4 text-white" />
+              </div>
+              <p
+                className={cn(
+                  "text-sm",
+                  isDark ? "text-neutral-300" : "text-neutral-600"
+                )}
+              >
+                Issue? Dispute within 48hrs
               </p>
             </div>
           </div>
@@ -575,9 +590,11 @@ export default function HowItWorksPage() {
                 isDark ? "text-neutral-400" : "text-neutral-600"
               )}
             >
-              A direct line to the right people — with a guaranteed outcome.
+              Connect with experts already on Kōru, or{" "}
+              <span className="text-koru-golden">summon anyone</span> to the
+              platform.
               <br />
-              <span className="text-koru-golden">Book time, get clarity.</span>
+              <span className="text-koru-lime">Direct access, guaranteed outcomes.</span>
             </p>
           </motion.section>
 
@@ -970,7 +987,7 @@ export default function HowItWorksPage() {
                   <ArrowRightIcon className="w-4 h-4" />
                 </motion.a>
                 <motion.a
-                  href="/appeals"
+                  href="/summons"
                   className={cn(
                     "inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-medium",
                     isDark

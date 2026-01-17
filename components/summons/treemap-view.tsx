@@ -1,11 +1,41 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { cn, calculateTreemapLayout, formatCurrency } from "@/lib/utils";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { CrownIcon, ShareIcon } from "@/components/icons";
 import type { Summon } from "@/lib/types";
+
+// Component to handle image with fallback
+function SafeImage({
+  src,
+  alt,
+  seed,
+  size,
+  className,
+}: {
+  src?: string;
+  alt: string;
+  seed: string;
+  size: number;
+  className?: string;
+}) {
+  const [error, setError] = useState(false);
+
+  if (!src || error) {
+    return <AvatarGenerator seed={seed} size={size} />;
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className || "w-full h-full object-cover"}
+      onError={() => setError(true)}
+    />
+  );
+}
 
 interface TreemapViewProps {
   summons: Summon[];
@@ -98,15 +128,12 @@ export function TreemapView({
                 <div className="flex items-center gap-1 sm:gap-2 min-w-0">
                   {(isLarge || isMedium) && (
                     <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md overflow-hidden bg-white/20 shrink-0">
-                      {summon.targetProfileImage ? (
-                        <img
-                          src={summon.targetProfileImage}
-                          alt={summon.targetName}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <AvatarGenerator seed={summon.targetHandle} size={24} />
-                      )}
+                      <SafeImage
+                        src={summon.targetProfileImage}
+                        alt={summon.targetName}
+                        seed={summon.targetHandle}
+                        size={24}
+                      />
                     </div>
                   )}
                   <span
@@ -180,18 +207,12 @@ export function TreemapView({
                             className="w-5 h-5 rounded-full ring-1 ring-white/50 overflow-hidden"
                             title={backer.name}
                           >
-                            {backer.profileImageUrl ? (
-                              <img
-                                src={backer.profileImageUrl}
-                                alt={backer.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <AvatarGenerator
-                                seed={backer.username}
-                                size={20}
-                              />
-                            )}
+                            <SafeImage
+                              src={backer.profileImageUrl}
+                              alt={backer.name}
+                              seed={backer.username}
+                              size={20}
+                            />
                           </div>
                         ))
                       : null}

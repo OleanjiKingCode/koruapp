@@ -22,20 +22,8 @@ export function TwitterProfileCard({ profile, onView }: TwitterProfileCardProps)
   return (
     <motion.div
       whileHover={{ y: -4 }}
-      className="group relative bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft transition-all duration-300 hover:shadow-xl hover:border-koru-purple/30 dark:hover:border-koru-purple/30 overflow-hidden"
+      className="group relative bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft transition-all duration-300 hover:shadow-xl hover:border-koru-purple/30 dark:hover:border-koru-purple/30"
     >
-      {/* Decorative background image - top right corner (mobile) */}
-      {hasValidImage && (
-        <div className="absolute -top-8 -right-8 w-32 h-32 sm:hidden pointer-events-none">
-          <img
-            src={profile.profileImageUrl}
-            alt=""
-            className="w-full h-full rounded-full object-cover opacity-[0.08] dark:opacity-[0.12] blur-[1px]"
-            aria-hidden="true"
-          />
-        </div>
-      )}
-
       {/* Gold shimmer on hover */}
       <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none overflow-hidden">
         <div className="absolute inset-0 border-2 border-transparent rounded-2xl shimmer-gold" />
