@@ -567,7 +567,7 @@ export default function HowItWorksPage() {
           >
             <h1
               className={cn(
-                "text-5xl md:text-6xl lg:text-7xl mb-6 leading-tight",
+                "text-2xl md:text-5xl  mb-6 leading-tight",
                 isDark ? "text-white" : "text-neutral-900"
               )}
             >
@@ -586,7 +586,7 @@ export default function HowItWorksPage() {
 
             <p
               className={cn(
-                "text-xl md:text-2xl max-w-2xl mx-auto leading-relaxed",
+                "text-md md:text-xl max-w-2xl mx-auto leading-relaxed",
                 isDark ? "text-neutral-400" : "text-neutral-600"
               )}
             >
@@ -605,10 +605,10 @@ export default function HowItWorksPage() {
             transition={{ delay: 0.3 }}
             className="mb-8"
           >
-            <div className="flex justify-center">
+            <div className="flex justify-center ">
               <div
                 className={cn(
-                  "inline-flex p-1.5 rounded-2xl",
+                  "flex p-1.5 items-center gap-2 rounded-2xl",
                   isDark
                     ? "bg-neutral-900 border border-neutral-800"
                     : "bg-neutral-100"
@@ -635,7 +635,7 @@ export default function HowItWorksPage() {
                       key={persona.id}
                       onClick={() => setActivePersona(persona.id)}
                       className={cn(
-                        "relative flex items-center gap-3 px-6 sm:px-8 py-4 rounded-xl transition-all duration-300 cursor-pointer",
+                        "relative flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-300 cursor-pointer",
                         isActive
                           ? "text-white"
                           : isDark
@@ -737,7 +737,7 @@ export default function HowItWorksPage() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: index * 0.1 }}
-                    className="relative min-h-[10rem]"
+                    className="relative min-h-[10rem] cursor-pointer"
                   >
                     <div className="relative h-full rounded-[1.25rem] border-[0.75px] border-neutral-200 dark:border-neutral-800 p-2">
                       <GlowingEffect
@@ -796,17 +796,10 @@ export default function HowItWorksPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="mb-16"
+            className="mb-16 cursor-pointer"
           >
             <div className="relative rounded-[1.5rem] border-[0.75px] border-neutral-200 dark:border-neutral-800 p-3">
-              <GlowingEffect
-                spread={40}
-                glow={true}
-                disabled={false}
-                proximity={64}
-                inactiveZone={0.01}
-                borderWidth={3}
-              />
+          
               <div
                 className={cn(
                   "relative rounded-2xl p-8 md:p-12 overflow-hidden shadow-sm",
