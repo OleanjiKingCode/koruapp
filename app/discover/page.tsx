@@ -257,7 +257,7 @@ function DiscoverContent() {
           />
         </motion.div>
 
-        {/* Search Status Indicator */}
+       
         {isShowingSearchResults && !isActivelySearching && hasSearchResults && (
           <SearchStatusIndicator
             searchQuery={searchQuery}

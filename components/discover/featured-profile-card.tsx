@@ -27,9 +27,9 @@ export function FeaturedProfileCard({
   return (
     <motion.div
       whileHover={{ y: -4 }}
-      className="group relative bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft transition-all duration-300 hover:shadow-xl hover:border-koru-purple/30 dark:hover:border-koru-purple/30"
+      className="group relative bg-white dark:bg-neutral-900 cursor-pointer rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft transition-all duration-300 hover:shadow-xl hover:border-koru-purple/30 dark:hover:border-koru-purple/30"
     >
-      {/* Gold shimmer on hover */}
+      
       <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none overflow-hidden">
         <div className="absolute inset-0 border-2 border-transparent rounded-2xl shimmer-gold" />
       </div>

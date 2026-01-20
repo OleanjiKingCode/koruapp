@@ -5,12 +5,16 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 // Lazy initialization to avoid build-time errors
 let supabaseInstance: SupabaseClient | null = null;
 
-function getSupabase(): SupabaseClient {
+function getSupabase(): SupabaseClient | null {
   if (!supabaseInstance) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) {
-      throw new Error("Supabase URL and service role key are required");
+      console.error("Missing Supabase environment variables:", { 
+        hasUrl: !!url, 
+        hasKey: !!key 
+      });
+      return null;
     }
     supabaseInstance = createClient(url, key);
   }
@@ -54,14 +58,34 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Use the database user ID (UUID), not the Twitter ID
+    const userId = session.user.dbId;
+    if (!userId) {
+      console.error("User dbId not found in session");
+      // Return empty notifications if user doesn't have a database record yet
+      return NextResponse.json({
+        notifications: [],
+        unreadCount: 0,
+      });
+    }
+
+    const supabase = getSupabase();
+    if (!supabase) {
+      console.error("Supabase client not initialized - missing environment variables");
+      return NextResponse.json({
+        notifications: [],
+        unreadCount: 0,
+      });
+    }
+
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get("limit") || "50");
     const unreadOnly = searchParams.get("unread") === "true";
 
-    let query = getSupabase()
+    let query = supabase
       .from("notifications")
       .select("*")
-      .eq("user_id", session.user.id)
+      .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(limit);
 
@@ -73,10 +97,11 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error("Error fetching notifications:", error);
-      return NextResponse.json(
-        { error: "Failed to fetch notifications" },
-        { status: 500 }
-      );
+      // Return empty instead of 500 if table doesn't exist or other DB issues
+      return NextResponse.json({
+        notifications: [],
+        unreadCount: 0,
+      });
     }
 
     // Transform to response format
@@ -94,10 +119,10 @@ export async function GET(request: NextRequest) {
     }));
 
     // Get unread count
-    const { count: unreadCount } = await getSupabase()
+    const { count: unreadCount } = await supabase
       .from("notifications")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", session.user.id)
+      .eq("user_id", userId)
       .eq("read", false);
 
     return NextResponse.json({
@@ -106,10 +131,11 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error in notifications GET:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    // Return empty response on error to prevent UI from breaking
+    return NextResponse.json({
+      notifications: [],
+      unreadCount: 0,
+    });
   }
 }
 
@@ -121,15 +147,30 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Use the database user ID (UUID), not the Twitter ID
+    const userId = session.user.dbId;
+    if (!userId) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const supabase = getSupabase();
+    if (!supabase) {
+      console.error("Supabase client not initialized - missing environment variables");
+      return NextResponse.json(
+        { error: "Service unavailable" },
+        { status: 503 }
+      );
+    }
+
     const body = await request.json();
     const { notificationId, markAllRead } = body;
 
     if (markAllRead) {
       // Mark all notifications as read
-      const { error } = await getSupabase()
+      const { error } = await supabase
         .from("notifications")
         .update({ read: true })
-        .eq("user_id", session.user.id)
+        .eq("user_id", userId)
         .eq("read", false);
 
       if (error) {
@@ -145,11 +186,11 @@ export async function PATCH(request: NextRequest) {
 
     if (notificationId) {
       // Mark single notification as read
-      const { error } = await getSupabase()
+      const { error } = await supabase
         .from("notifications")
         .update({ read: true })
         .eq("id", notificationId)
-        .eq("user_id", session.user.id);
+        .eq("user_id", userId);
 
       if (error) {
         console.error("Error marking notification as read:", error);
