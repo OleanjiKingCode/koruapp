@@ -201,6 +201,21 @@ body.font-lemon *:not(.font-quicksand):not(.font-tenor):not(.font-lemon) {
   animation: shimmer 2s infinite;
 }
 
+/* Animated gradient border */
+@keyframes gradient-x {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-x {
+  background-size: 200% 200%;
+  animation: gradient-x 3s ease infinite;
+}
+
 /* Purple glow effect */
 .glow-purple {
   box-shadow: 0 0 40px rgba(195, 133, 238, 0.3),

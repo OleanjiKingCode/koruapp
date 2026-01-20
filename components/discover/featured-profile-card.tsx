@@ -26,15 +26,66 @@ export function FeaturedProfileCard({
 
   return (
     <motion.div
-      whileHover={{ y: -4 }}
-      className="group relative bg-white dark:bg-neutral-900 cursor-pointer rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft transition-all duration-300 hover:shadow-xl hover:border-koru-purple/30 dark:hover:border-koru-purple/30"
+      initial={{ y: 0 }}
+      whileHover={{ y: -8 }}
+      transition={{
+        type: "spring",
+        stiffness: 500,
+        damping: 30,
+      }}
+      className="group relative cursor-pointer"
     >
-      
-      <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none overflow-hidden">
-        <div className="absolute inset-0 border-2 border-transparent rounded-2xl shimmer-gold" />
-      </div>
-
-      <div className="relative flex flex-col gap-4">
+      <div className="relative bg-white dark:bg-neutral-900 rounded-2xl p-6 border border-neutral-200 dark:border-neutral-800 shadow-soft group-hover:shadow-xl transition-shadow duration-200 overflow-hidden">
+        
+        {/* Animated floating orbs background */}
+        <div className="absolute inset-0 overflow-hidden rounded-2xl">
+          <motion.div
+            className="absolute w-40 h-40 rounded-full bg-gradient-to-br from-koru-purple/25 to-violet-500/15 blur-3xl"
+            animate={{
+              x: [0, 40, 20, 0],
+              y: [0, -30, -10, 0],
+              scale: [1, 1.1, 0.95, 1],
+            }}
+            transition={{
+              duration: 10,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            style={{ top: "-30%", right: "-15%" }}
+          />
+          <motion.div
+            className="absolute w-32 h-32 rounded-full bg-gradient-to-br from-fuchsia-500/20 to-pink-500/10 blur-3xl"
+            animate={{
+              x: [0, -30, -15, 0],
+              y: [0, 25, 10, 0],
+              scale: [1, 0.9, 1.05, 1],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 0.5,
+            }}
+            style={{ bottom: "-20%", left: "-10%" }}
+          />
+          <motion.div
+            className="absolute w-28 h-28 rounded-full bg-gradient-to-br from-koru-lime/15 to-emerald-500/10 blur-2xl"
+            animate={{
+              x: [0, 25, -10, 0],
+              y: [0, -15, 20, 0],
+              scale: [1, 1.15, 0.9, 1],
+            }}
+            transition={{
+              duration: 12,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 1.5,
+            }}
+            style={{ top: "20%", left: "10%" }}
+          />
+        </div>
+        
+        <div className="relative flex flex-col gap-4">
         {/* Avatar & Basic Info */}
         <div className="flex items-start gap-4">
           {/* Avatar */}
@@ -103,6 +154,7 @@ export function FeaturedProfileCard({
           View
           <ArrowRightIcon className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
         </Button>
+      </div>
       </div>
     </motion.div>
   );
