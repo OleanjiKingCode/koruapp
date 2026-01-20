@@ -4,12 +4,72 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
-import { ArrowRightIcon, UsersIcon } from "@/components/icons";
+import { 
+  ArrowRightIcon, 
+  UsersIcon,
+  SparkleIcon,
+  DollarIcon,
+  GlobeIcon,
+  ChatIcon,
+  CrownIcon,
+  FireIcon,
+  ShieldIcon,
+} from "@/components/icons";
 import { VerifiedBadge } from "./verified-badge";
 import { ParsedBio } from "./parsed-bio";
 import { getTagColor, deduplicateTags } from "@/lib/utils/tags";
 import { formatFollowerCount } from "@/lib/utils/format";
 import type { FeaturedProfile } from "@/lib/supabase";
+
+// Icon map for tags - matches partial strings (case-insensitive)
+const TAG_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  // Tech & AI
+  "ai": SparkleIcon,
+  "machine learning": SparkleIcon,
+  "ml": SparkleIcon,
+  "tech": ShieldIcon,
+  "software": ShieldIcon,
+  "dev": ShieldIcon,
+  "engineer": ShieldIcon,
+  "code": ShieldIcon,
+  // Crypto & Finance
+  "crypto": DollarIcon,
+  "defi": DollarIcon,
+  "bitcoin": DollarIcon,
+  "ethereum": DollarIcon,
+  "web3": GlobeIcon,
+  "nft": SparkleIcon,
+  "trading": DollarIcon,
+  "finance": DollarIcon,
+  "invest": DollarIcon,
+  "vc": DollarIcon,
+  // Creator & Influencer
+  "creator": CrownIcon,
+  "influencer": CrownIcon,
+  "founder": CrownIcon,
+  "ceo": CrownIcon,
+  "entrepreneur": CrownIcon,
+  // Entertainment
+  "gaming": FireIcon,
+  "gamer": FireIcon,
+  "esport": FireIcon,
+  "sports": FireIcon,
+  "music": SparkleIcon,
+  "artist": SparkleIcon,
+  "entertainment": FireIcon,
+  "content": CrownIcon,
+  // Social & Community
+  "community": UsersIcon,
+  "social": ChatIcon,
+  "education": ChatIcon,
+  "podcast": ChatIcon,
+  // Other
+  "news": GlobeIcon,
+  "politics": GlobeIcon,
+  "science": SparkleIcon,
+  "health": ShieldIcon,
+  "design": SparkleIcon,
+};
 
 interface FeaturedProfileCardProps {
   profile: FeaturedProfile;
@@ -105,12 +165,18 @@ export function FeaturedProfileCard({
           {/* Name & Handle */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+              <h3 
+                className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 truncate group-hover:whitespace-normal group-hover:overflow-visible"
+                title={profile.name}
+              >
                 {profile.name}
               </h3>
               {profile.verified && <VerifiedBadge />}
             </div>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate">
+            <p 
+              className="text-sm text-neutral-500 dark:text-neutral-400 truncate"
+              title={`@${profile.username}`}
+            >
               @{profile.username}
             </p>
           </div>
@@ -129,15 +195,22 @@ export function FeaturedProfileCard({
           </p>
         )}
 
-        {/* Category & Tags - with colors */}
+        {/* Category & Tags - with colors and icons */}
         <div className="flex flex-wrap gap-2">
           {tags.slice(0, 5).map((tag) => {
             const color = getTagColor(tag);
+            // Find icon by checking if any key matches the tag (case-insensitive)
+            const iconKey = Object.keys(TAG_ICON_MAP).find(
+              (key) => tag.toLowerCase().includes(key.toLowerCase())
+            );
+            const TagIcon = iconKey ? TAG_ICON_MAP[iconKey] : null;
+            
             return (
               <span
                 key={tag}
-                className={`px-2.5 py-1 ${color.bg} ${color.text} text-xs rounded-full border ${color.border}`}
+                className={`px-2.5 py-1 ${color.bg} ${color.text} text-xs rounded-full border ${color.border} flex items-center gap-1`}
               >
+                {TagIcon && <TagIcon className="w-3 h-3" />}
                 {tag}
               </span>
             );

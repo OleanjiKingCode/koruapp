@@ -32,6 +32,11 @@ import {
   BellIcon,
   LogoutIcon,
   XIcon,
+  ShieldIcon,
+  ContractIcon,
+  EditIcon,
+  SparkleIcon,
+  SearchIcon,
 } from "@/components/icons";
 
 // Protected routes that require authentication
@@ -48,6 +53,35 @@ const iconMap = {
   summons: SummonsIcon,
   profile: ProfileIcon,
 };
+
+// Map "other" pages to contextual icons
+const contextualPageIcons: Record<string, { icon: typeof HomeIcon; label: string; color: string }> = {
+  "/how-it-works": { icon: HelpCircleIcon, label: "How It Works", color: "text-koru-purple" },
+  "/faq": { icon: SearchIcon, label: "FAQ", color: "text-koru-golden" },
+  "/contact": { icon: ChatIcon, label: "Contact", color: "text-koru-lime" },
+  "/notifications": { icon: BellIcon, label: "Notifications", color: "text-koru-purple" },
+  "/privacy": { icon: ShieldIcon, label: "Privacy", color: "text-koru-lime" },
+  "/terms": { icon: ContractIcon, label: "Terms", color: "text-koru-golden" },
+  "/login": { icon: XIcon, label: "Login", color: "text-white" },
+  "/sign-in": { icon: XIcon, label: "Sign In", color: "text-white" },
+  "/profile/edit": { icon: EditIcon, label: "Edit Profile", color: "text-koru-purple" },
+};
+
+// Helper to find contextual icon for current path
+function getContextualIcon(pathname: string) {
+  // Exact match first
+  if (contextualPageIcons[pathname]) {
+    return contextualPageIcons[pathname];
+  }
+  // Check for partial matches (e.g., /summons/[id])
+  for (const [path, config] of Object.entries(contextualPageIcons)) {
+    if (pathname.startsWith(path)) {
+      return config;
+    }
+  }
+  // Default for unknown pages
+  return { icon: SparkleIcon, label: "Page", color: "text-koru-purple" };
+}
 
 export function FloatingNav() {
   const pathname = usePathname();
@@ -137,6 +171,9 @@ export function FloatingNav() {
     (item) => pathname === item.href
   );
 
+  // Get contextual icon for "other" pages
+  const contextualPage = activeIndex === -1 ? getContextualIcon(pathname) : null;
+
   return (
     <>
       {/* Mobile Nav - Bubble Style */}
@@ -159,7 +196,7 @@ export function FloatingNav() {
                     : "bg-white/90 backdrop-blur-xl border border-neutral-200 shadow-black/10"
                 )}
               >
-                {/* Notch/Bubble cutout effect */}
+                {/* Notch/Bubble cutout effect for main nav items */}
                 {activeIndex >= 0 && (
                   <motion.div
                     layoutId="mobile-notch"
@@ -193,6 +230,7 @@ export function FloatingNav() {
                     </div>
                   </motion.div>
                 )}
+
 
                 {/* Nav Items */}
                 {visibleNavItems.map((item, index) => {
@@ -260,6 +298,46 @@ export function FloatingNav() {
                 >
                   <SettingsIcon className="w-5 h-5" />
                 </motion.button>
+
+                {/* Mobile Contextual Page Icon - with gap separator */}
+                <AnimatePresence>
+                  {contextualPage && (
+                    <>
+                      {/* Visual gap/separator */}
+                      <div className="w-px h-6 bg-neutral-300 dark:bg-neutral-600 mx-2" />
+                      
+                      <motion.div
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                      >
+                        <motion.div
+                          className={cn(
+                            "w-10 h-10 rounded-full flex items-center justify-center cursor-pointer",
+                            isDark
+                              ? "bg-neutral-700/50"
+                              : "bg-neutral-100"
+                          )}
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          {(() => {
+                            const Icon = contextualPage.icon;
+                            return (
+                              <motion.div
+                                initial={{ rotate: -90 }}
+                                animate={{ rotate: 0 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.1 }}
+                              >
+                                <Icon className={cn("w-5 h-5", contextualPage.color)} />
+                              </motion.div>
+                            );
+                          })()}
+                        </motion.div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </motion.nav>
@@ -383,6 +461,46 @@ export function FloatingNav() {
               >
                 <SettingsIcon className="w-4 h-4" />
               </motion.button>
+
+              {/* Desktop Contextual Page Icon - with gap separator */}
+              <AnimatePresence>
+                {contextualPage && (
+                  <>
+                    {/* Visual gap/separator */}
+                    <div className="w-px h-8 bg-neutral-300 dark:bg-neutral-700 mx-2" />
+                    
+                    <motion.div
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                    >
+                      <motion.div
+                        className={cn(
+                          "p-3 rounded-xl cursor-pointer",
+                          isDark
+                            ? "bg-neutral-800/50"
+                            : "bg-neutral-100"
+                        )}
+                        whileHover={{ scale: 1.05 }}
+                      >
+                        {(() => {
+                          const Icon = contextualPage.icon;
+                          return (
+                            <motion.div
+                              initial={{ rotate: -90 }}
+                              animate={{ rotate: 0 }}
+                              transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.1 }}
+                            >
+                              <Icon className={cn("w-4 h-4", contextualPage.color)} />
+                            </motion.div>
+                          );
+                        })()}
+                      </motion.div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </motion.div>
           </motion.nav>
         )}
