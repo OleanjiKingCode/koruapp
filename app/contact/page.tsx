@@ -1,8 +1,105 @@
 "use client";
 
-import { useState, Suspense } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
+
+export default function ContactPage() {
+  return (
+    <div className="min-h-screen pb-[500px] sm:pb-96">
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-16">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="space-y-12"
+        >
+          {/* Header */}
+          <div className="text-center space-y-4">
+            <h1 className="text-5xl font-bold text-foreground">
+              Contact Us
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Have a question or need help? Reach out to us on X.
+            </p>
+          </div>
+
+          {/* X Contact Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white dark:bg-neutral-900 rounded-2xl p-8 border border-neutral-200 dark:border-neutral-800 text-center space-y-6"
+          >
+            <div className="w-16 h-16 rounded-full bg-neutral-900 dark:bg-white flex items-center justify-center mx-auto">
+              <svg className="w-8 h-8 text-white dark:text-neutral-900" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+            </div>
+
+            <div>
+              <h2 className="text-2xl font-semibold text-foreground mb-2">
+                Message us on X
+              </h2>
+              <p className="text-muted-foreground">
+                DM us @koruapp for support, feedback, or just to say hi.
+              </p>
+            </div>
+
+            <a
+              href="https://x.com/koruapp"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-semibold hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+              @koruapp
+            </a>
+          </motion.div>
+
+          {/* FAQ Link */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="text-center"
+          >
+            <p className="text-muted-foreground mb-4">
+              Looking for quick answers?
+            </p>
+            <Link
+              href="/faq"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-koru-lime text-neutral-900 font-medium hover:bg-koru-lime/90 transition-colors"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              View FAQs
+            </Link>
+          </motion.div>
+        </motion.div>
+      </main>
+    </div>
+  );
+}
+
+/* 
+===========================================
+CONTACT FORM - COMMENTED OUT FOR LATER USE
+===========================================
+
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +121,7 @@ function ContactForm() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const categories = [
     { value: "general", label: "General Inquiry" },
@@ -38,12 +136,33 @@ function ContactForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmitError(null);
 
-    // Simulate form submission (replace with actual API call)
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
 
-    setIsSubmitting(false);
-    setSubmitted(true);
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to send message");
+      }
+
+      setSubmitted(true);
+    } catch (error) {
+      console.error("Contact form error:", error);
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "Failed to send message. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (field: string, value: string) => {
@@ -105,7 +224,6 @@ function ContactForm() {
           transition={{ duration: 0.5 }}
           className="space-y-12"
         >
-          {/* Header */}
           <div className="text-center space-y-4">
             <h1 className="text-5xl font-bold text-foreground">
               Contact Support
@@ -115,41 +233,6 @@ function ContactForm() {
             </p>
           </div>
 
-          {/* Quick Contact Options */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a
-              href="https://x.com/koruapp"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 font-medium hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-              </svg>
-              Message us on X
-            </a>
-            <Link
-              href="/faq"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-koru-lime text-neutral-900 font-medium hover:bg-koru-lime/90 transition-colors"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              View FAQs
-            </Link>
-          </div>
-
-          {/* Form */}
           <div className="bg-white/60 dark:bg-neutral-900/60 rounded-2xl p-8 border border-white/20 dark:border-neutral-800">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid gap-6 sm:grid-cols-2">
@@ -253,6 +336,14 @@ function ContactForm() {
                 />
               </div>
 
+              {submitError && (
+                <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {submitError}
+                  </p>
+                </div>
+              )}
+
               <div className="flex flex-col sm:flex-row gap-4 justify-between items-center pt-4">
                 <p className="text-sm text-muted-foreground">
                   Need quick answers? Check out our{" "}
@@ -281,7 +372,8 @@ function ContactForm() {
   );
 }
 
-export default function ContactPage() {
+// Wrap with Suspense when using the form
+export default function ContactPageWithForm() {
   return (
     <Suspense
       fallback={
@@ -296,3 +388,4 @@ export default function ContactPage() {
     </Suspense>
   );
 }
+*/

@@ -60,7 +60,7 @@
 - Theming: `ThemeProvider` and `ThemeToggle` wrap the app, with light/dark class-based Tailwind styles and animated orbs on the landing page.
 
 ## Environment & Configuration
-- Required envs (server): `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `TWITTER_CLIENT_ID`, `TWITTER_CLIENT_SECRET`, `RAPIDAPI_KEY` (for twitter241 search).
+- Required envs (server): `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `TWITTER_CLIENT_ID`, `TWITTER_CLIENT_SECRET`, `RAPIDAPI_KEY` (for twitter241 search), `RESEND_API_KEY` (for contact form emails to pingkoru@gmail.com).
 - Client Supabase: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` for realtime chat subscriptions.
 - Ports/scripts: `npm run dev` (Next dev on 2396), `npm run build`, `npm run start`, `npm run lint`.
 
