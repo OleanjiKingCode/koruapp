@@ -222,8 +222,8 @@ export function FloatingNav() {
                         (() => {
                           const Icon =
                             iconMap[
-                              visibleNavItems[activeIndex]
-                                .iconName as keyof typeof iconMap
+                            visibleNavItems[activeIndex]
+                              .iconName as keyof typeof iconMap
                             ];
                           return <Icon className="w-6 h-6 text-white" />;
                         })()}
@@ -259,8 +259,8 @@ export function FloatingNav() {
                           isActive
                             ? "opacity-0" // Hide the inline button when active (shown in bubble)
                             : isDark
-                            ? "text-neutral-400 hover:text-white"
-                            : "text-neutral-500 hover:text-neutral-900"
+                              ? "text-neutral-400 hover:text-white"
+                              : "text-neutral-500 hover:text-neutral-900"
                         )}
                       >
                         {showUserImage ? (
@@ -292,8 +292,8 @@ export function FloatingNav() {
                     isSettingsOpen
                       ? "text-koru-purple"
                       : isDark
-                      ? "text-neutral-400 hover:text-white"
-                      : "text-neutral-500 hover:text-neutral-900"
+                        ? "text-neutral-400 hover:text-white"
+                        : "text-neutral-500 hover:text-neutral-900"
                   )}
                 >
                   <SettingsIcon className="w-5 h-5" />
@@ -305,7 +305,7 @@ export function FloatingNav() {
                     <>
                       {/* Visual gap/separator */}
                       <div className="w-px h-6 bg-neutral-300 dark:bg-neutral-600 mx-2" />
-                      
+
                       <motion.div
                         initial={{ scale: 0, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
@@ -369,8 +369,8 @@ export function FloatingNav() {
                 className={cn(
                   "flex items-center justify-center px-4 py-2 rounded-xl text-lg font-bold",
                   isDark
-                    ? "bg-neutral-800 text-white"
-                    : "bg-neutral-100 text-neutral-900"
+                    ? " text-white"
+                    : " text-neutral-900"
                 )}
               >
                 Kōru
@@ -409,8 +409,8 @@ export function FloatingNav() {
                             ? "bg-neutral-800 text-white border border-neutral-700"
                             : "bg-neutral-900 text-white border border-neutral-800"
                           : isDark
-                          ? "bg-neutral-800/50 text-neutral-300 hover:bg-neutral-800"
-                          : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                            ? "bg-neutral-800/50 text-neutral-300 hover:bg-neutral-800"
+                            : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
                       )}
                     >
                       {/* Show user image for profile when logged in */}
@@ -468,7 +468,7 @@ export function FloatingNav() {
                   <>
                     {/* Visual gap/separator */}
                     <div className="w-px h-8 bg-neutral-300 dark:bg-neutral-700 mx-2" />
-                    
+
                     <motion.div
                       initial={{ scale: 0, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
@@ -604,8 +604,8 @@ export function FloatingNav() {
                           selectedFont === font.value
                             ? "bg-koru-purple text-white"
                             : isDark
-                            ? "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
-                            : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                              ? "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+                              : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
                         )}
                       >
                         {font.name}
@@ -634,8 +634,8 @@ export function FloatingNav() {
                           selectedLang === lang.code
                             ? "bg-koru-golden text-neutral-900"
                             : isDark
-                            ? "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
-                            : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                              ? "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+                              : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
                         )}
                       >
                         {lang.name}
@@ -687,7 +687,7 @@ export function FloatingNav() {
                   <ChevronRightIcon className="w-4 h-4 ml-auto" />
                 </Link>
 
-                {/* Spacer before auth section */}
+
                 <div className="mt-6" />
 
                 {/* Auth Section */}
