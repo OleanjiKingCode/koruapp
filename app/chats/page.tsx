@@ -562,9 +562,14 @@ export default function ChatsPage() {
               >
                 <InboxIcon className="w-4 h-4 mr-2" />
                 Inbox
-                {receivedPending.length > 0 && (
-                  <Badge className="ml-2 bg-orange-500 text-white text-xs h-5 px-1.5">
-                    {receivedPending.length}
+                {(receivedPending.length + receivedActive.length) > 0 && (
+                  <Badge className={cn(
+                    "ml-2 text-xs h-5 px-1.5",
+                    receivedPending.length > 0 
+                      ? "bg-orange-500 text-white" 
+                      : "bg-koru-golden/20 text-koru-golden"
+                  )}>
+                    {receivedPending.length + receivedActive.length}
                   </Badge>
                 )}
               </TabsTrigger>
@@ -574,9 +579,14 @@ export default function ChatsPage() {
               >
                 <SendIcon className="w-4 h-4 mr-2" />
                 Sent
-                {sentPending.length > 0 && (
-                  <Badge className="ml-2 bg-koru-purple/20 text-koru-purple text-xs h-5 px-1.5">
-                    {sentPending.length}
+                {(sentPending.length + sentActive.length) > 0 && (
+                  <Badge className={cn(
+                    "ml-2 text-xs h-5 px-1.5",
+                    sentPending.length > 0 
+                      ? "bg-koru-purple text-white" 
+                      : "bg-koru-purple/20 text-koru-purple"
+                  )}>
+                    {sentPending.length + sentActive.length}
                   </Badge>
                 )}
               </TabsTrigger>
