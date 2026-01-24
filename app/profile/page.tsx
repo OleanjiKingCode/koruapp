@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "next-themes";
 import { SiFarcaster } from "react-icons/si";
+import { usePrivy } from "@privy-io/react-auth";
 import {
   PageHeader,
   StatCard,
@@ -212,6 +213,33 @@ export default function ProfilePage() {
   } | null>(null);
   const [isFarcasterConnected, setIsFarcasterConnected] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+
+  const {
+    ready: privyReady,
+    authenticated: privyAuthenticated,
+    user: privyUser,
+    login: privyLogin,
+    logout: privyLogout,
+    linkWallet,
+  } = usePrivy();
+
+  const getWalletAddress = (): string | null => {
+    if (!privyUser) return null;
+    const walletAccount = privyUser.linkedAccounts?.find(
+      (account: { type: string }) => account.type === "wallet"
+    );
+    if (walletAccount && "address" in walletAccount) {
+      return walletAccount.address as string;
+    }
+    if (privyUser.wallet?.address) {
+      return privyUser.wallet.address;
+    }
+    return null;
+  };
+
+  const walletAddress = getWalletAddress();
+  const shortenAddress = (address: string) =>
+    `${address.slice(0, 6)}...${address.slice(-4)}`;
 
   // Get real user data
   const { user, isLoading: isUserLoading } = useUser();
@@ -546,8 +574,91 @@ export default function ProfilePage() {
               </motion.div>
             )}
           </AnimatePresence>
+          <AnimatePresence mode="wait">
+            {privyReady && !walletAddress && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                transition={{ delay: 0.1 }}
+                className="mb-8"
+              >
+                <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft overflow-hidden relative">
+                  <div className="absolute -right-16 -top-16 w-48 h-48 bg-gradient-to-br from-koru-lime/20 dark:from-koru-lime/10 to-transparent rounded-full opacity-50" />
+                  <div className="absolute right-4 top-4 opacity-10">
+                    <WalletIcon className="w-16 h-16 text-koru-lime" />
+                  </div>
 
-          {/* Wallet Balances Card */}
+                  <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-koru-lime to-koru-lime/70 flex items-center justify-center shrink-0">
+                        <WalletIcon className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-neutral-900 dark:text-neutral-100">
+                          Connect your wallet
+                        </h3>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                          Link your wallet on Base to unlock all features
+                        </p>
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={() => privyLogin()}
+                      disabled={!privyReady}
+                      className="bg-gradient-to-r from-koru-lime to-koru-lime/80 hover:from-koru-lime/90 hover:to-koru-lime/70 text-neutral-900 rounded-xl font-semibold group shrink-0"
+                    >
+                      <WalletIcon className="w-4 h-4 mr-2" />
+                      Connect Wallet
+                      <ChevronRightIcon className="w-4 h-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {privyReady && walletAddress && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-8"
+              >
+                <div className="bg-gradient-to-r from-koru-lime/10 to-koru-lime/5 rounded-2xl border border-koru-lime/20 p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-koru-lime/20 flex items-center justify-center">
+                      <CheckIcon className="w-5 h-5 text-koru-lime" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-neutral-900 dark:text-neutral-100">
+                        Wallet Connected
+                      </p>
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400 font-mono">
+                        {shortenAddress(walletAddress)} • Base Network
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => linkWallet()}
+                      className="text-xs text-koru-purple hover:text-koru-purple/80"
+                    >
+                      Link Another
+                    </Button>
+                    <button
+                      onClick={() => privyLogout()}
+                      className="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+                    >
+                      Disconnect
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {isLoading ? (
             <BalanceCardSkeleton className="mb-8" />
           ) : (

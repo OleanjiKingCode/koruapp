@@ -145,22 +145,34 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "0");
     const limit = parseInt(searchParams.get("limit") || "50");
     const categories = searchParams.get("categories")?.split(",").filter(Boolean);
+    const refresh = searchParams.get("refresh") === "true";
 
-    // Get featured profiles list from DB (we need this to know WHO is featured)
+    // Get featured profiles list from DB
     const result = await getFeaturedProfiles(page, limit, categories);
 
-    // Fetch fresh data from Twitter API for all profiles in parallel
-    // API calls have individual timeouts, so slow ones will fall back to cache
-    const refreshPromises = result.profiles.map((profile) =>
-      refreshProfileWithFallback(profile)
-    );
+    // Only refresh from Twitter API if explicitly requested and limit to a few profiles
+    // This prevents mass timeouts and rate limiting
+    if (refresh && result.profiles.length > 0) {
+      // Only refresh first 5 profiles to avoid rate limits
+      const profilesToRefresh = result.profiles.slice(0, 5);
+      const refreshPromises = profilesToRefresh.map((profile) =>
+        refreshProfileWithFallback(profile)
+      );
+      const refreshedProfiles = await Promise.all(refreshPromises);
+      
+      // Merge refreshed profiles back
+      const updatedProfiles = result.profiles.map((profile, index) => 
+        index < 5 ? refreshedProfiles[index] : profile
+      );
 
-    const updatedProfiles = await Promise.all(refreshPromises);
+      return NextResponse.json({
+        ...result,
+        profiles: updatedProfiles,
+      });
+    }
 
-    return NextResponse.json({
-      ...result,
-      profiles: updatedProfiles,
-    });
+    // Return cached data directly (fast path)
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Error fetching featured profiles:", error);
     return NextResponse.json(

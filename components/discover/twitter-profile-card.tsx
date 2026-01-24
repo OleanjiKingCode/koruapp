@@ -73,14 +73,15 @@ export function TwitterProfileCard({ profile, onView }: TwitterProfileCardProps)
           </p>
         )}
 
-        {/* Categories/Tags - with colors */}
-        <div className="flex flex-wrap gap-2">
+        {/* Categories/Tags - fixed height */}
+        <div className="flex flex-wrap gap-1.5 h-[26px] overflow-hidden">
           {profile.category &&
             (() => {
               const color = getTagColor(profile.category);
               return (
                 <span
-                  className={`px-2.5 py-1 ${color.bg} ${color.text} text-xs rounded-full font-medium border ${color.border}`}
+                  className={`px-2 py-0.5 ${color.bg} ${color.text} text-[10px] rounded-full font-medium border ${color.border} max-w-[100px] truncate`}
+                  title={profile.category}
                 >
                   {profile.category}
                 </span>
@@ -91,7 +92,8 @@ export function TwitterProfileCard({ profile, onView }: TwitterProfileCardProps)
               const color = getTagColor(profile.professionalType);
               return (
                 <span
-                  className={`px-2.5 py-1 ${color.bg} ${color.text} text-xs rounded-full border ${color.border}`}
+                  className={`px-2 py-0.5 ${color.bg} ${color.text} text-[10px] rounded-full border ${color.border} max-w-[100px] truncate`}
+                  title={profile.professionalType}
                 >
                   {profile.professionalType}
                 </span>

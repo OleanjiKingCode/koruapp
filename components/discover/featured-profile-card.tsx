@@ -166,7 +166,7 @@ export function FeaturedProfileCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               <h3 
-                className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 truncate group-hover:whitespace-normal group-hover:overflow-visible"
+                className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 truncate"
                 title={profile.name}
               >
                 {profile.name}
@@ -195,11 +195,10 @@ export function FeaturedProfileCard({
           </p>
         )}
 
-        {/* Category & Tags - with colors and icons */}
-        <div className="flex flex-wrap gap-2">
-          {tags.slice(0, 5).map((tag) => {
+        {/* Category & Tags - fixed height, no expansion */}
+        <div className="flex flex-wrap gap-1.5 h-[52px] overflow-hidden">
+          {tags.slice(0, 4).map((tag) => {
             const color = getTagColor(tag);
-            // Find icon by checking if any key matches the tag (case-insensitive)
             const iconKey = Object.keys(TAG_ICON_MAP).find(
               (key) => tag.toLowerCase().includes(key.toLowerCase())
             );
@@ -208,13 +207,22 @@ export function FeaturedProfileCard({
             return (
               <span
                 key={tag}
-                className={`px-2.5 py-1 ${color.bg} ${color.text} text-xs rounded-full border ${color.border} flex items-center gap-1`}
+                className={`px-2 py-0.5 ${color.bg} ${color.text} text-[10px] rounded-full border ${color.border} flex items-center gap-1 max-w-[100px] truncate`}
+                title={tag}
               >
-                {TagIcon && <TagIcon className="w-3 h-3" />}
-                {tag}
+                {TagIcon && <TagIcon className="w-2.5 h-2.5 shrink-0" />}
+                <span className="truncate">{tag}</span>
               </span>
             );
           })}
+          {tags.length > 4 && (
+            <span 
+              className="px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 text-[10px] rounded-full"
+              title={tags.slice(4).join(", ")}
+            >
+              +{tags.length - 4}
+            </span>
+          )}
         </div>
 
         {/* CTA Button */}

@@ -3,6 +3,7 @@ import { Quicksand, Tenor_Sans, Caveat } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { PrivyProvider } from "@/components/providers/privy-provider";
 import { ModalProvider } from "@/lib/contexts/modal-context";
 import { AppShell } from "@/components/shared";
 import { CookieConsentModal } from "@/components/cookie-consent-modal";
@@ -109,10 +110,12 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange={false}
           >
-            <ModalProvider>
-              <AppShell>{children}</AppShell>
-              <CookieConsentModal />
-            </ModalProvider>
+            <PrivyProvider>
+              <ModalProvider>
+                <AppShell>{children}</AppShell>
+                <CookieConsentModal />
+              </ModalProvider>
+            </PrivyProvider>
           </ThemeProvider>
         </AuthProvider>
         <Analytics />

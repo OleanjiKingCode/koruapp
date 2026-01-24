@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "next-themes";
 import { useSession, signOut } from "next-auth/react";
+import { usePrivy } from "@privy-io/react-auth";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS, FONT_OPTIONS, LANGUAGE_OPTIONS, STORAGE_KEYS } from "@/lib/constants";
 import {
@@ -94,7 +95,31 @@ export function FloatingNav() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [pendingRoute, setPendingRoute] = useState<string | null>(null);
 
-  // Use custom hooks
+  const {
+    ready: privyReady,
+    authenticated: privyAuthenticated,
+    user: privyUser,
+    logout: privyLogout,
+  } = usePrivy();
+
+  const getWalletAddress = (): string | null => {
+    if (!privyUser) return null;
+    const walletAccount = privyUser.linkedAccounts?.find(
+      (account: { type: string }) => account.type === "wallet"
+    );
+    if (walletAccount && "address" in walletAccount) {
+      return walletAccount.address as string;
+    }
+    if (privyUser.wallet?.address) {
+      return privyUser.wallet.address;
+    }
+    return null;
+  };
+
+  const walletAddress = getWalletAddress();
+  const shortenAddress = (address: string) =>
+    `${address.slice(0, 4)}...${address.slice(-4)}`;
+
   const mounted = useMounted();
   const { isNearBottom } = useScrollPosition({ bottomThreshold: 200 });
   const { font: selectedFont, applyFont } = useFontPreference();
@@ -244,6 +269,7 @@ export function FloatingNav() {
                   const isProfileItem = item.iconName === "profile";
                   const showUserImage =
                     isProfileItem && isAuthenticated && session?.user?.image;
+                  const showWalletInfo = isProfileItem && privyReady && walletAddress;
 
                   return (
                     <Link
@@ -255,7 +281,8 @@ export function FloatingNav() {
                       <motion.button
                         whileTap={{ scale: 0.9 }}
                         className={cn(
-                          "relative w-10 h-10 flex items-center justify-center mx-1.5 rounded-full transition-all cursor-pointer",
+                          "relative flex items-center justify-center mx-1.5 rounded-full transition-all cursor-pointer",
+                          showWalletInfo ? "px-2 gap-1.5" : "w-10 h-10",
                           isActive
                             ? "opacity-0" // Hide the inline button when active (shown in bubble)
                             : isDark
@@ -263,7 +290,18 @@ export function FloatingNav() {
                               : "text-neutral-500 hover:text-neutral-900"
                         )}
                       >
-                        {showUserImage ? (
+                        {showWalletInfo ? (
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-koru-purple to-koru-lime flex items-center justify-center">
+                              <span className="text-[10px] font-bold text-white">
+                                {walletAddress.slice(2, 4).toUpperCase()}
+                              </span>
+                            </div>
+                            <span className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400 hidden xs:inline">
+                              {shortenAddress(walletAddress)}
+                            </span>
+                          </div>
+                        ) : showUserImage ? (
                           <img
                             src={session.user.image}
                             alt={session.user.name || "Profile"}
@@ -389,6 +427,7 @@ export function FloatingNav() {
                 const isProfileItem = item.iconName === "profile";
                 const showUserImage =
                   isProfileItem && isAuthenticated && session?.user?.image;
+                const showWalletInfo = isProfileItem && privyReady && walletAddress;
 
                 return (
                   <Link
@@ -413,8 +452,18 @@ export function FloatingNav() {
                             : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
                       )}
                     >
-                      {/* Show user image for profile when logged in */}
-                      {showUserImage ? (
+                      {showWalletInfo ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-koru-purple to-koru-lime flex items-center justify-center">
+                            <span className="text-[8px] font-bold text-white">
+                              {walletAddress.slice(2, 4).toUpperCase()}
+                            </span>
+                          </div>
+                          <span className="font-mono text-xs">
+                            {shortenAddress(walletAddress)}
+                          </span>
+                        </div>
+                      ) : showUserImage ? (
                         <img
                           src={session.user.image}
                           alt={session.user.name || "Profile"}
@@ -435,7 +484,7 @@ export function FloatingNav() {
                           )}
                         </AnimatePresence>
                       )}
-                      <span>{item.name}</span>
+                      {!showWalletInfo && <span>{item.name}</span>}
                       {/* Unread Badge */}
                       {showBadge && (
                         <span className="min-w-[20px] h-5 flex items-center justify-center px-1.5 text-[10px] font-bold text-white bg-red-500 rounded-full ml-1">
@@ -689,8 +738,51 @@ export function FloatingNav() {
 
 
                 <div className="mt-6" />
-
-                {/* Auth Section */}
+                {privyReady && walletAddress && (
+                  <div className="mb-4">
+                    <div
+                      className={cn(
+                        "flex items-center gap-3 p-3 rounded-xl",
+                        isDark
+                          ? "bg-koru-lime/10 border border-koru-lime/20"
+                          : "bg-koru-lime/10 border border-koru-lime/20"
+                      )}
+                    >
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-koru-purple to-koru-lime flex items-center justify-center">
+                        <span className="text-xs font-bold text-white">
+                          {walletAddress.slice(2, 4).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={cn(
+                            "text-sm font-medium",
+                            isDark ? "text-white" : "text-neutral-900"
+                          )}
+                        >
+                          Wallet Connected
+                        </p>
+                        <p
+                          className={cn(
+                            "text-xs font-mono truncate",
+                            isDark ? "text-neutral-400" : "text-neutral-500"
+                          )}
+                        >
+                          {shortenAddress(walletAddress)} • Base
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          privyLogout();
+                          setIsSettingsOpen(false);
+                        }}
+                        className="text-xs text-neutral-400 hover:text-red-400 transition-colors"
+                      >
+                        Disconnect
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {isAuthenticated && session?.user ? (
                   <div className="space-y-3">
                     {/* User Info */}

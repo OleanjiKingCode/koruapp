@@ -62,7 +62,16 @@
 ## Environment & Configuration
 - Required envs (server): `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `TWITTER_CLIENT_ID`, `TWITTER_CLIENT_SECRET`, `RAPIDAPI_KEY` (for twitter241 search), `RESEND_API_KEY` (for contact form emails to pingkoru@gmail.com).
 - Client Supabase: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` for realtime chat subscriptions.
+- Privy Wallet: `NEXT_PUBLIC_PRIVY_APP_ID` for wallet connection (get from https://dashboard.privy.io).
 - Ports/scripts: `npm run dev` (Next dev on 2396), `npm run build`, `npm run start`, `npm run lint`.
+
+## Wallet Integration (Privy)
+- Privy is integrated for wallet connection with Base chain support and email login.
+- Provider: `components/providers/privy-provider.tsx` wraps the app with PrivyProvider configured for Base network only.
+- Profile page shows wallet connection card when not connected, and a success banner with wallet address when connected.
+- Floating nav shows wallet avatar and shortened address instead of profile icon when wallet is connected.
+- Settings panel displays wallet info with disconnect option when connected.
+- Configuration includes: Base chain as default/only supported chain, custom theme matching Koru colors, wallet list with popular options, embedded wallet creation for users without external wallets.
 
 ## Quick File Map (reference)
 - `app/`: Pages; `app/api/`: API routes; `app/globals.css`: base styles.
