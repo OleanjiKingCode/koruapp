@@ -30,6 +30,7 @@ export function PrivyProvider({ children }: PrivyProviderProps) {
             "rainbow",
             "wallet_connect",
           ],
+          loginMessage: "Connect your wallet",
         },
         defaultChain: base,
         supportedChains: [base],
