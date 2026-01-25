@@ -257,7 +257,7 @@ function DiscoverContent() {
           />
         </motion.div>
 
-       
+
         {isShowingSearchResults && !isActivelySearching && hasSearchResults && (
           <SearchStatusIndicator
             searchQuery={searchQuery}
@@ -269,9 +269,9 @@ function DiscoverContent() {
         <AnimatePresence mode="wait">
           {/* Loading State */}
           {(isActivelySearching && isShowingSearchResults) ||
-          (isLoadingFeatured &&
-            !isShowingSearchResults &&
-            featuredProfiles.length === 0) ? (
+            (isLoadingFeatured &&
+              !isShowingSearchResults &&
+              featuredProfiles.length === 0) ? (
             <LoadingGrid />
           ) : isShowingSearchResults ? (
             // Twitter Search Results
@@ -544,12 +544,12 @@ function FeaturedProfilesGrid({
         ))}
       </div>
 
-      {/* Scroll sentinel for infinite scroll */}
+
       <div ref={sentinelRef} className="h-10" />
 
-      {/* Loading indicator for infinite scroll */}
+
       {(isLoading || hasMore) && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="flex flex-col items-center justify-center py-12 gap-4"
