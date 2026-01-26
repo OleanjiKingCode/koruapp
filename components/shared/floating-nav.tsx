@@ -291,13 +291,18 @@ export function FloatingNav() {
                         )}
                       >
                         {showWalletInfo ? (
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-koru-purple to-koru-lime flex items-center justify-center">
-                              <span className="text-[10px] font-bold text-white">
-                                {walletAddress.slice(2, 4).toUpperCase()}
-                              </span>
-                            </div>
-                            <span className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400 hidden xs:inline">
+                          <div className="flex items-center gap-2">
+                            <>
+                              {session?.user?.image ? (
+                                <img
+                                  src={session.user.image}
+                                  alt={session.user.name || "Profile"}
+                                  className="w-5 h-5 rounded-full object-cover ring-1 ring-neutral-300 dark:ring-neutral-600"
+                                />
+                              ) :
+                                (<Icon className="w-5 h-5" />)}</>
+
+                            <span className="font-mono text-xs">
                               {shortenAddress(walletAddress)}
                             </span>
                           </div>
@@ -454,11 +459,26 @@ export function FloatingNav() {
                     >
                       {showWalletInfo ? (
                         <div className="flex items-center gap-2">
-                          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-koru-purple to-koru-lime flex items-center justify-center">
-                            <span className="text-[8px] font-bold text-white">
-                              {walletAddress.slice(2, 4).toUpperCase()}
-                            </span>
-                          </div>
+                          <>
+                            {session?.user?.image ? (<img
+                              src={session.user.image}
+                              alt={session.user.name || "Profile"}
+                              className="w-5 h-5 rounded-full object-cover ring-1 ring-neutral-300 dark:ring-neutral-600"
+                            />) :
+                              (<AnimatePresence mode="popLayout">
+                                {(isHovered || isActive) && (
+                                  <motion.span
+                                    initial={{ width: 0, opacity: 0 }}
+                                    animate={{ width: "auto", opacity: 1 }}
+                                    exit={{ width: 0, opacity: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="overflow-hidden"
+                                  >
+                                    <Icon className="w-4 h-4" />
+                                  </motion.span>
+                                )}
+                              </AnimatePresence>)}</>
+
                           <span className="font-mono text-xs">
                             {shortenAddress(walletAddress)}
                           </span>
@@ -485,7 +505,7 @@ export function FloatingNav() {
                         </AnimatePresence>
                       )}
                       {!showWalletInfo && <span>{item.name}</span>}
-                      {/* Unread Badge */}
+
                       {showBadge && (
                         <span className="min-w-[20px] h-5 flex items-center justify-center px-1.5 text-[10px] font-bold text-white bg-red-500 rounded-full ml-1">
                           {formatUnreadCount(unreadCounts.chats)}
