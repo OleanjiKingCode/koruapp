@@ -291,14 +291,15 @@ export default function ProfilePage() {
     <AuthGuard>
       <div className="min-h-screen pb-[500px] sm:pb-96">
         <main className="max-w-container mx-auto px-4 sm:px-6 py-8">
-          {/* Profile Header Card */}
+          
+          <div className="flex flex-col gap-3 mb-8">
           {isLoading ? (
-            <ProfileHeaderSkeleton className="mb-8" />
+            <ProfileHeaderSkeleton />
           ) : (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 overflow-hidden mb-8 shadow-soft"
+              className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 overflow-hidden shadow-soft"
             >
               {/* Banner */}
               <div className="h-32 bg-gradient-to-r from-koru-purple via-koru-golden/50 to-koru-lime/30 relative overflow-hidden">
@@ -495,164 +496,156 @@ export default function ProfilePage() {
             </motion.div>
           )}
 
-          {/* Connect Farcaster Card */}
-          <AnimatePresence>
-            {!isFarcasterConnected && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                transition={{ delay: 0.1 }}
-                className="mb-8"
-              >
-                <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft overflow-hidden relative">
-                  {/* Farcaster branding background */}
-                  <div className="absolute -right-16 -top-16 w-48 h-48 bg-gradient-to-br from-purple-100 dark:from-purple-900/20 to-transparent rounded-full opacity-50" />
-                  <div className="absolute right-2 top-2 opacity-10">
-                    <SiFarcaster className="w-20 h-20 text-purple-600" />
-                  </div>
-
-                  <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center shrink-0">
-                        <SiFarcaster className="w-6 h-6 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="  font-bold text-neutral-900 dark:text-neutral-100">
-                          Connect your Farcaster account
-                        </h3>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                          Expand your reach, share casts, and earn bonus points!
-                        </p>
-                      </div>
+          {/* Connection Cards Row - Farcaster & Wallet */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Farcaster Card */}
+            <AnimatePresence mode="wait">
+              {!isFarcasterConnected ? (
+                <motion.div
+                  key="farcaster-connect"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ delay: 0.1 }}
+                  className="h-full"
+                >
+                  <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 shadow-soft overflow-hidden relative h-full">
+                    <div className="absolute -right-8 -top-8 w-24 h-24 bg-gradient-to-br from-purple-100 dark:from-purple-900/20 to-transparent rounded-full opacity-50" />
+                    <div className="absolute right-2 top-2 opacity-10">
+                      <SiFarcaster className="w-12 h-12 text-purple-600" />
                     </div>
 
-                    <Button
-                      onClick={handleConnectFarcaster}
-                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-xl   font-semibold group shrink-0"
-                    >
-                      <SiFarcaster className="w-4 h-4 mr-2" />
-                      Connect Farcaster
-                      <ChevronRightIcon className="w-4 h-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
-                    </Button>
+                    <div className="relative z-10 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center shrink-0">
+                        <SiFarcaster className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
+                          Connect Farcaster
+                        </h3>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                          Share casts & earn bonus points
+                        </p>
+                      </div>
+                      <Button
+                        onClick={handleConnectFarcaster}
+                        size="sm"
+                        className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-lg text-xs font-medium shrink-0"
+                      >
+                        Connect
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Farcaster Connected Success Banner */}
-          <AnimatePresence>
-            {isFarcasterConnected && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-8"
-              >
-                <div className="bg-gradient-to-r from-purple-500/10 to-purple-500/5 rounded-2xl border border-purple-500/20 p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="farcaster-connected"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="h-full"
+                >
+                  <div className="bg-gradient-to-r from-purple-500/10 to-purple-500/5 rounded-2xl border border-purple-500/20 p-4 flex items-center gap-3 h-full">
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center shrink-0">
                       <CheckIcon className="w-5 h-5 text-purple-500" />
                     </div>
-                    <div>
-                      <p className="  font-semibold text-neutral-900 dark:text-neutral-100">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
                         Farcaster Connected
                       </p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                        @cryptoexplorer.eth • Cast your profile anytime!
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                        @cryptoexplorer.eth
                       </p>
                     </div>
+                    <button
+                      onClick={() => setIsFarcasterConnected(false)}
+                      className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all shrink-0"
+                    >
+                      Disconnect
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setIsFarcasterConnected(false)}
-                    className="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
-                  >
-                    Disconnect
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          <AnimatePresence mode="wait">
-            {privyReady && !walletAddress && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                transition={{ delay: 0.1 }}
-                className="mb-8"
-              >
-                <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft overflow-hidden relative">
-                  <div className="absolute -right-16 -top-16 w-48 h-48 bg-gradient-to-br from-koru-lime/20 dark:from-koru-lime/10 to-transparent rounded-full opacity-50" />
-                  <div className="absolute right-4 top-4 opacity-10">
-                    <WalletIcon className="w-16 h-16 text-koru-lime" />
-                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-                  <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-koru-lime to-koru-lime/70 flex items-center justify-center shrink-0">
-                        <WalletIcon className="w-6 h-6 text-white" />
+            {/* Wallet Card */}
+            <AnimatePresence mode="wait">
+              {privyReady && !walletAddress ? (
+                <motion.div
+                  key="wallet-connect"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ delay: 0.15 }}
+                  className="h-full"
+                >
+                  <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 shadow-soft overflow-hidden relative h-full">
+                    <div className="absolute -right-8 -top-8 w-24 h-24 bg-gradient-to-br from-koru-lime/20 dark:from-koru-lime/10 to-transparent rounded-full opacity-50" />
+                    <div className="absolute right-2 top-2 opacity-10">
+                      <WalletIcon className="w-12 h-12 text-koru-lime" />
+                    </div>
+
+                    <div className="relative z-10 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-koru-lime to-koru-lime/70 flex items-center justify-center shrink-0">
+                        <WalletIcon className="w-5 h-5 text-white" />
                       </div>
-                      <div>
-                        <h3 className="font-bold text-neutral-900 dark:text-neutral-100">
-                          Connect your wallet
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
+                          Connect Wallet
                         </h3>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                          Link your wallet on Base to unlock all features
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                          Link wallet on Base to unlock features
                         </p>
                       </div>
+                      <Button
+                        onClick={() => privyLogin()}
+                        disabled={!privyReady}
+                        size="sm"
+                        className="bg-gradient-to-r from-koru-lime to-koru-lime/80 hover:from-koru-lime/90 hover:to-koru-lime/70 text-neutral-900 rounded-lg text-xs font-medium shrink-0"
+                      >
+                        Connect
+                      </Button>
                     </div>
-
-                    <Button
-                      onClick={() => privyLogin()}
-                      disabled={!privyReady}
-                      className="bg-gradient-to-r from-koru-lime to-koru-lime/80 hover:from-koru-lime/90 hover:to-koru-lime/70 text-neutral-900 rounded-xl font-semibold group shrink-0"
-                    >
-                      <WalletIcon className="w-4 h-4 mr-2" />
-                      Connect Wallet
-                      <ChevronRightIcon className="w-4 h-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
-                    </Button>
                   </div>
-                </div>
-              </motion.div>
-            )}
-
-            {privyReady && walletAddress && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-8"
-              >
-                <div className="bg-gradient-to-r from-koru-lime/10 to-koru-lime/5 rounded-2xl border border-koru-lime/20 p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-koru-lime/20 flex items-center justify-center">
+                </motion.div>
+              ) : privyReady && walletAddress ? (
+                <motion.div
+                  key="wallet-connected"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="h-full"
+                >
+                  <div className="bg-gradient-to-r from-koru-lime/10 to-koru-lime/5 rounded-2xl border border-koru-lime/20 p-4 flex items-center gap-3 h-full">
+                    <div className="w-10 h-10 rounded-xl bg-koru-lime/20 flex items-center justify-center shrink-0">
                       <CheckIcon className="w-5 h-5 text-koru-lime" />
                     </div>
-                    <div>
-                      <p className="font-semibold text-neutral-900 dark:text-neutral-100">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
                         Wallet Connected
                       </p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400 font-mono">
-                        {shortenAddress(walletAddress)} • Base Network
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono truncate">
+                        {shortenAddress(walletAddress)} • Base
                       </p>
                     </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await privyLogout();
+                        } catch (error) {
+                          console.error("Error disconnecting wallet:", error);
+                        }
+                      }}
+                      className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all shrink-0"
+                    >
+                      Disconnect
+                    </button>
                   </div>
-                  <button
-                    onClick={async () => {
-                      try {
-                        await privyLogout();
-                      } catch (error) {
-                        console.error("Error disconnecting wallet:", error);
-                      }
-                    }}
-                    className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all"
-                  >
-                    Disconnect
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
+          </div>
 
           {isLoading ? (
             <BalanceCardSkeleton className="mb-8" />
