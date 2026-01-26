@@ -792,11 +792,15 @@ export function FloatingNav() {
                         </p>
                       </div>
                       <button
-                        onClick={() => {
-                          privyLogout();
+                        onClick={async () => {
+                          try {
+                            await privyLogout();
+                          } catch (error) {
+                            console.error("Error disconnecting wallet:", error);
+                          }
                           setIsSettingsOpen(false);
                         }}
-                        className="text-xs text-neutral-400 hover:text-red-400 transition-colors"
+                        className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all"
                       >
                         Disconnect
                       </button>

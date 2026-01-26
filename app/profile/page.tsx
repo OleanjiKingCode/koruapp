@@ -220,7 +220,6 @@ export default function ProfilePage() {
     user: privyUser,
     login: privyLogin,
     logout: privyLogout,
-    linkWallet,
   } = usePrivy();
 
   const getWalletAddress = (): string | null => {
@@ -638,22 +637,18 @@ export default function ProfilePage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => linkWallet()}
-                      className="text-xs text-koru-purple hover:text-koru-purple/80"
-                    >
-                      Link Another
-                    </Button>
-                    <button
-                      onClick={() => privyLogout()}
-                      className="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
-                    >
-                      Disconnect
-                    </button>
-                  </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await privyLogout();
+                      } catch (error) {
+                        console.error("Error disconnecting wallet:", error);
+                      }
+                    }}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all"
+                  >
+                    Disconnect
+                  </button>
                 </div>
               </motion.div>
             )}
