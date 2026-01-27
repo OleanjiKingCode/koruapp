@@ -15,6 +15,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
+import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import {
   TwitterProfileCard,
   FeaturedProfileCard,
@@ -457,15 +458,12 @@ function TwitterResultsTable({
                   </td>
                   <td className="p-4">
                     <div className="flex items-center gap-3">
-                      {profile.profileImageUrl ? (
-                        <img
-                          src={profile.profileImageUrl}
-                          alt={profile.name}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <AvatarGenerator seed={profile.username} size={40} />
-                      )}
+                      <OptimizedAvatar
+                        src={profile.profileImageUrl}
+                        alt={profile.name}
+                        size={40}
+                        fallbackSeed={profile.username}
+                      />
                       <div>
                         <div className="flex items-center gap-1.5">
                           <p className="font-semibold text-neutral-900 dark:text-neutral-100">
@@ -632,15 +630,12 @@ function FeaturedProfilesTable({
                 </td>
                 <td className="p-4">
                   <div className="flex items-center gap-3">
-                    {profile.profile_image_url ? (
-                      <img
-                        src={profile.profile_image_url}
-                        alt={profile.name}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <AvatarGenerator seed={profile.username} size={40} />
-                    )}
+                    <OptimizedAvatar
+                      src={profile.profile_image_url}
+                      alt={profile.name}
+                      size={40}
+                      fallbackSeed={profile.username}
+                    />
                     <div>
                       <p className="font-semibold text-neutral-900 dark:text-neutral-100">
                         {profile.name}

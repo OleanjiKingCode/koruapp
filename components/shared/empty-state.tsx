@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { AvatarGenerator } from "@/components/ui/avatar-generator";
+import { OptimizedAvatar } from "@/components/ui/optimized-image";
 
 interface SuggestedProfile {
   id: string;
@@ -200,15 +200,12 @@ export function EmptyState({
                 <Link href={`/profile/${profile.handle}`}>
                   <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer group">
                     <div className="w-10 h-10 rounded-full overflow-hidden">
-                      {profile.profileImageUrl ? (
-                        <img
-                          src={profile.profileImageUrl}
-                          alt={profile.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <AvatarGenerator seed={profile.handle} size={40} />
-                      )}
+                      <OptimizedAvatar
+                        src={profile.profileImageUrl}
+                        alt={profile.name}
+                        size={40}
+                        fallbackSeed={profile.handle}
+                      />
                     </div>
                     <div className="flex-1 min-w-0 text-left">
                       <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate group-hover:text-koru-purple transition-colors">

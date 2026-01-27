@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import { cn } from "@/lib/utils";
 
 interface ProfileCardProps {
@@ -33,8 +33,6 @@ export function ProfileCard({
   className,
   onView,
 }: ProfileCardProps) {
-  const [imageError, setImageError] = useState(false);
-
   if (isLoading) {
     return <ProfileCardSkeleton className={className} />;
   }
@@ -47,8 +45,6 @@ export function ProfileCard({
       .join("")
       .toUpperCase()
       .slice(0, 2);
-
-  const hasValidImage = avatarUrl && !imageError;
 
   return (
     <motion.div
@@ -75,13 +71,15 @@ export function ProfileCard({
               <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-neutral-200 dark:border-neutral-700">
                 {avatarComponent}
               </div>
-            ) : hasValidImage ? (
-              <img
-                src={avatarUrl}
-                alt={name}
-                className="w-14 h-14 rounded-full object-cover border-2 border-neutral-200 dark:border-neutral-700"
-                onError={() => setImageError(true)}
-              />
+            ) : avatarUrl ? (
+              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-neutral-200 dark:border-neutral-700">
+                <OptimizedAvatar
+                  src={avatarUrl}
+                  alt={name}
+                  size={56}
+                  fallbackSeed={handle}
+                />
+              </div>
             ) : (
               <div className="w-14 h-14 rounded-full bg-gradient-to-br from-koru-purple/20 to-koru-golden/20 flex items-center justify-center border-2 border-koru-purple/30">
                 <span className="text-lg   font-medium text-koru-purple">

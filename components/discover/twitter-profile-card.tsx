@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
-import { AvatarGenerator } from "@/components/ui/avatar-generator";
+import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import { ArrowRightIcon, UsersIcon } from "@/components/icons";
 import { VerifiedBadge } from "./verified-badge";
 import { ParsedBio } from "./parsed-bio";
@@ -16,9 +15,6 @@ interface TwitterProfileCardProps {
 }
 
 export function TwitterProfileCard({ profile, onView }: TwitterProfileCardProps) {
-  const [imageError, setImageError] = useState(false);
-  const hasValidImage = profile.profileImageUrl && !imageError;
-
   return (
     <motion.div
       whileHover={{ y: -4 }}
@@ -34,16 +30,14 @@ export function TwitterProfileCard({ profile, onView }: TwitterProfileCardProps)
         <div className="flex items-start gap-4">
           {/* Avatar */}
           <div className="relative shrink-0">
-            {hasValidImage ? (
-              <img
+            <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-neutral-200 dark:border-neutral-700">
+              <OptimizedAvatar
                 src={profile.profileImageUrl}
                 alt={profile.name}
-                className="w-14 h-14 rounded-full object-cover border-2 border-neutral-200 dark:border-neutral-700"
-                onError={() => setImageError(true)}
+                size={56}
+                fallbackSeed={profile.username}
               />
-            ) : (
-              <AvatarGenerator seed={profile.username} size={56} />
-            )}
+            </div>
           </div>
 
           {/* Name & Handle */}

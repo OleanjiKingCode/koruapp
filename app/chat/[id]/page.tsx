@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { StatusPill, EmptyState } from "@/components/shared";
 import { AuthGuard } from "@/components/auth";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
+import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import { cn } from "@/lib/utils";
 import { API_ROUTES } from "@/lib/constants";
 import { useChatMessages } from "@/lib/hooks/use-chat-messages";
@@ -249,15 +250,12 @@ export default function ChatPage() {
               >
                 <div className="relative">
                   <div className="w-10 h-10 rounded-xl overflow-hidden ring-2 ring-white dark:ring-neutral-800 shadow-sm">
-                    {otherParty.profile_image_url ? (
-                      <img
-                        src={otherParty.profile_image_url}
-                        alt={otherParty.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <AvatarGenerator seed={otherParty.username} size={40} />
-                    )}
+                    <OptimizedAvatar
+                      src={otherParty.profile_image_url}
+                      alt={otherParty.name}
+                      size={40}
+                      fallbackSeed={otherParty.username}
+                    />
                   </div>
                   {/* Real-time connection indicator */}
                   {/* <div
@@ -355,18 +353,12 @@ export default function ChatPage() {
                             <div className="w-8 flex-shrink-0">
                               {showAvatar && (
                                 <div className="w-8 h-8 rounded-lg overflow-hidden">
-                                  {otherParty.profile_image_url ? (
-                                    <img
-                                      src={otherParty.profile_image_url}
-                                      alt={otherParty.name}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <AvatarGenerator
-                                      seed={otherParty.username}
-                                      size={32}
-                                    />
-                                  )}
+                                  <OptimizedAvatar
+                                    src={otherParty.profile_image_url}
+                                    alt={otherParty.name}
+                                    size={32}
+                                    fallbackSeed={otherParty.username}
+                                  />
                                 </div>
                               )}
                             </div>

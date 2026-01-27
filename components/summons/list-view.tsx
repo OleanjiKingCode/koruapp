@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { motion } from "motion/react";
+import Image from "next/image";
 import { cn, formatCurrency } from "@/lib/utils";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
+import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import { Badge } from "@/components/ui/badge";
 import {
   CrownIcon,
@@ -14,36 +16,6 @@ import {
 import { getTagColor } from "@/lib/constants";
 import { useRefreshableImage } from "@/lib/hooks/use-refreshable-image";
 import type { Summon } from "@/lib/types";
-
-// Component to handle image with fallback
-function ProfileImage({
-  src,
-  alt,
-  seed,
-  size = 48,
-  className,
-}: {
-  src?: string;
-  alt: string;
-  seed: string;
-  size?: number;
-  className?: string;
-}) {
-  const [error, setError] = useState(false);
-
-  if (!src || error) {
-    return <AvatarGenerator seed={seed} size={size} />;
-  }
-
-  return (
-    <img
-      src={src}
-      alt={alt}
-      className={className}
-      onError={() => setError(true)}
-    />
-  );
-}
 
 // Backer image with automatic refresh from Twitter on error
 function BackerImage({
@@ -66,14 +38,17 @@ function BackerImage({
 
   return (
     <>
-      <img
+      <Image
         src={imageSrc}
         alt={alt}
+        width={20}
+        height={20}
         className={cn(
-          "w-full h-full object-cover",
+          "w-full h-full object-cover rounded-full",
           isRefreshing && "opacity-50"
         )}
         onError={handleError}
+        unoptimized
       />
       {isRefreshing && (
         <div className="absolute inset-0 flex items-center justify-center">
@@ -156,12 +131,15 @@ function SummonCard({
     >
       {hasValidBgImage && (
         <div className="absolute flex md:hidden -top-8 -right-10 w-72 h-72 pointer-events-none">
-          <img
-            src={summon.targetProfileImage || undefined}
+          <Image
+            src={summon.targetProfileImage || ""}
             alt=""
+            width={288}
+            height={288}
             className="w-full h-full object-cover rounded-full opacity-[0.07] dark:opacity-[0.05] blur-[2px]"
             aria-hidden="true"
             onError={() => setBgImageError(true)}
+            unoptimized
           />
         </div>
       )}
@@ -185,13 +163,14 @@ function SummonCard({
         </div>
 
         {/* Avatar */}
-        <ProfileImage
-          src={summon.targetProfileImage || undefined}
-          alt={summon.targetName}
-          seed={summon.targetHandle}
-          size={48}
-          className="w-12 h-12 rounded-full object-cover ring-2 ring-white dark:ring-neutral-800"
-        />
+        <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-white dark:ring-neutral-800">
+          <OptimizedAvatar
+            src={summon.targetProfileImage}
+            alt={summon.targetName}
+            size={48}
+            fallbackSeed={summon.targetHandle}
+          />
+        </div>
 
         {/* Info */}
         <div className="flex-1 min-w-0">

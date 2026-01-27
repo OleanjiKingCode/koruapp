@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
+import { OptimizedAvatar, BackgroundImage } from "@/components/ui/optimized-image";
 import { BookingModal } from "@/components/booking-modal";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
@@ -585,7 +586,7 @@ export default function ViewProfilePage() {
           {/* Banner */}
           <div className="h-32 sm:h-48 relative overflow-hidden">
             {profile.banner ? (
-              <img
+              <BackgroundImage
                 src={profile.banner}
                 alt=""
                 className="w-full h-full object-cover"
@@ -603,15 +604,12 @@ export default function ViewProfilePage() {
             {/* Avatar - positioned to overlap banner */}
             <div className="absolute -top-14 left-6">
               <div className="w-28 h-28 rounded-2xl border-4 border-white dark:border-neutral-900 shadow-xl overflow-hidden bg-white dark:bg-neutral-800">
-                {profile.avatar ? (
-                  <img
-                    src={profile.avatar}
-                    alt={profile.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <AvatarGenerator seed={profile.handle} size={112} />
-                )}
+                <OptimizedAvatar
+                  src={profile.avatar}
+                  alt={profile.name}
+                  size={112}
+                  fallbackSeed={profile.handle}
+                />
               </div>
             </div>
 

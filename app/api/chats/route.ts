@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { createChat, getUserByUsername } from "@/lib/supabase";
+import { captureApiError } from "@/lib/sentry";
 
 // POST - Create a new chat
 export async function POST(request: NextRequest) {
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ chat });
   } catch (error) {
-    console.error("Error creating chat:", error);
+    captureApiError(error, "POST /api/chats");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

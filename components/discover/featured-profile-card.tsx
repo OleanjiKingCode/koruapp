@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
-import { AvatarGenerator } from "@/components/ui/avatar-generator";
+import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import {
   ArrowRightIcon,
   UsersIcon,
@@ -81,8 +80,6 @@ export function FeaturedProfileCard({
   onView,
 }: FeaturedProfileCardProps) {
   const tags = deduplicateTags(profile.tags || []);
-  const [imageError, setImageError] = useState(false);
-  const hasValidImage = profile.profile_image_url && !imageError;
 
   return (
     <motion.div
@@ -150,16 +147,14 @@ export function FeaturedProfileCard({
           <div className="flex items-start gap-4">
             {/* Avatar */}
             <div className="relative shrink-0">
-              {hasValidImage ? (
-                <img
-                  src={profile.profile_image_url || ""}
+              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-neutral-200 dark:border-neutral-700">
+                <OptimizedAvatar
+                  src={profile.profile_image_url}
                   alt={profile.name}
-                  className="w-14 h-14 rounded-full object-cover border-2 border-neutral-200 dark:border-neutral-700"
-                  onError={() => setImageError(true)}
+                  size={56}
+                  fallbackSeed={profile.username}
                 />
-              ) : (
-                <AvatarGenerator seed={profile.username} size={56} />
-              )}
+              </div>
             </div>
 
             {/* Name & Handle */}

@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { captureDbError } from "./sentry";
 
 // Lazy initialization of Supabase client (server-side only)
 let supabaseInstance: SupabaseClient | null = null;
@@ -73,7 +74,11 @@ export async function getCachedProfile(
     .eq("username", username.toLowerCase())
     .limit(1);
 
-  if (error || !data || data.length === 0) return null;
+  if (error) {
+    captureDbError(error, "getCachedProfile", { username });
+    return null;
+  }
+  if (!data || data.length === 0) return null;
   const profile = data[0];
 
   // Check if cache is older than 24 hours
@@ -97,7 +102,11 @@ export async function getCachedProfilesByQuery(
     .order("followers_count", { ascending: false })
     .limit(20);
 
-  if (error || !data) return [];
+  if (error) {
+    captureDbError(error, "getCachedProfilesByQuery", { query });
+    return [];
+  }
+  if (!data) return [];
   return data;
 }
 
@@ -120,7 +129,7 @@ export async function upsertTwitterProfile(
     .single();
 
   if (error) {
-    console.error("Error upserting profile:", error);
+    captureDbError(error, "upsertTwitterProfile", { username: profile.username });
     return null;
   }
 
@@ -150,7 +159,7 @@ export async function upsertManyTwitterProfiles(
   );
 
   if (error) {
-    console.error("Error upserting profiles:", error);
+    captureDbError(error, "upsertManyTwitterProfiles", { count: profiles.length });
   }
 }
 
@@ -209,7 +218,7 @@ export async function getFeaturedProfiles(
     .range(page * limit, (page + 1) * limit - 1);
 
   if (error || !data) {
-    console.error("Error fetching featured profiles:", error);
+    if (error) captureDbError(error, "getFeaturedProfiles", { page, limit, categories });
     return { profiles: [], total: 0, hasMore: false };
   }
 
@@ -539,7 +548,7 @@ export async function upsertUser(user: {
     .single();
 
   if (error) {
-    console.error("Error upserting user:", error);
+    captureDbError(error, "upsertUser", { twitter_id: user.twitter_id });
     return null;
   }
 
@@ -564,7 +573,7 @@ export async function updateUser(
     .single();
 
   if (error) {
-    console.error("Error updating user:", error);
+    captureDbError(error, "updateUser", { twitterId });
     return null;
   }
 
@@ -649,7 +658,7 @@ export async function createChat(chat: {
     .single();
 
   if (error) {
-    console.error("Error creating chat:", error);
+    captureDbError(error, "createChat", { requester_id: chat.requester_id, creator_id: chat.creator_id });
     return null;
   }
 
@@ -750,7 +759,7 @@ export async function createSummon(summon: {
     .single();
 
   if (error) {
-    console.error("Error creating summon:", error);
+    captureDbError(error, "createSummon", { creator_id: summon.creator_id, target_username: summon.target_username });
     return null;
   }
 
@@ -880,7 +889,7 @@ export async function backSummon(
   });
 
   if (backerError) {
-    console.error("Error adding backer:", backerError);
+    captureDbError(backerError, "backSummon:addBacker", { summonId, userId, amount });
     return false;
   }
 
@@ -894,7 +903,7 @@ export async function backSummon(
   );
 
   if (updateError) {
-    console.error("Error updating summon:", updateError);
+    captureDbError(updateError, "backSummon:updateSummon", { summonId, amount });
     return false;
   }
 
@@ -1033,7 +1042,7 @@ export async function createAvailabilitySlot(
     .single();
 
   if (error) {
-    console.error("Error creating availability slot:", error);
+    captureDbError(error, "createAvailabilitySlot", { userId });
     return null;
   }
 
@@ -1058,7 +1067,7 @@ export async function updateAvailabilitySlot(
     .single();
 
   if (error) {
-    console.error("Error updating availability slot:", error);
+    captureDbError(error, "updateAvailabilitySlot", { slotId });
     return null;
   }
 
@@ -1109,7 +1118,7 @@ export async function getChatMessages(
     .limit(limit);
 
   if (error || !data) {
-    console.error("Error fetching messages:", error);
+    if (error) captureDbError(error, "getChatMessages", { chatId });
     return [];
   }
   return data;
@@ -1142,7 +1151,7 @@ export async function sendMessage(
     .single();
 
   if (error) {
-    console.error("Error sending message:", error);
+    captureDbError(error, "sendMessage", { chatId, senderId });
     return null;
   }
 
@@ -1172,7 +1181,7 @@ export async function markMessagesAsRead(
     .eq("is_read", false);
 
   if (error) {
-    console.error("Error marking messages as read:", error);
+    captureDbError(error, "markMessagesAsRead", { chatId, userId });
     return false;
   }
   return true;
@@ -1191,7 +1200,7 @@ export async function getUnreadCount(
     .eq("is_read", false);
 
   if (error) {
-    console.error("Error getting unread count:", error);
+    captureDbError(error, "getUnreadCount", { chatId, userId });
     return 0;
   }
   return count || 0;
@@ -1248,7 +1257,7 @@ export async function getUserStats(userId: string): Promise<{
       totalTransactions: totalTransactions || 0,
     };
   } catch (error) {
-    console.error("Error fetching user stats:", error);
+    captureDbError(error, "getUserStats", { userId });
     return null;
   }
 }

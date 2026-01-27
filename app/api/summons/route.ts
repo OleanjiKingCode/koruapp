@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabase, getActiveSummons } from "@/lib/supabase";
+import { captureApiError } from "@/lib/sentry";
 
 interface BackerInfo {
   user_id: string;
@@ -115,7 +116,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ summons: transformedSummons });
   } catch (error) {
-    console.error("Error fetching summons:", error);
+    captureApiError(error, "GET /api/summons");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -240,7 +241,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ summon });
   } catch (error) {
-    console.error("Error creating summon:", error);
+    captureApiError(error, "POST /api/summons");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

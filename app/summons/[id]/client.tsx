@@ -9,6 +9,7 @@ import useSWR from "swr";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
+import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import { ShareModal } from "@/components/share";
 import { LoginModal } from "@/components/auth";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -421,15 +422,12 @@ export function SummonDetailClient({
                 {/* Avatar */}
                 <div className="absolute -top-10 left-6">
                   <div className="w-20 h-20 rounded-2xl border-4 border-white dark:border-neutral-900 shadow-xl overflow-hidden bg-white dark:bg-neutral-800">
-                    {summon.targetProfileImage ? (
-                      <img
-                        src={summon.targetProfileImage}
-                        alt={summon.targetName}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <AvatarGenerator seed={summon.targetHandle} size={80} />
-                    )}
+                    <OptimizedAvatar
+                      src={summon.targetProfileImage}
+                      alt={summon.targetName}
+                      size={80}
+                      fallbackSeed={summon.targetHandle}
+                    />
                   </div>
                 </div>
 
@@ -540,15 +538,12 @@ export function SummonDetailClient({
                       className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-700"
                     >
                       <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                        {backer.profileImageUrl ? (
-                          <img
-                            src={backer.profileImageUrl}
-                            alt={backer.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <AvatarGenerator seed={backer.username} size={40} />
-                        )}
+                        <OptimizedAvatar
+                          src={backer.profileImageUrl}
+                          alt={backer.name}
+                          size={40}
+                          fallbackSeed={backer.username}
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-neutral-900 dark:text-neutral-100 truncate">
@@ -737,15 +732,12 @@ export function SummonDetailClient({
                 <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden">
                   <div className="p-5">
                     <div className="flex items-center gap-3 mb-4">
-                      {summon.targetProfileImage ? (
-                        <img
-                          src={summon.targetProfileImage}
-                          alt={summon.targetName}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                      ) : (
-                        <AvatarGenerator seed={summon.targetHandle} size={48} />
-                      )}
+                      <OptimizedAvatar
+                        src={summon.targetProfileImage}
+                        alt={summon.targetName}
+                        size={48}
+                        fallbackSeed={summon.targetHandle}
+                      />
                       <div>
                         <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">
                           Back this Summon

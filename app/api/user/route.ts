@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getUserByTwitterId } from "@/lib/supabase";
+import { captureApiError } from "@/lib/sentry";
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ user });
   } catch (error) {
-    console.error("Error fetching user:", error);
+    captureApiError(error, "GET /api/user");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

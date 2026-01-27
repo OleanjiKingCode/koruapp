@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
+import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import { AuthGuard } from "@/components/auth";
 import { cn } from "@/lib/utils";
 import { CheckIcon, ChevronRightIcon } from "@/components/icons";
@@ -325,21 +326,12 @@ export default function EditProfilePage() {
 
                   <div className="flex justify-center">
                     <div className="w-32 h-32 rounded-full border-4 border-koru-purple/20 shadow-xl overflow-hidden bg-white dark:bg-neutral-800">
-                      {user?.profileImageUrl ? (
-                        <img
-                          src={user.profileImageUrl.replace(
-                            "_normal",
-                            "_400x400"
-                          )}
-                          alt={user.name || "Profile"}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <AvatarGenerator
-                          seed={user?.username || "user"}
-                          size={128}
-                        />
-                      )}
+                      <OptimizedAvatar
+                        src={user?.profileImageUrl?.replace("_normal", "_400x400")}
+                        alt={user?.name || "Profile"}
+                        size={128}
+                        fallbackSeed={user?.username || "user"}
+                      />
                     </div>
                   </div>
                   <p className="text-xs text-neutral-500 text-center mt-3">
@@ -367,21 +359,17 @@ export default function EditProfilePage() {
 
                     <div className="flex items-start gap-3 -mt-10 relative z-10">
                       <div className="w-16 h-16 rounded-full border-3 border-white dark:border-neutral-800 shadow-lg overflow-hidden">
-                        {user?.profileImageUrl ? (
-                          <img
-                            src={user.profileImageUrl.replace(
-                              "_normal",
-                              "_400x400"
-                            )}
-                            alt={user.name || "Profile"}
-                            className="w-full h-full object-cover"
-                          />
+                        <OptimizedAvatar
+                          src={user?.profileImageUrl?.replace("_normal", "_400x400")}
+                          alt={user?.name || "Profile"}
+                          size={64}
+                          fallbackSeed={user?.username || "user"}
+                        />
                         ) : (
                           <AvatarGenerator
                             seed={user?.username || "user"}
                             size={64}
                           />
-                        )}
                       </div>
                       <div className="pt-8">
                         <h4 className="  font-bold text-neutral-900 dark:text-neutral-100">

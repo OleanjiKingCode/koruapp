@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
+import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import { cn, calculateTreemapLayout, formatCurrency } from "@/lib/utils";
 import {
   CATEGORIES,
@@ -595,13 +596,11 @@ export default function SummonsPage() {
                                             }
                                             className="w-full flex items-center gap-3 p-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors text-left border-b border-neutral-100 dark:border-neutral-700 last:border-0"
                                           >
-                                            <img
-                                              src={
-                                                profile.profileImageUrl ||
-                                                `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`
-                                              }
+                                            <OptimizedAvatar
+                                              src={profile.profileImageUrl}
                                               alt={profile.name}
-                                              className="w-10 h-10 rounded-full"
+                                              size={40}
+                                              fallbackSeed={profile.username}
                                             />
                                             <div className="flex-1 min-w-0">
                                               <div className="flex items-center gap-2">
@@ -630,13 +629,11 @@ export default function SummonsPage() {
                                 </div>
                                 {selectedProfile && (
                                   <div className="flex items-center gap-2 p-2 rounded-lg bg-koru-purple/5 border border-koru-purple/20">
-                                    <img
-                                      src={
-                                        selectedProfile.profileImageUrl ||
-                                        `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedProfile.username}`
-                                      }
+                                    <OptimizedAvatar
+                                      src={selectedProfile.profileImageUrl}
                                       alt={selectedProfile.name}
-                                      className="w-8 h-8 rounded-full"
+                                      size={32}
+                                      fallbackSeed={selectedProfile.username}
                                     />
                                     <div className="flex-1">
                                       <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
@@ -1013,18 +1010,12 @@ export default function SummonsPage() {
                 <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden">
                   <div className="p-5">
                     <div className="flex items-center gap-3 mb-4">
-                      {summonToBack.targetProfileImage ? (
-                        <img
-                          src={summonToBack.targetProfileImage}
-                          alt={summonToBack.targetName}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                      ) : (
-                        <AvatarGenerator
-                          seed={summonToBack.targetHandle}
-                          size={48}
-                        />
-                      )}
+                      <OptimizedAvatar
+                        src={summonToBack.targetProfileImage}
+                        alt={summonToBack.targetName}
+                        size={48}
+                        fallbackSeed={summonToBack.targetHandle}
+                      />
                       <div>
                         <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">
                           Back this Summon

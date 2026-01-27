@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
+import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import { AuthGuard } from "@/components/auth";
 import { cn } from "@/lib/utils";
 
@@ -207,15 +208,12 @@ function NotificationCard({
         <div className="relative shrink-0">
           {notification.relatedUserUsername ? (
             <div className="w-10 h-10 rounded-full overflow-hidden">
-              {notification.relatedUserImage ? (
-                <img
-                  src={notification.relatedUserImage}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <AvatarGenerator seed={notification.relatedUserUsername} size={40} />
-              )}
+              <OptimizedAvatar
+                src={notification.relatedUserImage}
+                alt=""
+                size={40}
+                fallbackSeed={notification.relatedUserUsername}
+              />
             </div>
           ) : (
             <NotificationIcon type={notification.type} />

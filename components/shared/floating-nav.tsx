@@ -19,6 +19,7 @@ import {
 import { useModalContext } from "@/lib/contexts/modal-context";
 import { LoginModal } from "@/components/auth";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
+import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import {
   HomeIcon,
   DiscoverIcon,
@@ -294,10 +295,12 @@ export function FloatingNav() {
                           <div className="flex items-center gap-2">
                             <>
                               {session?.user?.image ? (
-                                <img
+                                <OptimizedAvatar
                                   src={session.user.image}
                                   alt={session.user.name || "Profile"}
-                                  className="w-5 h-5 rounded-full object-cover ring-1 ring-neutral-300 dark:ring-neutral-600"
+                                  size={20}
+                                  fallbackSeed={session.user.name || "user"}
+                                  className="ring-1 ring-neutral-300 dark:ring-neutral-600"
                                 />
                               ) :
                                 (<Icon className="w-5 h-5" />)}</>
@@ -307,10 +310,12 @@ export function FloatingNav() {
                             </span>
                           </div>
                         ) : showUserImage ? (
-                          <img
+                          <OptimizedAvatar
                             src={session.user.image}
                             alt={session.user.name || "Profile"}
-                            className="w-7 h-7 rounded-full object-cover ring-2 ring-neutral-200 dark:ring-neutral-700"
+                            size={28}
+                            fallbackSeed={session.user.name || "user"}
+                            className="ring-2 ring-neutral-200 dark:ring-neutral-700"
                           />
                         ) : (
                           <Icon className="w-5 h-5" />
@@ -460,11 +465,15 @@ export function FloatingNav() {
                       {showWalletInfo ? (
                         <div className="flex items-center gap-2">
                           <>
-                            {session?.user?.image ? (<img
-                              src={session.user.image}
-                              alt={session.user.name || "Profile"}
-                              className="w-5 h-5 rounded-full object-cover ring-1 ring-neutral-300 dark:ring-neutral-600"
-                            />) :
+                            {session?.user?.image ? (
+                              <OptimizedAvatar
+                                src={session.user.image}
+                                alt={session.user.name || "Profile"}
+                                size={20}
+                                fallbackSeed={session.user.name || "user"}
+                                className="ring-1 ring-neutral-300 dark:ring-neutral-600"
+                              />
+                            ) :
                               (<AnimatePresence mode="popLayout">
                                 {(isHovered || isActive) && (
                                   <motion.span
@@ -484,10 +493,12 @@ export function FloatingNav() {
                           </span>
                         </div>
                       ) : showUserImage ? (
-                        <img
+                        <OptimizedAvatar
                           src={session.user.image}
                           alt={session.user.name || "Profile"}
-                          className="w-5 h-5 rounded-full object-cover ring-1 ring-neutral-300 dark:ring-neutral-600"
+                          size={20}
+                          fallbackSeed={session.user.name || "user"}
+                          className="ring-1 ring-neutral-300 dark:ring-neutral-600"
                         />
                       ) : (
                         <AnimatePresence mode="popLayout">
@@ -817,18 +828,12 @@ export function FloatingNav() {
                       )}
                     >
                       <div className="w-10 h-10 rounded-full overflow-hidden bg-neutral-200 dark:bg-neutral-700">
-                        {session.user.image ? (
-                          <img
-                            src={session.user.image}
-                            alt={session.user.name || "User"}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <AvatarGenerator
-                            seed={session.user.id || "user"}
-                            size={40}
-                          />
-                        )}
+                        <OptimizedAvatar
+                          src={session.user.image}
+                          alt={session.user.name || "User"}
+                          size={40}
+                          fallbackSeed={session.user.id || "user"}
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p

@@ -17,6 +17,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
+import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import { cn } from "@/lib/utils";
 import { API_ROUTES } from "@/lib/constants";
 import { ChatIcon, ChevronRightIcon } from "@/components/icons";
@@ -177,15 +178,12 @@ function ChatCard({
                   : "bg-gradient-to-br from-koru-golden/20 to-koru-lime/20"
               )}
             >
-              {chat.profileImage ? (
-                <img
-                  src={chat.profileImage}
-                  alt={chat.otherParty}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <AvatarGenerator seed={chat.handle} size={48} />
-              )}
+              <OptimizedAvatar
+                src={chat.profileImage}
+                alt={chat.otherParty}
+                size={48}
+                fallbackSeed={chat.handle}
+              />
             </div>
             <div>
               <div className="flex items-center gap-2">

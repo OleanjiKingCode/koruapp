@@ -37,6 +37,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
+import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import { cn } from "@/lib/utils";
 import {
   CheckIcon,
@@ -328,21 +329,12 @@ export default function ProfilePage() {
                     className="relative"
                   >
                     <div className="w-28 h-28 md:w-32 md:h-32 rounded-2xl border-4 border-white dark:border-neutral-900 shadow-xl overflow-hidden bg-white dark:bg-neutral-800">
-                      {user?.profileImageUrl ? (
-                        <img
-                          src={user.profileImageUrl.replace(
-                            "_normal",
-                            "_400x400"
-                          )}
-                          alt={user.name || "Profile"}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <AvatarGenerator
-                          seed={user?.username || "user"}
-                          size={128}
-                        />
-                      )}
+                      <OptimizedAvatar
+                        src={user?.profileImageUrl?.replace("_normal", "_400x400")}
+                        alt={user?.name || "Profile"}
+                        size={128}
+                        fallbackSeed={user?.username || "user"}
+                      />
                     </div>
                     {/* Verified Badge */}
                     {user?.isVerified && (
@@ -905,7 +897,7 @@ export default function ProfilePage() {
                           <p className="text-sm text-neutral-500 dark:text-neutral-400">
                             {chat.slot_duration
                               ? `${chat.slot_duration} min`
-                              : "Chat"}
+                              : "Chat"} 
                           </p>
                         </div>
                       </div>
