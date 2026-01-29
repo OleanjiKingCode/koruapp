@@ -20,7 +20,7 @@ export function PrivyProvider({ children }: PrivyProviderProps) {
         appearance: {
           theme: theme === "dark" ? "dark" : "light",
           accentColor: "#c385ee",
-          logo: "/logo.png",
+          logo: "/kayaSideWays.png",
           showWalletLoginFirst: true,
           walletChainType: "ethereum-only",
           walletList: [
