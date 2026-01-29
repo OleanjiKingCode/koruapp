@@ -24,6 +24,7 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@sentry/nextjs": "^10",
     "@supabase/supabase-js": "^2.89.0",
+    "@tanstack/react-query": "^5.90.20",
     "@vercel/analytics": "^1.6.1",
     "axios": "^1.13.2",
     "class-variance-authority": "^0.7.1",
@@ -43,7 +44,8 @@
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.2",
-    "viem": "^2.21.0"
+    "viem": "^2.21.0",
+    "wagmi": "^3.4.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
