@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -23,19 +23,35 @@ import {
   ChevronRightIcon,
   CreditCardIcon,
   DollarIcon,
+  WalletIcon,
+  AlertCircleIcon,
 } from "@/components/icons";
+import { usePrivy } from "@privy-io/react-auth";
+import {
+  useCreateEscrow,
+  useApproveUsdc,
+  useUsdcBalance,
+  useUsdcAllowance,
+  parseUsdcAmount,
+  formatUsdcAmount,
+  getEscrowAddress,
+} from "@/lib/hooks/use-koru-escrow";
+import { getSupabaseClient } from "@/lib/supabase-client";
+import { getChainId } from "@/lib/wagmi-config";
+import type { Address } from "viem";
 
 interface BookingModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   personName: string;
   personId: string;
+  recipientAddress?: Address; // Wallet address of the person being booked (optional for now)
   availability: AvailabilityData;
   onBook: (
     slot: AvailabilitySlot,
     date: Date,
     timeSlot: string,
-    receipt: Receipt
+    receipt: Receipt,
   ) => void;
 }
 
@@ -49,9 +65,21 @@ export interface Receipt {
   time: string;
   createdAt: string;
   expiresAt: string;
+  // On-chain data
+  escrowId?: number;
+  txHash?: string;
+  depositorAddress?: string;
+  recipientAddress?: string;
 }
 
-type Step = "slots" | "date" | "time" | "confirm" | "paying" | "receipt";
+type Step =
+  | "slots"
+  | "date"
+  | "time"
+  | "confirm"
+  | "approving"
+  | "paying"
+  | "receipt";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
@@ -74,12 +102,13 @@ export function BookingModal({
   onOpenChange,
   personName,
   personId,
+  recipientAddress,
   availability,
   onBook,
 }: BookingModalProps) {
   const [step, setStep] = useState<Step>("slots");
   const [selectedSlot, setSelectedSlot] = useState<AvailabilitySlot | null>(
-    null
+    null,
   );
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -89,8 +118,100 @@ export function BookingModal({
     tomorrow.setDate(tomorrow.getDate() + 1);
     return new Date(tomorrow.getFullYear(), tomorrow.getMonth(), 1);
   });
+  const [error, setError] = useState<string | null>(null);
 
   const timezone = availability.timezone || "UTC";
+
+  // Privy wallet connection
+  const { ready, authenticated, user, login } = usePrivy();
+  const walletAddress = user?.wallet?.address as Address | undefined;
+
+  // Convert price to USDC amount (6 decimals)
+  const escrowAmount = useMemo(() => {
+    if (!selectedSlot || selectedSlot.price === 0) return BigInt(0);
+    return parseUsdcAmount(selectedSlot.price);
+  }, [selectedSlot]);
+
+  // Escrow hooks
+  const { balance: usdcBalance, formatted: usdcFormatted } =
+    useUsdcBalance(walletAddress);
+  const { allowance } = useUsdcAllowance(walletAddress);
+  const needsApproval = escrowAmount > BigInt(0) && allowance < escrowAmount;
+  const hasEnoughBalance = usdcBalance >= escrowAmount;
+
+  // Approval hook
+  const {
+    approve,
+    isSimulating: isApprovalSimulating,
+    isPending: isApprovalPending,
+    isConfirming: isApprovalConfirming,
+    isConfirmed: isApprovalConfirmed,
+    simError: approvalSimError,
+    writeError: approvalWriteError,
+    reset: resetApproval,
+  } = useApproveUsdc(escrowAmount);
+
+  // Create escrow hook - only enabled if we have a recipient address
+  const {
+    createEscrow,
+    escrowId,
+    txHash,
+    address: depositorAddress,
+    isSimulating: isEscrowSimulating,
+    isPending: isEscrowPending,
+    isConfirming: isEscrowConfirming,
+    isConfirmed: isEscrowConfirmed,
+    simError: escrowSimError,
+    writeError: escrowWriteError,
+    reset: resetEscrow,
+  } = useCreateEscrow(
+    recipientAddress ||
+      ("0x0000000000000000000000000000000000000000" as Address),
+    escrowAmount,
+  );
+
+  // Check if recipient can receive payment
+  const canReceivePayment = !!recipientAddress;
+
+  // Handle approval confirmation - proceed to create escrow
+  useEffect(() => {
+    if (isApprovalConfirmed && step === "approving") {
+      setStep("paying");
+      createEscrow();
+    }
+  }, [isApprovalConfirmed, step]);
+
+  // Handle escrow confirmation - save to DB and show receipt
+  useEffect(() => {
+    if (
+      isEscrowConfirmed &&
+      escrowId !== undefined &&
+      txHash &&
+      step === "paying"
+    ) {
+      saveEscrowAndShowReceipt();
+    }
+  }, [isEscrowConfirmed, escrowId, txHash, step]);
+
+  // Handle errors
+  useEffect(() => {
+    const err =
+      approvalSimError ||
+      approvalWriteError ||
+      escrowSimError ||
+      escrowWriteError;
+    if (err) {
+      setError(err.message || "Transaction failed. Please try again.");
+      if (step === "approving") setStep("confirm");
+      if (step === "paying") setStep("confirm");
+    }
+  }, [
+    approvalSimError,
+    approvalWriteError,
+    escrowSimError,
+    escrowWriteError,
+    step,
+  ]);
 
   // Get configured slots only
   const configuredSlots = useMemo(() => {
@@ -148,42 +269,150 @@ export function BookingModal({
   };
 
   const handlePay = async () => {
-    if (selectedSlot && selectedDate && selectedTime) {
+    if (!selectedSlot || !selectedDate || !selectedTime) return;
+
+    setError(null);
+
+    // For free slots, skip payment
+    if (selectedSlot.price === 0) {
+      await handleFreeBooking();
+      return;
+    }
+
+    // Check if recipient can receive payment
+    if (!canReceivePayment) {
+      setError(
+        `${personName} hasn't set up their wallet to receive payments yet.`,
+      );
+      return;
+    }
+
+    // Check wallet connection
+    if (!authenticated || !walletAddress) {
+      login();
+      return;
+    }
+
+    // Check balance
+    if (!hasEnoughBalance) {
+      setError(
+        `Insufficient USDC balance. You have ${usdcFormatted} USDC but need $${selectedSlot.price}.`,
+      );
+      return;
+    }
+
+    // Start payment flow
+    if (needsApproval) {
+      // Need to approve USDC first
+      setStep("approving");
+      approve();
+    } else {
+      // Already approved, create escrow directly
       setStep("paying");
+      createEscrow();
+    }
+  };
 
-      // Simulate payment processing
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+  const handleFreeBooking = async () => {
+    if (!selectedSlot || !selectedDate || !selectedTime) return;
 
-      // Generate receipt
-      const now = new Date();
-      const newReceipt: Receipt = {
-        id: `RCP-${Date.now().toString(36).toUpperCase()}`,
-        personName,
-        personId,
+    const now = new Date();
+    const newReceipt: Receipt = {
+      id: `RCP-${Date.now().toString(36).toUpperCase()}`,
+      personName,
+      personId,
+      slotName: selectedSlot.name,
+      price: 0,
+      date: formatDate(selectedDate),
+      time: selectedTime,
+      createdAt: now.toISOString(),
+      expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+    };
+
+    setReceipt(newReceipt);
+    setStep("receipt");
+
+    // Store booking info in localStorage for the chat page
+    localStorage.setItem(
+      getBookingStorageKey(personId),
+      JSON.stringify({
+        slotName: selectedSlot.name,
+        price: 0,
+        date: formatDate(selectedDate),
+        time: selectedTime,
+        createdAt: now.toISOString(),
+        receiptId: newReceipt.id,
+      }),
+    );
+  };
+
+  const saveEscrowAndShowReceipt = async () => {
+    if (
+      !selectedSlot ||
+      !selectedDate ||
+      !selectedTime ||
+      escrowId === undefined ||
+      !txHash
+    )
+      return;
+
+    const now = new Date();
+    const newReceipt: Receipt = {
+      id: `ESC-${escrowId}`,
+      personName,
+      personId,
+      slotName: selectedSlot.name,
+      price: selectedSlot.price,
+      date: formatDate(selectedDate),
+      time: selectedTime,
+      createdAt: now.toISOString(),
+      expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+      escrowId: Number(escrowId),
+      txHash,
+      depositorAddress: walletAddress,
+      recipientAddress,
+    };
+
+    // Save to Supabase
+    const supabase = getSupabaseClient();
+    if (supabase && recipientAddress) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any).from("escrows").insert({
+          escrow_id: Number(escrowId),
+          chain_id: getChainId(),
+          depositor_address: walletAddress?.toLowerCase(),
+          recipient_address: recipientAddress.toLowerCase(),
+          amount: selectedSlot.price,
+          status: "pending",
+          create_tx_hash: txHash,
+          accept_deadline: new Date(
+            now.getTime() + 24 * 60 * 60 * 1000,
+          ).toISOString(),
+          description: `${selectedSlot.name} session with ${personName}`,
+        });
+      } catch (err) {
+        console.error("Failed to save escrow to database:", err);
+      }
+    }
+
+    setReceipt(newReceipt);
+    setStep("receipt");
+
+    // Store booking info in localStorage for the chat page
+    localStorage.setItem(
+      getBookingStorageKey(personId),
+      JSON.stringify({
         slotName: selectedSlot.name,
         price: selectedSlot.price,
         date: formatDate(selectedDate),
         time: selectedTime,
         createdAt: now.toISOString(),
-        expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
-      };
-
-      setReceipt(newReceipt);
-      setStep("receipt");
-
-      // Store booking info in localStorage for the chat page
-      localStorage.setItem(
-        getBookingStorageKey(personId),
-        JSON.stringify({
-          slotName: selectedSlot.name,
-          price: selectedSlot.price,
-          date: formatDate(selectedDate),
-          time: selectedTime,
-          createdAt: now.toISOString(),
-          receiptId: newReceipt.id,
-        })
-      );
-    }
+        receiptId: newReceipt.id,
+        escrowId: Number(escrowId),
+        txHash,
+      }),
+    );
   };
 
   const handleContinueToChat = () => {
@@ -199,6 +428,9 @@ export function BookingModal({
     setSelectedDate(null);
     setSelectedTime(null);
     setReceipt(null);
+    setError(null);
+    resetApproval();
+    resetEscrow();
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     setCurrentMonth(new Date(tomorrow.getFullYear(), tomorrow.getMonth(), 1));
@@ -213,13 +445,13 @@ export function BookingModal({
 
   const goToPrevMonth = () => {
     setCurrentMonth(
-      new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1)
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1),
     );
   };
 
   const goToNextMonth = () => {
     setCurrentMonth(
-      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1)
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1),
     );
   };
 
@@ -245,8 +477,8 @@ export function BookingModal({
           step === "slots"
             ? "max-w-sm"
             : step === "confirm"
-            ? "max-w-sm"
-            : "max-w-md"
+              ? "max-w-sm"
+              : "max-w-md",
         )}
       >
         <DialogTitle className="sr-only">Book a Session</DialogTitle>
@@ -299,7 +531,7 @@ export function BookingModal({
                             "text-lg font-bold",
                             slot.price === 0
                               ? "text-koru-lime"
-                              : "text-koru-golden"
+                              : "text-koru-golden",
                           )}
                         >
                           {slot.price === 0 ? "Free" : `$${slot.price}`}
@@ -311,7 +543,7 @@ export function BookingModal({
                           <span>
                             {
                               DURATION_OPTIONS.find(
-                                (d) => d.value === slot.duration
+                                (d) => d.value === slot.duration,
                               )?.label
                             }
                           </span>
@@ -421,7 +653,7 @@ export function BookingModal({
                             ? "hover:bg-koru-purple/10 hover:text-koru-purple cursor-pointer text-neutral-700 dark:text-neutral-300"
                             : "text-neutral-300 dark:text-neutral-600 cursor-not-allowed",
                           isToday &&
-                            "ring-2 ring-koru-golden ring-offset-2 dark:ring-offset-neutral-900"
+                            "ring-2 ring-koru-golden ring-offset-2 dark:ring-offset-neutral-900",
                         )}
                       >
                         {date.getDate()}
@@ -483,7 +715,7 @@ export function BookingModal({
                       className={cn(
                         "w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all",
                         "bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300",
-                        "hover:bg-koru-purple/10 hover:text-koru-purple border-2 border-transparent hover:border-koru-purple/30"
+                        "hover:bg-koru-purple/10 hover:text-koru-purple border-2 border-transparent hover:border-koru-purple/30",
                       )}
                     >
                       <div className="flex items-center gap-3">
@@ -535,6 +767,39 @@ export function BookingModal({
                     </p>
                   </div>
                 </div>
+
+                {/* Error Display */}
+                {error && (
+                  <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                    <div className="flex items-start gap-2">
+                      <AlertCircleIcon className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-red-600 dark:text-red-400">
+                        {error}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Wallet Info (for paid bookings) */}
+                {selectedSlot.price > 0 && (
+                  <div className="mb-4 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <WalletIcon className="w-4 h-4 text-neutral-500" />
+                        <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                          {walletAddress
+                            ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
+                            : "No wallet connected"}
+                        </span>
+                      </div>
+                      {walletAddress && (
+                        <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                          {usdcFormatted} USDC
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Booking Summary */}
                 <div className="space-y-3 mb-6">
@@ -595,20 +860,146 @@ export function BookingModal({
                   >
                     Cancel
                   </Button>
-                  <Button
-                    onClick={handlePay}
-                    className="flex-1 bg-koru-lime hover:bg-koru-lime/90 text-neutral-900"
-                  >
-                    <CheckIcon className="w-4 h-4 mr-2" />
-                    {selectedSlot.price === 0
-                      ? "Confirm Booking"
-                      : `Pay $${selectedSlot.price}`}
-                  </Button>
+                  {selectedSlot.price === 0 ? (
+                    <Button
+                      onClick={handlePay}
+                      className="flex-1 bg-koru-lime hover:bg-koru-lime/90 text-neutral-900"
+                    >
+                      <CheckIcon className="w-4 h-4 mr-2" />
+                      Confirm Booking
+                    </Button>
+                  ) : !authenticated || !walletAddress ? (
+                    <Button
+                      onClick={() => login()}
+                      className="flex-1 bg-koru-purple hover:bg-koru-purple/90"
+                    >
+                      <WalletIcon className="w-4 h-4 mr-2" />
+                      Connect Wallet
+                    </Button>
+                  ) : !hasEnoughBalance ? (
+                    <Button
+                      disabled
+                      className="flex-1 bg-neutral-300 dark:bg-neutral-700 cursor-not-allowed"
+                    >
+                      Insufficient USDC
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handlePay}
+                      className="flex-1 bg-koru-lime hover:bg-koru-lime/90 text-neutral-900"
+                    >
+                      <CheckIcon className="w-4 h-4 mr-2" />
+                      {needsApproval
+                        ? `Approve & Pay $${selectedSlot.price}`
+                        : `Pay $${selectedSlot.price}`}
+                    </Button>
+                  )}
                 </div>
               </motion.div>
             )}
 
-          {/* Step 5: Processing Payment */}
+          {/* Step 5: Approving USDC */}
+          {step === "approving" && (
+            <motion.div
+              key="approving"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="p-8 flex flex-col items-center justify-center min-h-[300px]"
+            >
+              {/* Loading Animation Container */}
+              <div className="relative mb-6">
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.2, 0.5] }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className="absolute inset-0 w-20 h-20 rounded-full bg-koru-golden/20"
+                />
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                  className="relative w-20 h-20"
+                >
+                  <svg className="w-20 h-20" viewBox="0 0 80 80">
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="34"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                      className="text-neutral-200 dark:text-neutral-700"
+                    />
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="34"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                      strokeDasharray="160"
+                      strokeDashoffset="120"
+                      strokeLinecap="round"
+                      className="text-koru-golden"
+                    />
+                  </svg>
+                </motion.div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <motion.div
+                    animate={{ scale: [1, 0.9, 1] }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  >
+                    <CheckIcon className="w-8 h-8 text-koru-golden" />
+                  </motion.div>
+                </div>
+              </div>
+
+              <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
+                {isApprovalSimulating
+                  ? "Preparing Approval..."
+                  : isApprovalPending
+                    ? "Confirm in Wallet"
+                    : isApprovalConfirming
+                      ? "Confirming Approval..."
+                      : "Approving USDC"}
+              </h2>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center mb-4">
+                {isApprovalPending
+                  ? "Please confirm the approval transaction in your wallet"
+                  : "Allowing the escrow contract to use your USDC..."}
+              </p>
+
+              <div className="flex gap-1.5">
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
+                    transition={{
+                      duration: 0.8,
+                      repeat: Infinity,
+                      delay: i * 0.2,
+                      ease: "easeInOut",
+                    }}
+                    className="w-2 h-2 rounded-full bg-koru-golden"
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Step 6: Processing Payment */}
           {step === "paying" && (
             <motion.div
               key="paying"
@@ -682,10 +1073,20 @@ export function BookingModal({
               </div>
 
               <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
-                Processing Payment
+                {isEscrowSimulating
+                  ? "Preparing Transaction..."
+                  : isEscrowPending
+                    ? "Confirm in Wallet"
+                    : isEscrowConfirming
+                      ? "Confirming Payment..."
+                      : "Creating Escrow"}
               </h2>
               <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center mb-4">
-                Please wait while we process your payment...
+                {isEscrowPending
+                  ? "Please confirm the escrow transaction in your wallet"
+                  : isEscrowConfirming
+                    ? "Waiting for blockchain confirmation..."
+                    : "Creating a secure escrow for your payment..."}
               </p>
 
               {/* Progress dots */}

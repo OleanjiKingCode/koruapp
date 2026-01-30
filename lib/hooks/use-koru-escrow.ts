@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   useConnection,
   useBalance,
@@ -9,10 +9,8 @@ import {
   useSimulateContract,
   useWriteContract,
   useWaitForTransactionReceipt,
-  usePublicClient,
 } from "wagmi";
-import { Address, formatUnits, parseUnits, decodeEventLog, Log } from "viem";
-import useSWR from "swr";
+import { Address, formatUnits, parseUnits } from "viem";
 import {
   KORU_ESCROW_ADDRESSES,
   KORU_ESCROW_ABI,
@@ -351,162 +349,6 @@ export function useContractInfo() {
 }
 
 // =============================================================================
-// USER ESCROWS HOOKS
-// =============================================================================
-
-export interface UserEscrowInfo {
-  escrowId: bigint;
-  depositor: Address;
-  recipient: Address;
-  amount: bigint;
-  createdAt: bigint; // block timestamp
-  role: "depositor" | "recipient";
-}
-
-/**
- * Hook to get all escrows for a user address (as depositor or recipient)
- * Queries EscrowCreated events from the blockchain
- */
-export function useUserEscrows(userAddress?: Address) {
-  const publicClient = usePublicClient();
-  const { isConnected } = useConnection();
-
-  const fetcher = useCallback(async () => {
-    if (!publicClient || !userAddress) return [];
-
-    const contractAddress = getContractAddress();
-
-    // Query events where user is depositor
-    const depositorLogs = await publicClient.getLogs({
-      address: contractAddress,
-      event: {
-        type: "event",
-        name: "EscrowCreated",
-        inputs: [
-          { name: "escrowId", type: "uint256", indexed: true },
-          { name: "depositor", type: "address", indexed: true },
-          { name: "recipient", type: "address", indexed: true },
-          { name: "amount", type: "uint256", indexed: false },
-          { name: "acceptDeadline", type: "uint256", indexed: false },
-        ],
-      },
-      args: {
-        depositor: userAddress,
-      },
-      fromBlock: "earliest",
-      toBlock: "latest",
-    });
-
-    // Query events where user is recipient
-    const recipientLogs = await publicClient.getLogs({
-      address: contractAddress,
-      event: {
-        type: "event",
-        name: "EscrowCreated",
-        inputs: [
-          { name: "escrowId", type: "uint256", indexed: true },
-          { name: "depositor", type: "address", indexed: true },
-          { name: "recipient", type: "address", indexed: true },
-          { name: "amount", type: "uint256", indexed: false },
-          { name: "acceptDeadline", type: "uint256", indexed: false },
-        ],
-      },
-      args: {
-        recipient: userAddress,
-      },
-      fromBlock: "earliest",
-      toBlock: "latest",
-    });
-
-    // Map logs to escrow info
-    const depositorEscrows: UserEscrowInfo[] = depositorLogs.map((log) => ({
-      escrowId: log.args.escrowId as bigint,
-      depositor: log.args.depositor as Address,
-      recipient: log.args.recipient as Address,
-      amount: log.args.amount as bigint,
-      createdAt: log.blockNumber ?? BigInt(0),
-      role: "depositor" as const,
-    }));
-
-    const recipientEscrows: UserEscrowInfo[] = recipientLogs.map((log) => ({
-      escrowId: log.args.escrowId as bigint,
-      depositor: log.args.depositor as Address,
-      recipient: log.args.recipient as Address,
-      amount: log.args.amount as bigint,
-      createdAt: log.blockNumber ?? BigInt(0),
-      role: "recipient" as const,
-    }));
-
-    // Combine and dedupe (in case user is both depositor and recipient somehow)
-    const allEscrows = [...depositorEscrows, ...recipientEscrows];
-    const uniqueEscrows = allEscrows.filter(
-      (escrow, index, self) =>
-        index === self.findIndex((e) => e.escrowId === escrow.escrowId),
-    );
-
-    // Sort by escrowId descending (newest first)
-    return uniqueEscrows.sort(
-      (a, b) => Number(b.escrowId) - Number(a.escrowId),
-    );
-  }, [publicClient, userAddress]);
-
-  const swrKey = useMemo(() => {
-    if (!isConnected || !userAddress) return null;
-    return ["userEscrows", userAddress];
-  }, [isConnected, userAddress]);
-
-  const { data, error, isLoading, mutate } = useSWR(swrKey, fetcher, {
-    refreshInterval: 30000, // Refresh every 30 seconds
-    revalidateOnFocus: true,
-  });
-
-  return {
-    escrows: data ?? [],
-    isLoading,
-    error,
-    refetch: mutate,
-  };
-}
-
-/**
- * Hook to get escrows where user is the depositor (payments made)
- */
-export function useDepositorEscrows(userAddress?: Address) {
-  const { escrows, isLoading, error, refetch } = useUserEscrows(userAddress);
-
-  const depositorEscrows = useMemo(
-    () => escrows.filter((e) => e.role === "depositor"),
-    [escrows],
-  );
-
-  return {
-    escrows: depositorEscrows,
-    isLoading,
-    error,
-    refetch,
-  };
-}
-
-/**
- * Hook to get escrows where user is the recipient (payments received)
- */
-export function useRecipientEscrows(userAddress?: Address) {
-  const { escrows, isLoading, error, refetch } = useUserEscrows(userAddress);
-
-  const recipientEscrows = useMemo(
-    () => escrows.filter((e) => e.role === "recipient"),
-    [escrows],
-  );
-
-  return {
-    escrows: recipientEscrows,
-    isLoading,
-    error,
-    refetch,
-  };
-}
-
-// =============================================================================
 // WRITE HOOKS
 // =============================================================================
 
@@ -588,34 +430,12 @@ export function useApproveUsdc(amount: bigint) {
 }
 
 /**
- * Helper to parse escrowId from transaction logs
- */
-function parseEscrowIdFromLogs(logs: Log[]): bigint | undefined {
-  for (const log of logs) {
-    try {
-      const decoded = decodeEventLog({
-        abi: KORU_ESCROW_ABI,
-        data: log.data,
-        topics: log.topics,
-      });
-      if (decoded.eventName === "EscrowCreated" && decoded.args) {
-        return (decoded.args as { escrowId: bigint }).escrowId;
-      }
-    } catch {
-      // Not this event, continue
-    }
-  }
-  return undefined;
-}
-
-/**
  * Hook to create escrow
- * Returns escrowId after transaction is confirmed
+ * Returns escrowId from simulation result (the contract returns it!)
  */
 export function useCreateEscrow(recipient: Address, amount: bigint) {
   const { address, isConnected } = useConnection();
   const [enabled, setEnabled] = useState(false);
-  const [escrowId, setEscrowId] = useState<bigint | undefined>();
 
   const {
     data: simData,
@@ -632,6 +452,9 @@ export function useCreateEscrow(recipient: Address, amount: bigint) {
     },
   });
 
+  // Get escrowId from simulation result (contract returns it)
+  const escrowId = simData?.result as bigint | undefined;
+
   const {
     writeContract,
     data: txHash,
@@ -640,23 +463,10 @@ export function useCreateEscrow(recipient: Address, amount: bigint) {
     reset: writeReset,
   } = useWriteContract();
 
-  const {
-    data: receipt,
-    isLoading: isConfirming,
-    isSuccess: isConfirmed,
-  } = useWaitForTransactionReceipt({
-    hash: txHash,
-  });
-
-  // Parse escrowId from receipt logs when confirmed
-  useEffect(() => {
-    if (isConfirmed && receipt?.logs) {
-      const id = parseEscrowIdFromLogs(receipt.logs);
-      if (id !== undefined) {
-        setEscrowId(id);
-      }
-    }
-  }, [isConfirmed, receipt]);
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
+      hash: txHash,
+    });
 
   const newFetchRef = useRef(false);
 
@@ -685,14 +495,9 @@ export function useCreateEscrow(recipient: Address, amount: bigint) {
     }
   }, [simError, enabled]);
 
-  const reset = () => {
-    writeReset();
-    setEscrowId(undefined);
-  };
-
   return {
     createEscrow: () => setEnabled(true),
-    escrowId, // The created escrow ID (available after confirmation)
+    escrowId, // The escrow ID that will be assigned (from simulation)
     txHash,
     address,
     isConnected,
@@ -702,7 +507,7 @@ export function useCreateEscrow(recipient: Address, amount: bigint) {
     isConfirmed,
     simError,
     writeError,
-    reset,
+    reset: writeReset,
   };
 }
 
@@ -1247,3 +1052,52 @@ export function getUsdcContractAddress(): Address {
 
 // Re-export types
 export type { Escrow, Deadlines, EscrowStatus };
+
+// =============================================================================
+// BATCH READ HOOKS (For fetching multiple escrows by ID from database)
+// =============================================================================
+
+/**
+ * Hook to fetch multiple escrows by their IDs (from database)
+ * Use this when you have escrow IDs stored in your database
+ */
+export function useEscrowsByIds(escrowIds: bigint[]) {
+  const contracts = useMemo(() => {
+    return escrowIds.map((id) => ({
+      address: getContractAddress(),
+      abi: KORU_ESCROW_ABI,
+      functionName: "getEscrow" as const,
+      args: [id] as const,
+    }));
+  }, [escrowIds]);
+
+  const { data, isLoading, error, refetch } = useReadContracts({
+    contracts,
+    query: {
+      enabled: escrowIds.length > 0,
+      refetchInterval: 30000,
+    },
+  });
+
+  const escrows = useMemo(() => {
+    if (!data) return [];
+    return data
+      .map((result, index) => {
+        if (result.status === "success" && result.result) {
+          return {
+            id: escrowIds[index],
+            ...(result.result as Escrow),
+          };
+        }
+        return null;
+      })
+      .filter((e): e is { id: bigint } & Escrow => e !== null);
+  }, [data, escrowIds]);
+
+  return {
+    escrows,
+    isLoading,
+    error,
+    refetch,
+  };
+}

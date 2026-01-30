@@ -51,6 +51,7 @@ import {
   Sorting05Icon as HugeSorting05Icon,
   Loading02Icon as HugeLoading02Icon,
   Fire03Icon as HugeFireIcon,
+  AlertCircleIcon as HugeAlertCircleIcon,
 } from "@hugeicons/core-free-icons";
 
 // Helper wrapper for hugeicons with className support
@@ -146,6 +147,7 @@ export const CreditCardIcon = createHugeIcon(HugeCreditCardIcon);
 export const GlobeIcon = createHugeIcon(HugeGlobe02Icon);
 export const SortIcon = createHugeIcon(HugeSorting05Icon);
 export const LoadingIcon = createHugeIcon(HugeLoading02Icon);
+export const AlertCircleIcon = createHugeIcon(HugeAlertCircleIcon);
 
 export const FireIcon = createHugeIcon(HugeFireIcon);
 
