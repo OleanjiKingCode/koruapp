@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  useConnection,
+  useAccount,
   useBalance,
   useReadContract,
   useReadContracts,
@@ -356,7 +356,7 @@ export function useContractInfo() {
  * Hook to approve USDC spending
  */
 export function useApproveUsdc(amount: bigint) {
-  const { address, isConnected } = useConnection();
+  const { address, isConnected } = useAccount();
   const [enabled, setEnabled] = useState(false);
 
   const {
@@ -434,7 +434,7 @@ export function useApproveUsdc(amount: bigint) {
  * Returns escrowId from simulation result (the contract returns it!)
  */
 export function useCreateEscrow(recipient: Address, amount: bigint) {
-  const { address, isConnected } = useConnection();
+  const { address, isConnected } = useAccount();
   const [enabled, setEnabled] = useState(false);
 
   const {
@@ -515,7 +515,7 @@ export function useCreateEscrow(recipient: Address, amount: bigint) {
  * Hook to accept escrow
  */
 export function useAcceptEscrow(escrowId: bigint) {
-  const { address, isConnected } = useConnection();
+  const { address, isConnected } = useAccount();
   const [enabled, setEnabled] = useState(false);
 
   const {
@@ -592,7 +592,7 @@ export function useAcceptEscrow(escrowId: bigint) {
  * Hook to cancel escrow
  */
 export function useCancelEscrow(escrowId: bigint) {
-  const { address, isConnected } = useConnection();
+  const { address, isConnected } = useAccount();
   const [enabled, setEnabled] = useState(false);
 
   const {
@@ -669,7 +669,7 @@ export function useCancelEscrow(escrowId: bigint) {
  * Hook to release escrow
  */
 export function useReleaseEscrow(escrowId: bigint) {
-  const { address, isConnected } = useConnection();
+  const { address, isConnected } = useAccount();
   const [enabled, setEnabled] = useState(false);
 
   const {
@@ -746,7 +746,7 @@ export function useReleaseEscrow(escrowId: bigint) {
  * Hook to dispute escrow
  */
 export function useDisputeEscrow(escrowId: bigint) {
-  const { address, isConnected } = useConnection();
+  const { address, isConnected } = useAccount();
   const [enabled, setEnabled] = useState(false);
 
   const {
@@ -823,7 +823,7 @@ export function useDisputeEscrow(escrowId: bigint) {
  * Hook to counter dispute
  */
 export function useCounterDispute(escrowId: bigint) {
-  const { address, isConnected } = useConnection();
+  const { address, isConnected } = useAccount();
   const [enabled, setEnabled] = useState(false);
 
   const {
@@ -900,7 +900,7 @@ export function useCounterDispute(escrowId: bigint) {
  * Hook to withdraw from escrow
  */
 export function useWithdrawEscrow(escrowId: bigint) {
-  const { address, isConnected } = useConnection();
+  const { address, isConnected } = useAccount();
   const [enabled, setEnabled] = useState(false);
 
   const {

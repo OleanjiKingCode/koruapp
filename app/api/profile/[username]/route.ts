@@ -45,7 +45,7 @@ async function fetchProfileFromTwitter(username: string): Promise<{
           "x-rapidapi-host": RAPIDAPI_HOST,
         },
         signal: controller.signal,
-      }
+      },
     );
 
     clearTimeout(timeoutId);
@@ -57,7 +57,7 @@ async function fetchProfileFromTwitter(username: string): Promise<{
 
     // Find exact username match (case-insensitive)
     const matchedProfile = profiles.find(
-      (p) => p.username.toLowerCase() === username.toLowerCase()
+      (p) => p.username.toLowerCase() === username.toLowerCase(),
     );
 
     if (!matchedProfile) return null;
@@ -86,7 +86,7 @@ async function fetchProfileFromTwitter(username: string): Promise<{
 async function updateCachedProfile(
   profile: CachedTwitterProfile,
   freshData: NonNullable<Awaited<ReturnType<typeof fetchProfileFromTwitter>>>,
-  tableName: "featured_profiles" | "twitter_profiles"
+  tableName: "featured_profiles" | "twitter_profiles",
 ): Promise<void> {
   const updateData: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
@@ -113,7 +113,7 @@ async function updateCachedProfile(
       if (error) {
         console.error(
           `Error updating ${tableName} for ${profile.username}:`,
-          error
+          error,
         );
       }
     });
@@ -121,7 +121,7 @@ async function updateCachedProfile(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ username: string }> }
+  { params }: { params: Promise<{ username: string }> },
 ) {
   try {
     const { username } = await params;
@@ -129,7 +129,7 @@ export async function GET(
     if (!username) {
       return NextResponse.json(
         { error: "Username is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -140,6 +140,13 @@ export async function GET(
       if (koruUser.is_creator) {
         availabilitySlots = await getUserAvailabilitySlots(koruUser.id);
       }
+
+      // Get primary wallet address for payments
+      const primaryWallet = koruUser.connected_wallets?.find(
+        (w) => w.is_primary,
+      );
+      const walletAddress =
+        primaryWallet?.address || koruUser.connected_wallets?.[0]?.address;
 
       return NextResponse.json({
         profile: {
@@ -160,6 +167,7 @@ export async function GET(
           responseTimeHours: koruUser.response_time_hours,
           availability: koruUser.availability,
           availabilitySlots: availabilitySlots || [],
+          walletAddress: walletAddress || undefined, // For escrow payments
         },
       });
     }
@@ -227,7 +235,7 @@ export async function GET(
     console.error("Error fetching profile:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

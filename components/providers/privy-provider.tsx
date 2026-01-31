@@ -1,10 +1,10 @@
 "use client";
 
 import { PrivyProvider as BasePrivyProvider } from "@privy-io/react-auth";
+import { WagmiProvider } from "@privy-io/wagmi";
 import { base, baseSepolia } from "viem/chains";
 import { ReactNode } from "react";
 import { useTheme } from "next-themes";
-import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { wagmiConfig } from "@/lib/wagmi-config";
 
@@ -15,11 +15,12 @@ interface PrivyProviderProps {
 // Create a client
 const queryClient = new QueryClient();
 
+// Use Base Sepolia for testing, Base for production
+const isTestnet = process.env.NEXT_PUBLIC_CHAIN_ID !== "8453";
+
 export function PrivyProvider({ children }: PrivyProviderProps) {
   const { theme } = useTheme();
 
-  // Use Base Sepolia for testing, Base for production
-  const isTestnet = process.env.NEXT_PUBLIC_CHAIN_ID !== "8453";
   const defaultChain = isTestnet ? baseSepolia : base;
   const supportedChains = isTestnet ? [baseSepolia, base] : [base, baseSepolia];
 

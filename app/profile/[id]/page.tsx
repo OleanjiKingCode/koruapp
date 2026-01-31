@@ -8,7 +8,10 @@ import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
-import { OptimizedAvatar, BackgroundImage } from "@/components/ui/optimized-image";
+import {
+  OptimizedAvatar,
+  BackgroundImage,
+} from "@/components/ui/optimized-image";
 import { BookingModal } from "@/components/booking-modal";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
@@ -409,6 +412,7 @@ export default function ViewProfilePage() {
       pricePerMessage: profileData.pricePerMessage,
       responseTimeHours: profileData.responseTimeHours,
       availabilitySlots: profileData.availabilitySlots || [],
+      walletAddress: profileData.walletAddress || undefined,
     };
   }, [profileData]);
 
@@ -519,7 +523,7 @@ export default function ViewProfilePage() {
     slot: AvailabilitySlot,
     date: Date,
     timeSlot: string,
-    receipt: { id: string }
+    receipt: { id: string },
   ) => {
     try {
       // Create the chat in the database
@@ -694,7 +698,7 @@ export default function ViewProfilePage() {
                         color.bg,
                         color.text,
                         "border",
-                        color.border
+                        color.border,
                       )}
                     >
                       {tag}
@@ -792,7 +796,7 @@ export default function ViewProfilePage() {
                               "font-semibold",
                               slot.price === 0
                                 ? "text-koru-lime"
-                                : "text-koru-golden"
+                                : "text-koru-golden",
                             )}
                           >
                             {slot.price === 0 ? "Free" : `$${slot.price}`}
@@ -875,6 +879,7 @@ export default function ViewProfilePage() {
         onOpenChange={setBookingModalOpen}
         personName={profile.name}
         personId={profile.id}
+        recipientAddress={profile.walletAddress as `0x${string}` | undefined}
         availability={availabilityData}
         onBook={handleBook}
       />
@@ -980,7 +985,7 @@ function SummonModal({
       setError(
         err instanceof Error
           ? err.message
-          : "An error occurred. Please try again."
+          : "An error occurred. Please try again.",
       );
     } finally {
       setIsSubmitting(false);
@@ -1236,7 +1241,7 @@ function StatCard({
       <div
         className={cn(
           "w-10 h-10 rounded-xl flex items-center justify-center mb-3",
-          colorClasses[color]
+          colorClasses[color],
         )}
       >
         {icon}

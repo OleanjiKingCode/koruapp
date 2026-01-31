@@ -182,6 +182,7 @@ export function BookingModal({
   }, [isApprovalConfirmed, step]);
 
   // Handle escrow confirmation - save to DB and show receipt
+  // This ONLY fires after a REAL blockchain transaction is confirmed
   useEffect(() => {
     if (
       isEscrowConfirmed &&
@@ -189,6 +190,14 @@ export function BookingModal({
       txHash &&
       step === "paying"
     ) {
+      console.log(
+        "[BookingModal] ===== TRANSACTION CONFIRMED ON BLOCKCHAIN =====",
+      );
+      console.log("[BookingModal] Transaction Hash:", txHash);
+      console.log("[BookingModal] Escrow ID:", escrowId.toString());
+      console.log(
+        "[BookingModal] USDC has been transferred to the escrow contract",
+      );
       saveEscrowAndShowReceipt();
     }
   }, [isEscrowConfirmed, escrowId, txHash, step]);
@@ -273,41 +282,98 @@ export function BookingModal({
 
     setError(null);
 
+    // Debug logging - REAL PAYMENT FLOW
+    console.log("[BookingModal] ===== PAYMENT FLOW START =====");
+    console.log("[BookingModal] Price:", selectedSlot.price, "USD");
+    console.log("[BookingModal] Escrow amount (raw):", escrowAmount.toString());
+    console.log("[BookingModal] Recipient address:", recipientAddress);
+    console.log("[BookingModal] Can receive payment:", canReceivePayment);
+    console.log("[BookingModal] User authenticated:", authenticated);
+    console.log("[BookingModal] User wallet:", walletAddress);
+    console.log("[BookingModal] USDC balance:", usdcFormatted);
+    console.log("[BookingModal] Has enough balance:", hasEnoughBalance);
+    console.log("[BookingModal] Needs approval:", needsApproval);
+    console.log("[BookingModal] Current allowance:", allowance.toString());
+
     // For free slots, skip payment
     if (selectedSlot.price === 0) {
+      console.log("[BookingModal] Free slot - no payment required");
       await handleFreeBooking();
       return;
     }
 
-    // Check if recipient can receive payment
-    if (!canReceivePayment) {
+    // CRITICAL: Validate recipient address is a real address (not zero)
+    if (
+      !recipientAddress ||
+      recipientAddress === "0x0000000000000000000000000000000000000000"
+    ) {
+      console.error(
+        "[BookingModal] INVALID: Recipient has no valid wallet address",
+      );
       setError(
-        `${personName} hasn't set up their wallet to receive payments yet.`,
+        `${personName} hasn't set up their wallet to receive payments yet. They need to connect their wallet on Koru first.`,
       );
       return;
     }
 
     // Check wallet connection
     if (!authenticated || !walletAddress) {
+      console.log("[BookingModal] User not authenticated - opening login");
       login();
+      return;
+    }
+
+    // CRITICAL: Check that user is not paying themselves
+    if (walletAddress.toLowerCase() === recipientAddress.toLowerCase()) {
+      console.error("[BookingModal] INVALID: Cannot pay yourself");
+      setError("You cannot book a session with yourself.");
       return;
     }
 
     // Check balance
     if (!hasEnoughBalance) {
+      console.error("[BookingModal] INSUFFICIENT BALANCE");
+      console.log(
+        "[BookingModal] Required:",
+        formatUsdcAmount(escrowAmount),
+        "USDC",
+      );
+      console.log("[BookingModal] Available:", usdcFormatted, "USDC");
       setError(
-        `Insufficient USDC balance. You have ${usdcFormatted} USDC but need $${selectedSlot.price}.`,
+        `Insufficient USDC balance. You have ${usdcFormatted} USDC but need $${selectedSlot.price}. Get testnet USDC from the Base Sepolia faucet.`,
       );
       return;
     }
 
-    // Start payment flow
+    // CRITICAL: Validate escrow amount is positive
+    if (escrowAmount <= BigInt(0)) {
+      console.error(
+        "[BookingModal] INVALID: Escrow amount is zero or negative",
+      );
+      setError("Invalid payment amount. Please try again.");
+      return;
+    }
+
+    // Start REAL payment flow
+    console.log(
+      "[BookingModal] ===== INITIATING REAL BLOCKCHAIN TRANSACTION =====",
+    );
+    console.log(
+      "[BookingModal] This will transfer",
+      formatUsdcAmount(escrowAmount),
+      "USDC",
+    );
+    console.log("[BookingModal] From:", walletAddress);
+    console.log("[BookingModal] To escrow for recipient:", recipientAddress);
+
     if (needsApproval) {
-      // Need to approve USDC first
+      console.log("[BookingModal] Step 1: Approving USDC spend...");
       setStep("approving");
       approve();
     } else {
-      // Already approved, create escrow directly
+      console.log(
+        "[BookingModal] Approval exists, creating escrow directly...",
+      );
       setStep("paying");
       createEscrow();
     }
@@ -867,6 +933,13 @@ export function BookingModal({
                     >
                       <CheckIcon className="w-4 h-4 mr-2" />
                       Confirm Booking
+                    </Button>
+                  ) : !canReceivePayment ? (
+                    <Button
+                      disabled
+                      className="flex-1 bg-neutral-300 dark:bg-neutral-700 cursor-not-allowed"
+                    >
+                      Recipient Has No Wallet
                     </Button>
                   ) : !authenticated || !walletAddress ? (
                     <Button
