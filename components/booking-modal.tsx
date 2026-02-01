@@ -126,6 +126,75 @@ export function BookingModal({
   const { ready, authenticated, user, login } = usePrivy();
   const walletAddress = user?.wallet?.address as Address | undefined;
 
+  // Helper: Check if a time slot is in the past for a given date
+  const isTimePast = (date: Date, timeStr: string): boolean => {
+    const now = new Date();
+    const [time, period] = timeStr.split(" ");
+    const [hours, minutes] = time.split(":").map(Number);
+
+    let hour24 = hours;
+    if (period?.toLowerCase() === "pm" && hours !== 12) {
+      hour24 = hours + 12;
+    } else if (period?.toLowerCase() === "am" && hours === 12) {
+      hour24 = 0;
+    }
+
+    const slotDateTime = new Date(date);
+    slotDateTime.setHours(hour24, minutes, 0, 0);
+
+    return slotDateTime <= now;
+  };
+
+  // Helper: Get available (future) times for a slot on a specific date
+  const getAvailableTimes = (
+    slot: AvailabilitySlot,
+    date: Date | null,
+  ): string[] => {
+    if (!date || !slot.times) return [];
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDay = new Date(date);
+    selectedDay.setHours(0, 0, 0, 0);
+
+    // If date is in the future (not today), all times are available
+    if (selectedDay > today) {
+      return slot.times;
+    }
+
+    // If date is today, filter out past times
+    if (selectedDay.getTime() === today.getTime()) {
+      return slot.times.filter((time) => !isTimePast(date, time));
+    }
+
+    // Date is in the past, no times available
+    return [];
+  };
+
+  // Helper: Check if a slot has any future available times
+  const slotHasFutureTimes = (slot: AvailabilitySlot): boolean => {
+    if (!slot.selectedDates || slot.selectedDates.length === 0) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (const dateStr of slot.selectedDates) {
+      const date = new Date(dateStr);
+      date.setHours(0, 0, 0, 0);
+
+      // Future date - has available times
+      if (date > today) return true;
+
+      // Today - check if any times are still in the future
+      if (date.getTime() === today.getTime()) {
+        const futureTimes = getAvailableTimes(slot, date);
+        if (futureTimes.length > 0) return true;
+      }
+    }
+
+    return false;
+  };
+
   // Convert price to USDC amount (6 decimals)
   const escrowAmount = useMemo(() => {
     if (!selectedSlot || selectedSlot.price === 0) return BigInt(0);
@@ -251,12 +320,32 @@ export function BookingModal({
     return days;
   }, [currentMonth]);
 
-  // Check if a day is available (in the selected slot's selected dates)
+  // Check if a day is available (in the selected slot's selected dates AND not in the past)
   const isDayAvailable = (date: Date) => {
     if (!selectedSlot || !selectedSlot.selectedDates) return false;
 
     const dateStr = date.toISOString().split("T")[0];
-    return selectedSlot.selectedDates.includes(dateStr);
+    const isInSlotDates = selectedSlot.selectedDates.includes(dateStr);
+
+    if (!isInSlotDates) return false;
+
+    // Check if date is in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checkDate = new Date(date);
+    checkDate.setHours(0, 0, 0, 0);
+
+    // If date is before today, not available
+    if (checkDate < today) return false;
+
+    // If date is today, check if there are any future times
+    if (checkDate.getTime() === today.getTime()) {
+      const futureTimes = getAvailableTimes(selectedSlot, date);
+      return futureTimes.length > 0;
+    }
+
+    // Future date - available
+    return true;
   };
 
   const handleSlotSelect = (slot: AvailabilitySlot) => {
@@ -580,47 +669,72 @@ export function BookingModal({
               {/* Available Slots */}
               <div className="space-y-3">
                 {configuredSlots.length > 0 ? (
-                  configuredSlots.map((slot) => (
-                    <motion.button
-                      key={slot.id}
-                      onClick={() => handleSlotSelect(slot)}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.99 }}
-                      className="w-full p-4 rounded-xl border-2 border-neutral-200 dark:border-neutral-700 hover:border-koru-purple/50 bg-white dark:bg-neutral-800/50 transition-all text-left"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">
-                          {slot.name}
-                        </h3>
-                        <span
-                          className={cn(
-                            "text-lg font-bold",
-                            slot.price === 0
-                              ? "text-koru-lime"
-                              : "text-koru-golden",
-                          )}
-                        >
-                          {slot.price === 0 ? "Free" : `$${slot.price}`}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
-                        <div className="flex items-center gap-1">
-                          <ClockIcon className="w-3.5 h-3.5" />
-                          <span>
-                            {
-                              DURATION_OPTIONS.find(
-                                (d) => d.value === slot.duration,
-                              )?.label
-                            }
+                  configuredSlots.map((slot) => {
+                    const hasFutureTimes = slotHasFutureTimes(slot);
+                    return (
+                      <motion.button
+                        key={slot.id}
+                        onClick={() => hasFutureTimes && handleSlotSelect(slot)}
+                        whileHover={hasFutureTimes ? { scale: 1.01 } : {}}
+                        whileTap={hasFutureTimes ? { scale: 0.99 } : {}}
+                        disabled={!hasFutureTimes}
+                        className={cn(
+                          "w-full p-4 rounded-xl border-2 transition-all text-left",
+                          hasFutureTimes
+                            ? "border-neutral-200 dark:border-neutral-700 hover:border-koru-purple/50 bg-white dark:bg-neutral-800/50 cursor-pointer"
+                            : "border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800/30 opacity-60 cursor-not-allowed",
+                        )}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <h3
+                              className={cn(
+                                "font-semibold",
+                                hasFutureTimes
+                                  ? "text-neutral-900 dark:text-neutral-100"
+                                  : "text-neutral-500 dark:text-neutral-400",
+                              )}
+                            >
+                              {slot.name}
+                            </h3>
+                            {!hasFutureTimes && (
+                              <span className="px-2 py-0.5 text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full">
+                                Past Times
+                              </span>
+                            )}
+                          </div>
+                          <span
+                            className={cn(
+                              "text-lg font-bold",
+                              !hasFutureTimes
+                                ? "text-neutral-400 dark:text-neutral-500"
+                                : slot.price === 0
+                                  ? "text-koru-lime"
+                                  : "text-koru-golden",
+                            )}
+                          >
+                            {slot.price === 0 ? "Free" : `$${slot.price}`}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <CalendarIcon className="w-3.5 h-3.5" />
-                          <span>{getSlotDateInfo(slot)}</span>
+                        <div className="flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
+                          <div className="flex items-center gap-1">
+                            <ClockIcon className="w-3.5 h-3.5" />
+                            <span>
+                              {
+                                DURATION_OPTIONS.find(
+                                  (d) => d.value === slot.duration,
+                                )?.label
+                              }
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <CalendarIcon className="w-3.5 h-3.5" />
+                            <span>{getSlotDateInfo(slot)}</span>
+                          </div>
                         </div>
-                      </div>
-                    </motion.button>
-                  ))
+                      </motion.button>
+                    );
+                  })
                 ) : (
                   <div className="text-center py-8">
                     <CalendarIcon className="w-10 h-10 text-neutral-300 dark:text-neutral-600 mx-auto mb-3" />
@@ -771,34 +885,94 @@ export function BookingModal({
                 </div>
               </div>
 
-              {/* Time Slots */}
+              {/* Time Slots - Only show future times */}
               <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                {selectedSlot.times.length > 0 ? (
-                  selectedSlot.times.map((time) => (
-                    <button
-                      key={time}
-                      onClick={() => handleTimeSelect(time)}
-                      className={cn(
-                        "w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all",
-                        "bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300",
-                        "hover:bg-koru-purple/10 hover:text-koru-purple border-2 border-transparent hover:border-koru-purple/30",
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <ClockIcon className="w-4 h-4" />
-                        <span className="font-mono">{time}</span>
+                {(() => {
+                  const availableTimes = getAvailableTimes(
+                    selectedSlot,
+                    selectedDate,
+                  );
+                  const pastTimes = selectedSlot.times.filter(
+                    (t) => !availableTimes.includes(t),
+                  );
+
+                  if (availableTimes.length === 0 && pastTimes.length === 0) {
+                    return (
+                      <div className="text-center py-8">
+                        <ClockIcon className="w-8 h-8 text-neutral-300 dark:text-neutral-600 mx-auto mb-2" />
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                          No available times for this slot
+                        </p>
                       </div>
-                      <ChevronRightIcon className="w-4 h-4" />
-                    </button>
-                  ))
-                ) : (
-                  <div className="text-center py-8">
-                    <ClockIcon className="w-8 h-8 text-neutral-300 dark:text-neutral-600 mx-auto mb-2" />
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      No available times for this slot
-                    </p>
-                  </div>
-                )}
+                    );
+                  }
+
+                  return (
+                    <>
+                      {/* Available (future) times */}
+                      {availableTimes.length > 0 ? (
+                        availableTimes.map((time) => (
+                          <button
+                            key={time}
+                            onClick={() => handleTimeSelect(time)}
+                            className={cn(
+                              "w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all",
+                              "bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300",
+                              "hover:bg-koru-purple/10 hover:text-koru-purple border-2 border-transparent hover:border-koru-purple/30",
+                            )}
+                          >
+                            <div className="flex items-center gap-3">
+                              <ClockIcon className="w-4 h-4" />
+                              <span className="font-mono">{time}</span>
+                            </div>
+                            <ChevronRightIcon className="w-4 h-4" />
+                          </button>
+                        ))
+                      ) : (
+                        <div className="text-center py-4 mb-4">
+                          <AlertCircleIcon className="w-8 h-8 text-amber-500 mx-auto mb-2" />
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                            All times for today have passed
+                          </p>
+                          <p className="text-xs text-neutral-500 dark:text-neutral-500 mt-1">
+                            Please select a different date
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Past times (greyed out) */}
+                      {pastTimes.length > 0 && availableTimes.length > 0 && (
+                        <>
+                          <div className="flex items-center gap-2 my-3">
+                            <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-700" />
+                            <span className="text-xs text-neutral-400 dark:text-neutral-500">
+                              Past times
+                            </span>
+                            <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-700" />
+                          </div>
+                          {pastTimes.map((time) => (
+                            <div
+                              key={time}
+                              className={cn(
+                                "w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium",
+                                "bg-neutral-100 dark:bg-neutral-800/50 text-neutral-400 dark:text-neutral-500",
+                                "border-2 border-transparent opacity-50 cursor-not-allowed",
+                              )}
+                            >
+                              <div className="flex items-center gap-3">
+                                <ClockIcon className="w-4 h-4" />
+                                <span className="font-mono line-through">
+                                  {time}
+                                </span>
+                              </div>
+                              <span className="text-xs">Passed</span>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </motion.div>
           )}
@@ -1206,10 +1380,16 @@ export function BookingModal({
               <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 text-center mb-2">
                 {selectedSlot.price === 0
                   ? "Booking Confirmed!"
-                  : "Payment Successful!"}
+                  : receipt.txHash
+                    ? "Payment Successful!"
+                    : "Booking Pending..."}
               </h2>
               <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center mb-6">
-                Your session with {personName} has been booked
+                {selectedSlot.price === 0
+                  ? `Your free session with ${personName} has been booked`
+                  : receipt.txHash
+                    ? `Your payment of $${selectedSlot.price} USDC has been sent`
+                    : `Waiting for payment confirmation...`}
               </p>
 
               {/* Receipt Card */}
@@ -1217,16 +1397,46 @@ export function BookingModal({
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                      Receipt
+                      {selectedSlot.price === 0 ? "Booking ID" : "Escrow ID"}
                     </p>
                     <p className="font-mono text-sm text-neutral-900 dark:text-neutral-100">
                       {receipt.id}
                     </p>
                   </div>
-                  <div className="px-2 py-1 rounded-full bg-koru-lime/20 text-koru-lime text-xs font-medium">
-                    Paid
+                  <div
+                    className={cn(
+                      "px-2 py-1 rounded-full text-xs font-medium",
+                      selectedSlot.price === 0
+                        ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                        : receipt.txHash
+                          ? "bg-koru-lime/20 text-koru-lime"
+                          : "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400",
+                    )}
+                  >
+                    {selectedSlot.price === 0
+                      ? "Free"
+                      : receipt.txHash
+                        ? "Paid"
+                        : "Pending"}
                   </div>
                 </div>
+
+                {/* Transaction Hash for paid bookings */}
+                {receipt.txHash && (
+                  <div className="mb-4 p-2 rounded-lg bg-neutral-100 dark:bg-neutral-700/50">
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                      Transaction Hash
+                    </p>
+                    <a
+                      href={`https://sepolia.basescan.org/tx/${receipt.txHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-xs text-koru-purple hover:underline break-all"
+                    >
+                      {receipt.txHash}
+                    </a>
+                  </div>
+                )}
 
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
