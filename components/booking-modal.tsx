@@ -171,6 +171,21 @@ export function BookingModal({
     return [];
   };
 
+  // Helper: Parse ISO date string (YYYY-MM-DD) to local Date at midnight
+  // This avoids timezone issues when parsing ISO date strings
+  const parseLocalDate = (dateStr: string): Date => {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  // Helper: Format Date to local ISO date string (YYYY-MM-DD)
+  const formatLocalDateStr = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   // Helper: Check if a slot has any future available times
   const slotHasFutureTimes = (slot: AvailabilitySlot): boolean => {
     if (!slot.selectedDates || slot.selectedDates.length === 0) return false;
@@ -179,8 +194,8 @@ export function BookingModal({
     today.setHours(0, 0, 0, 0);
 
     for (const dateStr of slot.selectedDates) {
-      const date = new Date(dateStr);
-      date.setHours(0, 0, 0, 0);
+      // Parse date string as local date to avoid timezone issues
+      const date = parseLocalDate(dateStr);
 
       // Future date - has available times
       if (date > today) return true;
@@ -195,10 +210,15 @@ export function BookingModal({
     return false;
   };
 
+  // Helper: Check if a slot is free (price is 0, undefined, or falsy)
+  const isSlotFree = (slot: AvailabilitySlot | null): boolean => {
+    return !slot || !slot.price || slot.price === 0;
+  };
+
   // Convert price to USDC amount (6 decimals)
   const escrowAmount = useMemo(() => {
-    if (!selectedSlot || selectedSlot.price === 0) return BigInt(0);
-    return parseUsdcAmount(selectedSlot.price);
+    if (isSlotFree(selectedSlot)) return BigInt(0);
+    return parseUsdcAmount(selectedSlot!.price);
   }, [selectedSlot]);
 
   // Escrow hooks
@@ -324,7 +344,8 @@ export function BookingModal({
   const isDayAvailable = (date: Date) => {
     if (!selectedSlot || !selectedSlot.selectedDates) return false;
 
-    const dateStr = date.toISOString().split("T")[0];
+    // Use local date formatting for consistency
+    const dateStr = formatLocalDateStr(date);
     const isInSlotDates = selectedSlot.selectedDates.includes(dateStr);
 
     if (!isInSlotDates) return false;
@@ -371,21 +392,8 @@ export function BookingModal({
 
     setError(null);
 
-    // Debug logging - REAL PAYMENT FLOW
-    console.log("[BookingModal] ===== PAYMENT FLOW START =====");
-    console.log("[BookingModal] Price:", selectedSlot.price, "USD");
-    console.log("[BookingModal] Escrow amount (raw):", escrowAmount.toString());
-    console.log("[BookingModal] Recipient address:", recipientAddress);
-    console.log("[BookingModal] Can receive payment:", canReceivePayment);
-    console.log("[BookingModal] User authenticated:", authenticated);
-    console.log("[BookingModal] User wallet:", walletAddress);
-    console.log("[BookingModal] USDC balance:", usdcFormatted);
-    console.log("[BookingModal] Has enough balance:", hasEnoughBalance);
-    console.log("[BookingModal] Needs approval:", needsApproval);
-    console.log("[BookingModal] Current allowance:", allowance.toString());
-
     // For free slots, skip payment
-    if (selectedSlot.price === 0) {
+    if (isSlotFree(selectedSlot)) {
       console.log("[BookingModal] Free slot - no payment required");
       await handleFreeBooking();
       return;
@@ -708,12 +716,14 @@ export function BookingModal({
                               "text-lg font-bold",
                               !hasFutureTimes
                                 ? "text-neutral-400 dark:text-neutral-500"
-                                : slot.price === 0
+                                : !slot.price || slot.price === 0
                                   ? "text-koru-lime"
                                   : "text-koru-golden",
                             )}
                           >
-                            {slot.price === 0 ? "Free" : `$${slot.price}`}
+                            {!slot.price || slot.price === 0
+                              ? "Free"
+                              : `$${slot.price}`}
                           </span>
                         </div>
                         <div className="flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
@@ -1021,7 +1031,7 @@ export function BookingModal({
                 )}
 
                 {/* Wallet Info (for paid bookings) */}
-                {selectedSlot.price > 0 && (
+                {!isSlotFree(selectedSlot) && (
                   <div className="mb-4 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -1083,7 +1093,7 @@ export function BookingModal({
                         Price
                       </p>
                       <p className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
-                        {selectedSlot.price === 0
+                        {isSlotFree(selectedSlot)
                           ? "Free"
                           : `$${selectedSlot.price}`}
                       </p>
@@ -1100,7 +1110,7 @@ export function BookingModal({
                   >
                     Cancel
                   </Button>
-                  {selectedSlot.price === 0 ? (
+                  {isSlotFree(selectedSlot) ? (
                     <Button
                       onClick={handlePay}
                       className="flex-1 bg-koru-lime hover:bg-koru-lime/90 text-neutral-900"
@@ -1378,127 +1388,167 @@ export function BookingModal({
               </div>
 
               <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 text-center mb-2">
-                {selectedSlot.price === 0
-                  ? "Booking Confirmed!"
+                {isSlotFree(selectedSlot)
+                  ? "You're All Set!"
                   : receipt.txHash
                     ? "Payment Successful!"
                     : "Booking Pending..."}
               </h2>
               <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center mb-6">
-                {selectedSlot.price === 0
-                  ? `Your free session with ${personName} has been booked`
+                {isSlotFree(selectedSlot)
+                  ? `This is a free session - no payment required`
                   : receipt.txHash
                     ? `Your payment of $${selectedSlot.price} USDC has been sent`
                     : `Waiting for payment confirmation...`}
               </p>
 
-              {/* Receipt Card */}
-              <div className="bg-neutral-50 dark:bg-neutral-800/50 rounded-2xl p-5 mb-6 border border-neutral-200 dark:border-neutral-700">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                      {selectedSlot.price === 0 ? "Booking ID" : "Escrow ID"}
-                    </p>
-                    <p className="font-mono text-sm text-neutral-900 dark:text-neutral-100">
-                      {receipt.id}
-                    </p>
+              {/* Receipt Card - Different for free vs paid */}
+              {isSlotFree(selectedSlot) ? (
+                /* Free Session Card - Simplified */
+                <div className="bg-koru-lime/10 rounded-2xl p-5 mb-6 border border-koru-lime/30">
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <span className="px-3 py-1 rounded-full text-sm font-semibold bg-koru-lime/20 text-koru-lime">
+                      Free Session
+                    </span>
                   </div>
-                  <div
-                    className={cn(
-                      "px-2 py-1 rounded-full text-xs font-medium",
-                      selectedSlot.price === 0
-                        ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                        : receipt.txHash
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        With
+                      </span>
+                      <span className="text-neutral-900 dark:text-neutral-100 font-medium">
+                        {personName}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        Session
+                      </span>
+                      <span className="text-neutral-900 dark:text-neutral-100">
+                        {selectedSlot.name}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        Date
+                      </span>
+                      <span className="text-neutral-900 dark:text-neutral-100">
+                        {receipt.date}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        Time
+                      </span>
+                      <span className="text-neutral-900 dark:text-neutral-100 font-mono">
+                        {receipt.time}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Paid Session Card - Full receipt with escrow details */
+                <div className="bg-neutral-50 dark:bg-neutral-800/50 rounded-2xl p-5 mb-6 border border-neutral-200 dark:border-neutral-700">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                        Escrow ID
+                      </p>
+                      <p className="font-mono text-sm text-neutral-900 dark:text-neutral-100">
+                        {receipt.id}
+                      </p>
+                    </div>
+                    <div
+                      className={cn(
+                        "px-2 py-1 rounded-full text-xs font-medium",
+                        receipt.txHash
                           ? "bg-koru-lime/20 text-koru-lime"
                           : "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400",
-                    )}
-                  >
-                    {selectedSlot.price === 0
-                      ? "Free"
-                      : receipt.txHash
-                        ? "Paid"
-                        : "Pending"}
-                  </div>
-                </div>
-
-                {/* Transaction Hash for paid bookings */}
-                {receipt.txHash && (
-                  <div className="mb-4 p-2 rounded-lg bg-neutral-100 dark:bg-neutral-700/50">
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
-                      Transaction Hash
-                    </p>
-                    <a
-                      href={`https://sepolia.basescan.org/tx/${receipt.txHash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-mono text-xs text-koru-purple hover:underline break-all"
+                      )}
                     >
-                      {receipt.txHash}
-                    </a>
+                      {receipt.txHash ? "Paid" : "Pending"}
+                    </div>
                   </div>
-                )}
 
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-neutral-500 dark:text-neutral-400">
-                      To
-                    </span>
-                    <span className="text-neutral-900 dark:text-neutral-100 font-medium">
-                      {personName}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-neutral-500 dark:text-neutral-400">
-                      Session
-                    </span>
-                    <span className="text-neutral-900 dark:text-neutral-100">
-                      {selectedSlot.name}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-neutral-500 dark:text-neutral-400">
-                      Date
-                    </span>
-                    <span className="text-neutral-900 dark:text-neutral-100">
-                      {receipt.date}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-neutral-500 dark:text-neutral-400">
-                      Time
-                    </span>
-                    <span className="text-neutral-900 dark:text-neutral-100 font-mono">
-                      {receipt.time}
-                    </span>
-                  </div>
-                  <div className="h-px bg-neutral-200 dark:bg-neutral-700 my-2" />
-                  <div className="flex justify-between">
-                    <span className="text-neutral-500 dark:text-neutral-400">
-                      Amount
-                    </span>
-                    <span className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
-                      {selectedSlot.price === 0
-                        ? "Free"
-                        : `$${selectedSlot.price}`}
-                    </span>
+                  {/* Transaction Hash for paid bookings */}
+                  {receipt.txHash && (
+                    <div className="mb-4 p-2 rounded-lg bg-neutral-100 dark:bg-neutral-700/50">
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                        Transaction Hash
+                      </p>
+                      <a
+                        href={`https://sepolia.basescan.org/tx/${receipt.txHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-mono text-xs text-koru-purple hover:underline break-all"
+                      >
+                        {receipt.txHash}
+                      </a>
+                    </div>
+                  )}
+
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        To
+                      </span>
+                      <span className="text-neutral-900 dark:text-neutral-100 font-medium">
+                        {personName}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        Session
+                      </span>
+                      <span className="text-neutral-900 dark:text-neutral-100">
+                        {selectedSlot.name}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        Date
+                      </span>
+                      <span className="text-neutral-900 dark:text-neutral-100">
+                        {receipt.date}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        Time
+                      </span>
+                      <span className="text-neutral-900 dark:text-neutral-100 font-mono">
+                        {receipt.time}
+                      </span>
+                    </div>
+                    <div className="h-px bg-neutral-200 dark:bg-neutral-700 my-2" />
+                    <div className="flex justify-between">
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        Amount
+                      </span>
+                      <span className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                        ${selectedSlot.price}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* Auto-refund Notice */}
-              <div className="bg-koru-golden/10 rounded-xl p-4 mb-6 border border-koru-golden/30">
-                <div className="flex items-start gap-3">
-                  <ClockIcon className="w-5 h-5 text-koru-golden flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                    If {personName.split(" ")[0]} doesn&apos;t reply within{" "}
-                    <span className="text-koru-golden font-medium">
-                      24 hours
-                    </span>
-                    , your payment will be automatically refunded to your
-                    wallet.
-                  </p>
+              {/* Auto-refund Notice - Only show for paid sessions */}
+              {!isSlotFree(selectedSlot) && (
+                <div className="bg-koru-golden/10 rounded-xl p-4 mb-6 border border-koru-golden/30">
+                  <div className="flex items-start gap-3">
+                    <ClockIcon className="w-5 h-5 text-koru-golden flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                      If {personName.split(" ")[0]} doesn&apos;t reply within{" "}
+                      <span className="text-koru-golden font-medium">
+                        24 hours
+                      </span>
+                      , your payment will be automatically refunded to your
+                      wallet.
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Continue Button */}
               <Button
