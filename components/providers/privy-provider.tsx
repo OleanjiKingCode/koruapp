@@ -47,7 +47,9 @@ export function PrivyProvider({ children }: PrivyProviderProps) {
         defaultChain,
         supportedChains,
         embeddedWallets: {
-          createOnLogin: "users-without-wallets",
+          ethereum: {
+            createOnLogin: "users-without-wallets",
+          },
         },
       }}
     >
