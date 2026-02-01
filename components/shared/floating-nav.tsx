@@ -8,7 +8,12 @@ import { useTheme } from "next-themes";
 import { useSession, signOut } from "next-auth/react";
 import { usePrivy } from "@privy-io/react-auth";
 import { cn } from "@/lib/utils";
-import { NAV_ITEMS, FONT_OPTIONS, LANGUAGE_OPTIONS, STORAGE_KEYS } from "@/lib/constants";
+import {
+  NAV_ITEMS,
+  FONT_OPTIONS,
+  LANGUAGE_OPTIONS,
+  STORAGE_KEYS,
+} from "@/lib/constants";
 import {
   useMounted,
   useScrollPosition,
@@ -57,16 +62,31 @@ const iconMap = {
 };
 
 // Map "other" pages to contextual icons
-const contextualPageIcons: Record<string, { icon: typeof HomeIcon; label: string; color: string }> = {
-  "/how-it-works": { icon: HelpCircleIcon, label: "How It Works", color: "text-koru-purple" },
+const contextualPageIcons: Record<
+  string,
+  { icon: typeof HomeIcon; label: string; color: string }
+> = {
+  "/how-it-works": {
+    icon: HelpCircleIcon,
+    label: "How It Works",
+    color: "text-koru-purple",
+  },
   "/faq": { icon: SearchIcon, label: "FAQ", color: "text-koru-golden" },
   "/contact": { icon: ChatIcon, label: "Contact", color: "text-koru-lime" },
-  "/notifications": { icon: BellIcon, label: "Notifications", color: "text-koru-purple" },
+  "/notifications": {
+    icon: BellIcon,
+    label: "Notifications",
+    color: "text-koru-purple",
+  },
   "/privacy": { icon: ShieldIcon, label: "Privacy", color: "text-koru-lime" },
   "/terms": { icon: ContractIcon, label: "Terms", color: "text-koru-golden" },
   "/login": { icon: XIcon, label: "Login", color: "text-white" },
   "/sign-in": { icon: XIcon, label: "Sign In", color: "text-white" },
-  "/profile/edit": { icon: EditIcon, label: "Edit Profile", color: "text-koru-purple" },
+  "/profile/edit": {
+    icon: EditIcon,
+    label: "Edit Profile",
+    color: "text-koru-purple",
+  },
 };
 
 // Helper to find contextual icon for current path
@@ -106,7 +126,7 @@ export function FloatingNav() {
   const getWalletAddress = (): string | null => {
     if (!privyUser) return null;
     const walletAccount = privyUser.linkedAccounts?.find(
-      (account: { type: string }) => account.type === "wallet"
+      (account: { type: string }) => account.type === "wallet",
     );
     if (walletAccount && "address" in walletAccount) {
       return walletAccount.address as string;
@@ -172,14 +192,15 @@ export function FloatingNav() {
       document.body.classList.remove(
         "font-quicksand",
         "font-tenor",
-        "font-lemon"
+        "font-lemon",
       );
       return;
     }
 
     const savedFont =
-      JSON.parse(localStorage.getItem(STORAGE_KEYS.FONT_PREFERENCE) || '"quicksand"') ??
-      "quicksand";
+      JSON.parse(
+        localStorage.getItem(STORAGE_KEYS.FONT_PREFERENCE) || '"quicksand"',
+      ) ?? "quicksand";
     applyFont(savedFont, true);
   }, [pathname, mounted, applyFont]);
 
@@ -194,11 +215,12 @@ export function FloatingNav() {
 
   // Find active item index for mobile nav (using visible items)
   const activeIndex = visibleNavItems.findIndex(
-    (item) => pathname === item.href
+    (item) => pathname === item.href,
   );
 
   // Get contextual icon for "other" pages
-  const contextualPage = activeIndex === -1 ? getContextualIcon(pathname) : null;
+  const contextualPage =
+    activeIndex === -1 ? getContextualIcon(pathname) : null;
 
   return (
     <>
@@ -219,7 +241,7 @@ export function FloatingNav() {
                   "flex items-center h-14 px-4 rounded-full shadow-2xl relative",
                   isDark
                     ? "bg-neutral-800 shadow-black/50"
-                    : "bg-white/90 backdrop-blur-xl border border-neutral-200 shadow-black/10"
+                    : "bg-white/90 backdrop-blur-xl border border-neutral-200 shadow-black/10",
                 )}
               >
                 {/* Notch/Bubble cutout effect for main nav items */}
@@ -230,7 +252,7 @@ export function FloatingNav() {
                       "absolute -top-5 w-16 h-16 rounded-full flex items-center justify-center",
                       isDark
                         ? "bg-neutral-900"
-                        : "bg-neutral-100 border border-neutral-200"
+                        : "bg-neutral-100 border border-neutral-200",
                     )}
                     style={{
                       left: `${activeIndex * 52 + 16}px`,
@@ -241,22 +263,21 @@ export function FloatingNav() {
                     <div
                       className={cn(
                         "w-12 h-12 rounded-full flex items-center justify-center",
-                        isDark ? "bg-neutral-700" : "bg-neutral-900"
+                        isDark ? "bg-neutral-700" : "bg-neutral-900",
                       )}
                     >
                       {visibleNavItems[activeIndex] &&
                         (() => {
                           const Icon =
                             iconMap[
-                            visibleNavItems[activeIndex]
-                              .iconName as keyof typeof iconMap
+                              visibleNavItems[activeIndex]
+                                .iconName as keyof typeof iconMap
                             ];
                           return <Icon className="w-6 h-6 text-white" />;
                         })()}
                     </div>
                   </motion.div>
                 )}
-
 
                 {/* Nav Items */}
                 {visibleNavItems.map((item, index) => {
@@ -265,12 +286,13 @@ export function FloatingNav() {
                   const showBadge =
                     item.iconName === "chats" && unreadCounts.chats > 0;
                   const isProtected = PROTECTED_ROUTES.some((route) =>
-                    item.href.startsWith(route)
+                    item.href.startsWith(route),
                   );
                   const isProfileItem = item.iconName === "profile";
                   const showUserImage =
                     isProfileItem && isAuthenticated && session?.user?.image;
-                  const showWalletInfo = isProfileItem && privyReady && walletAddress;
+                  const showWalletInfo =
+                    isProfileItem && privyReady && walletAddress;
 
                   return (
                     <Link
@@ -288,7 +310,7 @@ export function FloatingNav() {
                             ? "opacity-0" // Hide the inline button when active (shown in bubble)
                             : isDark
                               ? "text-neutral-400 hover:text-white"
-                              : "text-neutral-500 hover:text-neutral-900"
+                              : "text-neutral-500 hover:text-neutral-900",
                         )}
                       >
                         {showWalletInfo ? (
@@ -302,8 +324,10 @@ export function FloatingNav() {
                                   fallbackSeed={session.user.name || "user"}
                                   className="ring-1 ring-neutral-300 dark:ring-neutral-600"
                                 />
-                              ) :
-                                (<Icon className="w-5 h-5" />)}</>
+                              ) : (
+                                <Icon className="w-5 h-5" />
+                              )}
+                            </>
 
                             <span className="font-mono text-xs">
                               {shortenAddress(walletAddress)}
@@ -341,7 +365,7 @@ export function FloatingNav() {
                       ? "text-koru-purple"
                       : isDark
                         ? "text-neutral-400 hover:text-white"
-                        : "text-neutral-500 hover:text-neutral-900"
+                        : "text-neutral-500 hover:text-neutral-900",
                   )}
                 >
                   <SettingsIcon className="w-5 h-5" />
@@ -358,14 +382,16 @@ export function FloatingNav() {
                         initial={{ scale: 0, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0, opacity: 0 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 400,
+                          damping: 20,
+                        }}
                       >
                         <motion.div
                           className={cn(
                             "w-10 h-10 rounded-full flex items-center justify-center cursor-pointer",
-                            isDark
-                              ? "bg-neutral-700/50"
-                              : "bg-neutral-100"
+                            isDark ? "bg-neutral-700/50" : "bg-neutral-100",
                           )}
                           whileTap={{ scale: 0.9 }}
                         >
@@ -375,9 +401,19 @@ export function FloatingNav() {
                               <motion.div
                                 initial={{ rotate: -90 }}
                                 animate={{ rotate: 0 }}
-                                transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.1 }}
+                                transition={{
+                                  type: "spring",
+                                  stiffness: 300,
+                                  damping: 15,
+                                  delay: 0.1,
+                                }}
                               >
-                                <Icon className={cn("w-5 h-5", contextualPage.color)} />
+                                <Icon
+                                  className={cn(
+                                    "w-5 h-5",
+                                    contextualPage.color,
+                                  )}
+                                />
                               </motion.div>
                             );
                           })()}
@@ -409,16 +445,14 @@ export function FloatingNav() {
                 "shadow-2xl",
                 isDark
                   ? "bg-neutral-900 border border-neutral-800 shadow-black/40"
-                  : "bg-white border border-neutral-200 shadow-black/10"
+                  : "bg-white border border-neutral-200 shadow-black/10",
               )}
             >
               {/* Kōru Logo */}
               <div
                 className={cn(
                   "flex items-center justify-center px-4 py-2 rounded-xl text-lg font-bold",
-                  isDark
-                    ? " text-white"
-                    : " text-neutral-900"
+                  isDark ? " text-white" : " text-neutral-900",
                 )}
               >
                 Kōru
@@ -432,12 +466,13 @@ export function FloatingNav() {
                 const showBadge =
                   item.iconName === "chats" && unreadCounts.chats > 0;
                 const isProtected = PROTECTED_ROUTES.some((route) =>
-                  item.href.startsWith(route)
+                  item.href.startsWith(route),
                 );
                 const isProfileItem = item.iconName === "profile";
                 const showUserImage =
                   isProfileItem && isAuthenticated && session?.user?.image;
-                const showWalletInfo = isProfileItem && privyReady && walletAddress;
+                const showWalletInfo =
+                  isProfileItem && privyReady && walletAddress;
 
                 return (
                   <Link
@@ -459,7 +494,7 @@ export function FloatingNav() {
                             : "bg-neutral-900 text-white border border-neutral-800"
                           : isDark
                             ? "bg-neutral-800/50 text-neutral-300 hover:bg-neutral-800"
-                            : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                            : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200",
                       )}
                     >
                       {showWalletInfo ? (
@@ -473,8 +508,8 @@ export function FloatingNav() {
                                 fallbackSeed={session.user.name || "user"}
                                 className="ring-1 ring-neutral-300 dark:ring-neutral-600"
                               />
-                            ) :
-                              (<AnimatePresence mode="popLayout">
+                            ) : (
+                              <AnimatePresence mode="popLayout">
                                 {(isHovered || isActive) && (
                                   <motion.span
                                     initial={{ width: 0, opacity: 0 }}
@@ -486,7 +521,9 @@ export function FloatingNav() {
                                     <Icon className="w-4 h-4" />
                                   </motion.span>
                                 )}
-                              </AnimatePresence>)}</>
+                              </AnimatePresence>
+                            )}
+                          </>
 
                           <span className="font-mono text-xs">
                             {shortenAddress(walletAddress)}
@@ -536,7 +573,7 @@ export function FloatingNav() {
                   "p-3 rounded-xl transition-all cursor-pointer",
                   isSettingsOpen
                     ? "bg-koru-purple text-white"
-                    : "bg-koru-purple/80 text-white hover:bg-koru-purple"
+                    : "bg-koru-purple/80 text-white hover:bg-koru-purple",
                 )}
               >
                 <SettingsIcon className="w-4 h-4" />
@@ -553,14 +590,16 @@ export function FloatingNav() {
                       initial={{ scale: 0, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       exit={{ scale: 0, opacity: 0 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 20,
+                      }}
                     >
                       <motion.div
                         className={cn(
                           "p-3 rounded-xl cursor-pointer",
-                          isDark
-                            ? "bg-neutral-800/50"
-                            : "bg-neutral-100"
+                          isDark ? "bg-neutral-800/50" : "bg-neutral-100",
                         )}
                         whileHover={{ scale: 1.05 }}
                       >
@@ -570,9 +609,16 @@ export function FloatingNav() {
                             <motion.div
                               initial={{ rotate: -90 }}
                               animate={{ rotate: 0 }}
-                              transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.1 }}
+                              transition={{
+                                type: "spring",
+                                stiffness: 300,
+                                damping: 15,
+                                delay: 0.1,
+                              }}
                             >
-                              <Icon className={cn("w-4 h-4", contextualPage.color)} />
+                              <Icon
+                                className={cn("w-4 h-4", contextualPage.color)}
+                              />
                             </motion.div>
                           );
                         })()}
@@ -613,13 +659,13 @@ export function FloatingNav() {
                   "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
                   isDark
                     ? "bg-neutral-900 border border-neutral-800 shadow-black/40"
-                    : "bg-white border border-neutral-200 shadow-black/10"
+                    : "bg-white border border-neutral-200 shadow-black/10",
                 )}
               >
                 <h3
                   className={cn(
                     "text-base sm:text-lg mb-4",
-                    isDark ? "text-white" : "text-neutral-900"
+                    isDark ? "text-white" : "text-neutral-900",
                   )}
                 >
                   Settings
@@ -630,7 +676,7 @@ export function FloatingNav() {
                   <label
                     className={cn(
                       "text-xs sm:text-sm font-medium mb-2 block",
-                      isDark ? "text-neutral-400" : "text-neutral-600"
+                      isDark ? "text-neutral-400" : "text-neutral-600",
                     )}
                   >
                     Appearance
@@ -642,7 +688,7 @@ export function FloatingNav() {
                         "flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs sm:text-sm transition-all",
                         !isDark
                           ? "bg-koru-purple text-white"
-                          : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+                          : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700",
                       )}
                     >
                       <SunIcon className="w-4 h-4" />
@@ -654,7 +700,7 @@ export function FloatingNav() {
                         "flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs sm:text-sm transition-all",
                         isDark
                           ? "bg-koru-purple text-white"
-                          : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                          : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200",
                       )}
                     >
                       <MoonIcon className="w-4 h-4" />
@@ -668,7 +714,7 @@ export function FloatingNav() {
                   <label
                     className={cn(
                       "text-xs sm:text-sm font-medium mb-2 block",
-                      isDark ? "text-neutral-400" : "text-neutral-600"
+                      isDark ? "text-neutral-400" : "text-neutral-600",
                     )}
                   >
                     Font
@@ -685,7 +731,7 @@ export function FloatingNav() {
                             ? "bg-koru-purple text-white"
                             : isDark
                               ? "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
-                              : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                              : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200",
                         )}
                       >
                         {font.name}
@@ -699,7 +745,7 @@ export function FloatingNav() {
                   <label
                     className={cn(
                       "text-xs sm:text-sm font-medium mb-2 block",
-                      isDark ? "text-neutral-400" : "text-neutral-600"
+                      isDark ? "text-neutral-400" : "text-neutral-600",
                     )}
                   >
                     Language
@@ -715,7 +761,7 @@ export function FloatingNav() {
                             ? "bg-koru-golden text-neutral-900"
                             : isDark
                               ? "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
-                              : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                              : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200",
                         )}
                       >
                         {lang.name}
@@ -733,7 +779,7 @@ export function FloatingNav() {
                       "flex items-center justify-between w-full py-2.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm transition-all",
                       isDark
                         ? "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
-                        : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                        : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200",
                     )}
                   >
                     <div className="flex items-center gap-2 sm:gap-3">
@@ -759,7 +805,7 @@ export function FloatingNav() {
                     "flex items-center gap-2 sm:gap-3 py-2.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm transition-all w-full",
                     isDark
                       ? "bg-neutral-800 text-neutral-300 hover:bg-neutral-700 hover:text-white"
-                      : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-neutral-900"
+                      : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-neutral-900",
                   )}
                 >
                   <HelpCircleIcon className="w-4 h-4" />
@@ -767,64 +813,14 @@ export function FloatingNav() {
                   <ChevronRightIcon className="w-4 h-4 ml-auto" />
                 </Link>
 
-
                 <div className="mt-6" />
-                {privyReady && walletAddress && (
-                  <div className="mb-4">
-                    <div
-                      className={cn(
-                        "flex items-center gap-3 p-3 rounded-xl",
-                        isDark
-                          ? "bg-koru-lime/10 border border-koru-lime/20"
-                          : "bg-koru-lime/10 border border-koru-lime/20"
-                      )}
-                    >
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-koru-purple to-koru-lime flex items-center justify-center">
-                        <span className="text-xs font-bold text-white">
-                          {walletAddress.slice(2, 4).toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className={cn(
-                            "text-sm font-medium",
-                            isDark ? "text-white" : "text-neutral-900"
-                          )}
-                        >
-                          Wallet Connected
-                        </p>
-                        <p
-                          className={cn(
-                            "text-xs font-mono truncate",
-                            isDark ? "text-neutral-400" : "text-neutral-500"
-                          )}
-                        >
-                          {shortenAddress(walletAddress)} • Base
-                        </p>
-                      </div>
-                      <button
-                        onClick={async () => {
-                          try {
-                            await privyLogout();
-                          } catch (error) {
-                            console.error("Error disconnecting wallet:", error);
-                          }
-                          setIsSettingsOpen(false);
-                        }}
-                        className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all"
-                      >
-                        Disconnect
-                      </button>
-                    </div>
-                  </div>
-                )}
                 {isAuthenticated && session?.user ? (
                   <div className="space-y-3">
                     {/* User Info */}
                     <div
                       className={cn(
                         "flex items-center gap-3 p-3 rounded-xl",
-                        isDark ? "bg-neutral-800" : "bg-neutral-100"
+                        isDark ? "bg-neutral-800" : "bg-neutral-100",
                       )}
                     >
                       <div className="w-10 h-10 rounded-full overflow-hidden bg-neutral-200 dark:bg-neutral-700">
@@ -839,7 +835,7 @@ export function FloatingNav() {
                         <p
                           className={cn(
                             "text-sm font-medium truncate",
-                            isDark ? "text-white" : "text-neutral-900"
+                            isDark ? "text-white" : "text-neutral-900",
                           )}
                         >
                           {session.user.name || "User"}
@@ -848,10 +844,20 @@ export function FloatingNav() {
                           <p
                             className={cn(
                               "text-xs truncate",
-                              isDark ? "text-neutral-400" : "text-neutral-500"
+                              isDark ? "text-neutral-400" : "text-neutral-500",
                             )}
                           >
                             @{session.user.username}
+                          </p>
+                        )}
+                        {privyReady && walletAddress && (
+                          <p
+                            className={cn(
+                              "text-xs font-mono truncate mt-1",
+                              isDark ? "text-koru-lime" : "text-koru-lime",
+                            )}
+                          >
+                            {shortenAddress(walletAddress)} • Base
                           </p>
                         )}
                       </div>
@@ -864,7 +870,7 @@ export function FloatingNav() {
                         "flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-sm font-medium transition-all",
                         isDark
                           ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
-                          : "bg-red-50 text-red-600 hover:bg-red-100"
+                          : "bg-red-50 text-red-600 hover:bg-red-100",
                       )}
                     >
                       <LogoutIcon className="w-4 h-4" />
@@ -881,7 +887,7 @@ export function FloatingNav() {
                     className={cn(
                       "flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl text-sm font-medium transition-all",
                       "bg-neutral-900 text-white hover:bg-neutral-800",
-                      "dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100"
+                      "dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100",
                     )}
                   >
                     <XIcon className="w-4 h-4" />
@@ -905,4 +911,3 @@ export function FloatingNav() {
     </>
   );
 }
-

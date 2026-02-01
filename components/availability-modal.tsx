@@ -36,13 +36,13 @@ function CalendarPicker({
   const daysInMonth = new Date(
     currentMonth.getFullYear(),
     currentMonth.getMonth() + 1,
-    0
+    0,
   ).getDate();
 
   const firstDayOfMonth = new Date(
     currentMonth.getFullYear(),
     currentMonth.getMonth(),
-    1
+    1,
   ).getDay();
 
   const days: (number | null)[] = [];
@@ -59,7 +59,7 @@ function CalendarPicker({
     const newMonth = new Date(
       currentMonth.getFullYear(),
       currentMonth.getMonth() - 1,
-      1
+      1,
     );
     if (newMonth >= new Date(minDate.getFullYear(), minDate.getMonth(), 1)) {
       onMonthChange(newMonth);
@@ -70,7 +70,7 @@ function CalendarPicker({
     const newMonth = new Date(
       currentMonth.getFullYear(),
       currentMonth.getMonth() + 1,
-      1
+      1,
     );
     if (newMonth <= new Date(maxDate.getFullYear(), maxDate.getMonth(), 1)) {
       onMonthChange(newMonth);
@@ -98,7 +98,7 @@ function CalendarPicker({
             "p-1.5 rounded-lg transition-colors",
             canGoPrev
               ? "hover:bg-neutral-200 dark:hover:bg-neutral-700"
-              : "opacity-30 cursor-not-allowed"
+              : "opacity-30 cursor-not-allowed",
           )}
         >
           <ChevronLeftIcon className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
@@ -113,7 +113,7 @@ function CalendarPicker({
             "p-1.5 rounded-lg transition-colors",
             canGoNext
               ? "hover:bg-neutral-200 dark:hover:bg-neutral-700"
-              : "opacity-30 cursor-not-allowed"
+              : "opacity-30 cursor-not-allowed",
           )}
         >
           <ChevronRightIcon className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
@@ -142,9 +142,13 @@ function CalendarPicker({
           const date = new Date(
             currentMonth.getFullYear(),
             currentMonth.getMonth(),
-            day
+            day,
           );
-          const dateStr = date.toISOString().split("T")[0];
+          // Use local date formatting to avoid timezone issues
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, "0");
+          const dayStr = String(date.getDate()).padStart(2, "0");
+          const dateStr = `${year}-${month}-${dayStr}`;
           const isSelected = selectedDates.includes(dateStr);
           const isPast = date < minDate;
           const isFuture = date > maxDate;
@@ -160,7 +164,7 @@ function CalendarPicker({
                 isDisabled && "opacity-30 cursor-not-allowed",
                 !isDisabled && !isSelected && "hover:bg-koru-purple/10",
                 isSelected &&
-                  "bg-koru-purple text-white shadow-sm shadow-koru-purple/30"
+                  "bg-koru-purple text-white shadow-sm shadow-koru-purple/30",
               )}
             >
               {day}
@@ -278,11 +282,11 @@ export function AvailabilityModal({
 }: AvailabilityModalProps) {
   const [step, setStep] = useState<Step>("slots");
   const [timezone, setTimezone] = useState(
-    initialData?.timezone || TIMEZONES[0].value
+    initialData?.timezone || TIMEZONES[0].value,
   );
   const [showTimezoneDropdown, setShowTimezoneDropdown] = useState(false);
   const [slots, setSlots] = useState<AvailabilitySlot[]>(
-    initialData?.slots || createDefaultSlots()
+    initialData?.slots || createDefaultSlots(),
   );
   const [activeSlotId, setActiveSlotId] = useState<number | null>(null);
 
@@ -373,8 +377,8 @@ export function AvailabilityModal({
                 price: configPrice,
                 selectedDates: configSelectedDates,
               }
-            : slot
-        )
+            : slot,
+        ),
       );
       handleBackToSlots();
     }
@@ -415,7 +419,7 @@ export function AvailabilityModal({
   }, [open, initialData]);
 
   const filledSlotsCount = slots.filter(
-    (s) => s.name && s.times.length > 0
+    (s) => s.name && s.times.length > 0,
   ).length;
 
   return (
@@ -423,7 +427,7 @@ export function AvailabilityModal({
       <DialogContent
         className={cn(
           "p-0 gap-0 overflow-hidden transition-all duration-300",
-          step === "slots" ? "max-w-sm" : "max-w-md"
+          step === "slots" ? "max-w-sm" : "max-w-md",
         )}
       >
         <DialogTitle className="sr-only">Set Your Availability</DialogTitle>
@@ -472,7 +476,7 @@ export function AvailabilityModal({
                       <ChevronDownIcon
                         className={cn(
                           "w-4 h-4 text-neutral-400 transition-transform",
-                          showTimezoneDropdown && "rotate-180"
+                          showTimezoneDropdown && "rotate-180",
                         )}
                       />
                     </div>
@@ -496,7 +500,7 @@ export function AvailabilityModal({
                             className={cn(
                               "w-full flex items-center justify-between px-4 py-2.5 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors",
                               timezone === tz.value &&
-                                "bg-koru-purple/5 dark:bg-koru-purple/10"
+                                "bg-koru-purple/5 dark:bg-koru-purple/10",
                             )}
                           >
                             <span className="text-sm text-neutral-900 dark:text-neutral-100">
@@ -532,7 +536,7 @@ export function AvailabilityModal({
                         "w-full p-4 rounded-xl border-2 border-dashed transition-all text-left",
                         isConfigured
                           ? "border-koru-lime bg-koru-lime/5 dark:bg-koru-lime/10"
-                          : "border-neutral-200 dark:border-neutral-700 hover:border-koru-purple/50 bg-neutral-50/50 dark:bg-neutral-800/50"
+                          : "border-neutral-200 dark:border-neutral-700 hover:border-koru-purple/50 bg-neutral-50/50 dark:bg-neutral-800/50",
                       )}
                     >
                       {isConfigured ? (
@@ -550,7 +554,7 @@ export function AvailabilityModal({
                                   "text-sm font-semibold",
                                   slot.price === 0
                                     ? "text-koru-lime"
-                                    : "text-koru-golden"
+                                    : "text-koru-golden",
                                 )}
                               >
                                 {slot.price === 0 ? "Free" : `$${slot.price}`}
@@ -559,7 +563,7 @@ export function AvailabilityModal({
                             <p className="text-xs text-neutral-500 dark:text-neutral-400">
                               {
                                 DURATION_OPTIONS.find(
-                                  (d) => d.value === slot.duration
+                                  (d) => d.value === slot.duration,
                                 )?.label
                               }{" "}
                               · {slot.times?.length || 0} time
@@ -658,7 +662,7 @@ export function AvailabilityModal({
                         (configSubStep === "dates" && i <= 3) ||
                         (configSubStep === "times" && i <= 4)
                         ? "bg-koru-purple"
-                        : "bg-neutral-200 dark:bg-neutral-700"
+                        : "bg-neutral-200 dark:bg-neutral-700",
                     )}
                   />
                 ))}
@@ -713,7 +717,7 @@ export function AvailabilityModal({
                             "px-3 py-3 rounded-xl text-sm font-medium transition-all",
                             configDuration === opt.value
                               ? "bg-koru-purple text-white shadow-lg shadow-koru-purple/30"
-                              : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-koru-purple/10"
+                              : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-koru-purple/10",
                           )}
                         >
                           {opt.label}
@@ -818,7 +822,7 @@ export function AvailabilityModal({
                           setConfigSelectedDates((prev) =>
                             prev.includes(date)
                               ? prev.filter((d) => d !== date)
-                              : [...prev, date].sort()
+                              : [...prev, date].sort(),
                           );
                         }}
                         currentMonth={calendarMonth}
@@ -881,7 +885,7 @@ export function AvailabilityModal({
                               "w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-mono transition-all",
                               isSelected
                                 ? "bg-koru-golden/20 text-koru-golden border-2 border-koru-golden"
-                                : "bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-2 border-transparent hover:border-koru-golden/30"
+                                : "bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-2 border-transparent hover:border-koru-golden/30",
                             )}
                           >
                             <span>{time}</span>

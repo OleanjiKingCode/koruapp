@@ -31,7 +31,10 @@ import {
   useUserChats,
   useUserSummons,
   useUserStats,
+  useUsdcBalance,
+  useEthBalance,
 } from "@/lib/hooks";
+import type { Address } from "viem";
 import type { Chat, Summon } from "@/lib/supabase";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -226,7 +229,7 @@ export default function ProfilePage() {
   const getWalletAddress = (): string | null => {
     if (!privyUser) return null;
     const walletAccount = privyUser.linkedAccounts?.find(
-      (account: { type: string }) => account.type === "wallet"
+      (account: { type: string }) => account.type === "wallet",
     );
     if (walletAccount && "address" in walletAccount) {
       return walletAccount.address as string;
@@ -240,6 +243,19 @@ export default function ProfilePage() {
   const walletAddress = getWalletAddress();
   const shortenAddress = (address: string) =>
     `${address.slice(0, 6)}...${address.slice(-4)}`;
+
+  // Blockchain balances (wagmi hooks use connected wallet automatically)
+  const {
+    balance: usdcBalance,
+    formatted: usdcFormatted,
+    isLoading: isLoadingUsdc,
+  } = useUsdcBalance(walletAddress as Address | undefined);
+
+  const {
+    balance: ethBalance,
+    formatted: ethFormatted,
+    isLoading: isLoadingEth,
+  } = useEthBalance(walletAddress as Address | undefined);
 
   // Get real user data
   const { user, isLoading: isUserLoading } = useUser();
@@ -292,351 +308,357 @@ export default function ProfilePage() {
     <AuthGuard>
       <div className="min-h-screen pb-[500px] sm:pb-96">
         <main className="max-w-container mx-auto px-4 sm:px-6 py-8">
-          
           <div className="flex flex-col gap-3 mb-8">
-          {isLoading ? (
-            <ProfileHeaderSkeleton />
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 overflow-hidden shadow-soft"
-            >
-              {/* Banner */}
-              <div className="h-32 bg-gradient-to-r from-koru-purple via-koru-golden/50 to-koru-lime/30 relative overflow-hidden">
-                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzMiAyIDIgNC0yIDQtMiA0LTItMi0yLTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
+            {isLoading ? (
+              <ProfileHeaderSkeleton />
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 overflow-hidden shadow-soft"
+              >
+                {/* Banner */}
+                <div className="h-32 bg-gradient-to-r from-koru-purple via-koru-golden/50 to-koru-lime/30 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzMiAyIDIgNC0yIDQtMiA0LTItMi0yLTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
 
-                {/* Kaya Sideways - Background Decoration in Banner Only */}
-                <div className="absolute -right-24 -top-16 pointer-events-none select-none">
-                  <Image
-                    src="/kayaSideWays.png"
-                    alt=""
-                    width={350}
-                    height={350}
-                    className="object-contain opacity-20 -scale-x-100"
-                    aria-hidden="true"
-                  />
+                  {/* Kaya Sideways - Background Decoration in Banner Only */}
+                  <div className="absolute -right-24 -top-16 pointer-events-none select-none">
+                    <Image
+                      src="/kayaSideWays.png"
+                      alt=""
+                      width={350}
+                      height={350}
+                      className="object-contain opacity-20 -scale-x-100"
+                      aria-hidden="true"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="px-6 md:px-8 pb-6 -mt-16 relative">
-                <div className="flex flex-col md:flex-row md:items-end gap-4">
-                  {/* Avatar */}
-                  <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="relative"
-                  >
-                    <div className="w-28 h-28 md:w-32 md:h-32 rounded-2xl border-4 border-white dark:border-neutral-900 shadow-xl overflow-hidden bg-white dark:bg-neutral-800">
-                      <OptimizedAvatar
-                        src={user?.profileImageUrl?.replace("_normal", "_400x400")}
-                        alt={user?.name || "Profile"}
-                        size={128}
-                        fallbackSeed={user?.username || "user"}
-                      />
-                    </div>
-                    {/* Verified Badge */}
-                    {user?.isVerified && (
-                      <div className="absolute -bottom-2 -right-2 px-3 py-1 rounded-full bg-blue-500 text-white text-xs font-bold shadow-lg flex items-center gap-1">
-                        <CheckIcon className="w-3 h-3" />
-                        Verified
+                <div className="px-6 md:px-8 pb-6 -mt-16 relative">
+                  <div className="flex flex-col md:flex-row md:items-end gap-4">
+                    {/* Avatar */}
+                    <motion.div
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                      className="relative"
+                    >
+                      <div className="w-28 h-28 md:w-32 md:h-32 rounded-2xl border-4 border-white dark:border-neutral-900 shadow-xl overflow-hidden bg-white dark:bg-neutral-800">
+                        <OptimizedAvatar
+                          src={user?.profileImageUrl?.replace(
+                            "_normal",
+                            "_400x400",
+                          )}
+                          alt={user?.name || "Profile"}
+                          size={128}
+                          fallbackSeed={user?.username || "user"}
+                        />
                       </div>
-                    )}
-                  </motion.div>
-
-                  {/* Info */}
-                  <div className="flex-1 pt-4 md:pt-0">
-                    <div className="flex flex-wrap items-center gap-3 mb-1">
-                      <h1 className="text-2xl md:text-3xl text-neutral-900 dark:text-neutral-100">
-                        {user?.name || "User"}
-                      </h1>
+                      {/* Verified Badge */}
                       {user?.isVerified && (
-                        <Badge className="bg-blue-500/20 text-blue-500 border-0">
-                          <CheckIcon className="w-3 h-3 mr-1" />
+                        <div className="absolute -bottom-2 -right-2 px-3 py-1 rounded-full bg-blue-500 text-white text-xs font-bold shadow-lg flex items-center gap-1">
+                          <CheckIcon className="w-3 h-3" />
                           Verified
-                        </Badge>
+                        </div>
                       )}
-                      {user?.isCreator && (
-                        <Badge className="bg-koru-purple/20 text-koru-purple border-0">
-                          Creator
-                        </Badge>
-                      )}
-                    </div>
+                    </motion.div>
 
-                    {/* Username */}
-                    <div className="flex flex-wrap items-center gap-2 mb-3">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-300">
-                        @{user?.username || "username"}
-                      </span>
-                      {user?.followersCount ? (
-                        <>
-                          <span className="text-neutral-300 dark:text-neutral-600">
-                            •
-                          </span>
-                          <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                            {user.followersCount.toLocaleString()} followers
-                          </span>
-                        </>
-                      ) : null}
-                    </div>
-
-                    {/* Bio */}
-                    {user?.bio && (
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3 max-w-lg">
-                        {user.bio}
-                      </p>
-                    )}
-
-                    {/* Tags */}
-                    {user?.tags && user.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {user.tags.map((tag: string) => {
-                          const color = getTagColor(tag);
-                          return (
-                            <Badge
-                              key={tag}
-                              variant="secondary"
-                              className={cn(
-                                color.bg,
-                                color.text,
-                                "border",
-                                color.border,
-                                "font-medium"
-                              )}
-                            >
-                              {tag}
-                            </Badge>
-                          );
-                        })}
+                    {/* Info */}
+                    <div className="flex-1 pt-4 md:pt-0">
+                      <div className="flex flex-wrap items-center gap-3 mb-1">
+                        <h1 className="text-2xl md:text-3xl text-neutral-900 dark:text-neutral-100">
+                          {user?.name || "User"}
+                        </h1>
+                        {user?.isVerified && (
+                          <Badge className="bg-blue-500/20 text-blue-500 border-0">
+                            <CheckIcon className="w-3 h-3 mr-1" />
+                            Verified
+                          </Badge>
+                        )}
+                        {user?.isCreator && (
+                          <Badge className="bg-koru-purple/20 text-koru-purple border-0">
+                            Creator
+                          </Badge>
+                        )}
                       </div>
-                    )}
 
-                    {/* Links row */}
-                    <div className="flex flex-wrap items-center gap-4 mb-3">
-                      <a
-                        href={`https://x.com/${user?.username}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors group"
-                      >
-                        <XIcon className="w-4 h-4" />
-                        <span className="group-hover:underline">
-                          @{user?.username}
+                      {/* Username */}
+                      <div className="flex flex-wrap items-center gap-2 mb-3">
+                        <span className="text-sm text-neutral-600 dark:text-neutral-300">
+                          @{user?.username || "username"}
                         </span>
-                      </a>
-                      {user?.website && (
+                        {user?.followersCount ? (
+                          <>
+                            <span className="text-neutral-300 dark:text-neutral-600">
+                              •
+                            </span>
+                            <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                              {user.followersCount.toLocaleString()} followers
+                            </span>
+                          </>
+                        ) : null}
+                      </div>
+
+                      {/* Bio */}
+                      {user?.bio && (
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3 max-w-lg">
+                          {user.bio}
+                        </p>
+                      )}
+
+                      {/* Tags */}
+                      {user?.tags && user.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {user.tags.map((tag: string) => {
+                            const color = getTagColor(tag);
+                            return (
+                              <Badge
+                                key={tag}
+                                variant="secondary"
+                                className={cn(
+                                  color.bg,
+                                  color.text,
+                                  "border",
+                                  color.border,
+                                  "font-medium",
+                                )}
+                              >
+                                {tag}
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Links row */}
+                      <div className="flex flex-wrap items-center gap-4 mb-3">
                         <a
-                          href={user.website}
+                          href={`https://x.com/${user?.username}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-1.5 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors group"
                         >
-                          <LinkIcon className="w-4 h-4" />
-                          <span className="group-hover:underline">Website</span>
+                          <XIcon className="w-4 h-4" />
+                          <span className="group-hover:underline">
+                            @{user?.username}
+                          </span>
                         </a>
-                      )}
-                    </div>
+                        {user?.website && (
+                          <a
+                            href={user.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors group"
+                          >
+                            <LinkIcon className="w-4 h-4" />
+                            <span className="group-hover:underline">
+                              Website
+                            </span>
+                          </a>
+                        )}
+                      </div>
 
-                    {/* Badges */}
-                    <div className="flex flex-wrap gap-2">
-                      {user?.isCreator && (
+                      {/* Badges */}
+                      <div className="flex flex-wrap gap-2">
+                        {user?.isCreator && (
+                          <Badge
+                            variant="outline"
+                            className="text-xs border-koru-purple text-koru-purple bg-koru-purple/10"
+                          >
+                            Creator
+                          </Badge>
+                        )}
                         <Badge
                           variant="outline"
-                          className="text-xs border-koru-purple text-koru-purple bg-koru-purple/10"
+                          className="text-xs border-koru-golden text-koru-golden bg-koru-golden/10"
                         >
-                          Creator
+                          Early Adopter
                         </Badge>
-                      )}
-                      <Badge
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-2 pt-4 md:pt-0">
+                      <Button
                         variant="outline"
-                        className="text-xs border-koru-golden text-koru-golden bg-koru-golden/10"
+                        size="sm"
+                        onClick={handleShareProfile}
                       >
-                        Early Adopter
-                      </Badge>
+                        <ShareIcon className="w-4 h-4 mr-2" />
+                        Share
+                      </Button>
+                      <Link href="/profile/edit">
+                        <Button size="sm">
+                          <EditIcon className="w-4 h-4 mr-2" />
+                          Edit Profile
+                        </Button>
+                      </Link>
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex gap-2 pt-4 md:pt-0">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleShareProfile}
-                    >
-                      <ShareIcon className="w-4 h-4 mr-2" />
-                      Share
-                    </Button>
-                    <Link href="/profile/edit">
-                      <Button size="sm">
-                        <EditIcon className="w-4 h-4 mr-2" />
-                        Edit Profile
-                      </Button>
-                    </Link>
-                  </div>
+                  {/* Member Since */}
+                  <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-4">
+                    {user?.createdAt &&
+                      `Member since ${new Date(
+                        user.createdAt,
+                      ).toLocaleDateString("en-US", {
+                        month: "long",
+                        year: "numeric",
+                      })}`}
+                  </p>
                 </div>
+              </motion.div>
+            )}
 
-                {/* Member Since */}
-                <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-4">
-                  {user?.createdAt &&
-                    `Member since ${new Date(user.createdAt).toLocaleDateString(
-                      "en-US",
-                      { month: "long", year: "numeric" }
-                    )}`}
-                </p>
-              </div>
-            </motion.div>
-          )}
+            {/* Connection Cards Row - Farcaster & Wallet */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Farcaster Card */}
+              <AnimatePresence mode="wait">
+                {!isFarcasterConnected ? (
+                  <motion.div
+                    key="farcaster-connect"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ delay: 0.1 }}
+                    className="h-full"
+                  >
+                    <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 shadow-soft overflow-hidden relative h-full">
+                      <div className="absolute -right-8 -top-8 w-24 h-24 bg-gradient-to-br from-purple-100 dark:from-purple-900/20 to-transparent rounded-full opacity-50" />
+                      <div className="absolute right-2 top-2 opacity-10">
+                        <SiFarcaster className="w-12 h-12 text-purple-600" />
+                      </div>
 
-          {/* Connection Cards Row - Farcaster & Wallet */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {/* Farcaster Card */}
-            <AnimatePresence mode="wait">
-              {!isFarcasterConnected ? (
-                <motion.div
-                  key="farcaster-connect"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ delay: 0.1 }}
-                  className="h-full"
-                >
-                  <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 shadow-soft overflow-hidden relative h-full">
-                    <div className="absolute -right-8 -top-8 w-24 h-24 bg-gradient-to-br from-purple-100 dark:from-purple-900/20 to-transparent rounded-full opacity-50" />
-                    <div className="absolute right-2 top-2 opacity-10">
-                      <SiFarcaster className="w-12 h-12 text-purple-600" />
+                      <div className="relative z-10 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center shrink-0">
+                          <SiFarcaster className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
+                            Connect Farcaster
+                          </h3>
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                            Share casts & earn bonus points
+                          </p>
+                        </div>
+                        <Button
+                          onClick={handleConnectFarcaster}
+                          size="sm"
+                          className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-lg text-xs font-medium shrink-0"
+                        >
+                          Connect
+                        </Button>
+                      </div>
                     </div>
-
-                    <div className="relative z-10 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center shrink-0">
-                        <SiFarcaster className="w-5 h-5 text-white" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="farcaster-connected"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="h-full"
+                  >
+                    <div className="bg-gradient-to-r from-purple-500/10 to-purple-500/5 rounded-2xl border border-purple-500/20 p-4 flex items-center gap-3 h-full">
+                      <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center shrink-0">
+                        <CheckIcon className="w-5 h-5 text-purple-500" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
-                          Connect Farcaster
-                        </h3>
+                        <p className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
+                          Farcaster Connected
+                        </p>
                         <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
-                          Share casts & earn bonus points
+                          @cryptoexplorer.eth
                         </p>
                       </div>
-                      <Button
-                        onClick={handleConnectFarcaster}
-                        size="sm"
-                        className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-lg text-xs font-medium shrink-0"
+                      <button
+                        onClick={() => setIsFarcasterConnected(false)}
+                        className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all shrink-0"
                       >
-                        Connect
-                      </Button>
+                        Disconnect
+                      </button>
                     </div>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="farcaster-connected"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="h-full"
-                >
-                  <div className="bg-gradient-to-r from-purple-500/10 to-purple-500/5 rounded-2xl border border-purple-500/20 p-4 flex items-center gap-3 h-full">
-                    <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center shrink-0">
-                      <CheckIcon className="w-5 h-5 text-purple-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
-                        Farcaster Connected
-                      </p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
-                        @cryptoexplorer.eth
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setIsFarcasterConnected(false)}
-                      className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all shrink-0"
-                    >
-                      Disconnect
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-            {/* Wallet Card */}
-            <AnimatePresence mode="wait">
-              {privyReady && !walletAddress ? (
-                <motion.div
-                  key="wallet-connect"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ delay: 0.15 }}
-                  className="h-full"
-                >
-                  <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 shadow-soft overflow-hidden relative h-full">
-                    <div className="absolute -right-8 -top-8 w-24 h-24 bg-gradient-to-br from-koru-lime/20 dark:from-koru-lime/10 to-transparent rounded-full opacity-50" />
-                    <div className="absolute right-2 top-2 opacity-10">
-                      <WalletIcon className="w-12 h-12 text-koru-lime" />
-                    </div>
+              {/* Wallet Card */}
+              <AnimatePresence mode="wait">
+                {privyReady && !walletAddress ? (
+                  <motion.div
+                    key="wallet-connect"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ delay: 0.15 }}
+                    className="h-full"
+                  >
+                    <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 shadow-soft overflow-hidden relative h-full">
+                      <div className="absolute -right-8 -top-8 w-24 h-24 bg-gradient-to-br from-koru-lime/20 dark:from-koru-lime/10 to-transparent rounded-full opacity-50" />
+                      <div className="absolute right-2 top-2 opacity-10">
+                        <WalletIcon className="w-12 h-12 text-koru-lime" />
+                      </div>
 
-                    <div className="relative z-10 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-koru-lime to-koru-lime/70 flex items-center justify-center shrink-0">
-                        <WalletIcon className="w-5 h-5 text-white" />
+                      <div className="relative z-10 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-koru-lime to-koru-lime/70 flex items-center justify-center shrink-0">
+                          <WalletIcon className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
+                            Connect Wallet
+                          </h3>
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                            Link wallet on Base to unlock features
+                          </p>
+                        </div>
+                        <Button
+                          onClick={() => privyLogin()}
+                          disabled={!privyReady}
+                          size="sm"
+                          className="bg-gradient-to-r from-koru-lime to-koru-lime/80 hover:from-koru-lime/90 hover:to-koru-lime/70 text-neutral-900 rounded-lg text-xs font-medium shrink-0"
+                        >
+                          Connect
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ) : privyReady && walletAddress ? (
+                  <motion.div
+                    key="wallet-connected"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="h-full"
+                  >
+                    <div className="bg-gradient-to-r from-koru-lime/10 to-koru-lime/5 rounded-2xl border border-koru-lime/20 p-4 flex items-center gap-3 h-full">
+                      <div className="w-10 h-10 rounded-xl bg-koru-lime/20 flex items-center justify-center shrink-0">
+                        <CheckIcon className="w-5 h-5 text-koru-lime" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
-                          Connect Wallet
-                        </h3>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
-                          Link wallet on Base to unlock features
+                        <p className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
+                          Wallet Connected
+                        </p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono truncate">
+                          {shortenAddress(walletAddress)} • Base
                         </p>
                       </div>
-                      <Button
-                        onClick={() => privyLogin()}
-                        disabled={!privyReady}
-                        size="sm"
-                        className="bg-gradient-to-r from-koru-lime to-koru-lime/80 hover:from-koru-lime/90 hover:to-koru-lime/70 text-neutral-900 rounded-lg text-xs font-medium shrink-0"
+                      <button
+                        onClick={async () => {
+                          try {
+                            await privyLogout();
+                          } catch (error) {
+                            console.error("Error disconnecting wallet:", error);
+                          }
+                        }}
+                        className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all shrink-0"
                       >
-                        Connect
-                      </Button>
+                        Disconnect
+                      </button>
                     </div>
-                  </div>
-                </motion.div>
-              ) : privyReady && walletAddress ? (
-                <motion.div
-                  key="wallet-connected"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="h-full"
-                >
-                  <div className="bg-gradient-to-r from-koru-lime/10 to-koru-lime/5 rounded-2xl border border-koru-lime/20 p-4 flex items-center gap-3 h-full">
-                    <div className="w-10 h-10 rounded-xl bg-koru-lime/20 flex items-center justify-center shrink-0">
-                      <CheckIcon className="w-5 h-5 text-koru-lime" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
-                        Wallet Connected
-                      </p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono truncate">
-                        {shortenAddress(walletAddress)} • Base
-                      </p>
-                    </div>
-                    <button
-                      onClick={async () => {
-                        try {
-                          await privyLogout();
-                        } catch (error) {
-                          console.error("Error disconnecting wallet:", error);
-                        }
-                      }}
-                      className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all shrink-0"
-                    >
-                      Disconnect
-                    </button>
-                  </div>
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
-          </div>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
+            </div>
           </div>
 
           {isLoading ? (
@@ -659,47 +681,74 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4">
-                  {/* Available Balance (Withdrawable) */}
+                  {/* USDC Balance */}
                   <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-koru-purple/10 via-koru-purple/5 to-transparent border border-koru-purple/20 p-5">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-koru-purple/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
                     <div className="relative">
                       <div className="flex items-center gap-2 mb-2">
-                        <WalletIcon className="w-5 h-5 text-koru-purple" />
-                        <span className="text-sm text-neutral-500 dark:text-neutral-400  ">
-                          Available Balance
+                        <CoinsIcon className="w-5 h-5 text-koru-purple" />
+                        <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                          USDC Balance
                         </span>
                       </div>
-                      <p className="text-3xl   text-neutral-900 dark:text-neutral-100">
-                        ${(user?.balance || 0).toFixed(2)}
-                      </p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-                        Ready to withdraw
-                      </p>
+                      {walletAddress ? (
+                        <>
+                          <p className="text-3xl text-neutral-900 dark:text-neutral-100">
+                            {isLoadingUsdc ? (
+                              <span className="animate-pulse">Loading...</span>
+                            ) : (
+                              `$${parseFloat(usdcFormatted).toFixed(2)}`
+                            )}
+                          </p>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                            On Base Network
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-3xl text-neutral-900 dark:text-neutral-100">
+                            --
+                          </p>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                            Connect wallet to view
+                          </p>
+                        </>
+                      )}
                     </div>
                   </div>
 
-                  {/* Total Earnings */}
+                  {/* ETH Balance */}
                   <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-koru-golden/10 via-koru-golden/5 to-transparent border border-koru-golden/20 p-5">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-koru-golden/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
                     <div className="relative">
                       <div className="flex items-center gap-2 mb-2">
-                        <CoinsIcon className="w-5 h-5 text-koru-golden" />
-                        <span className="text-sm text-neutral-500 dark:text-neutral-400  ">
-                          Total Earnings
+                        <WalletIcon className="w-5 h-5 text-koru-golden" />
+                        <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                          ETH Balance
                         </span>
                       </div>
-                      <p className="text-3xl   text-neutral-900 dark:text-neutral-100">
-                        ${(user?.totalEarnings || 0).toFixed(2)}
-                      </p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-                        {user?.isCreator
-                          ? "From sessions"
-                          : "Start earning as a creator"}
-                      </p>
-                      {(user?.pendingBalance || 0) > 0 && (
-                        <p className="text-xs text-koru-golden mt-2  ">
-                          💰 ${(user?.pendingBalance || 0).toFixed(2)} pending
-                        </p>
+                      {walletAddress ? (
+                        <>
+                          <p className="text-3xl text-neutral-900 dark:text-neutral-100">
+                            {isLoadingEth ? (
+                              <span className="animate-pulse">Loading...</span>
+                            ) : (
+                              `${parseFloat(ethFormatted).toFixed(4)} ETH`
+                            )}
+                          </p>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                            For gas fees
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-3xl text-neutral-900 dark:text-neutral-100">
+                            --
+                          </p>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                            Connect wallet to view
+                          </p>
+                        </>
                       )}
                     </div>
                   </div>
@@ -897,7 +946,7 @@ export default function ProfilePage() {
                           <p className="text-sm text-neutral-500 dark:text-neutral-400">
                             {chat.slot_duration
                               ? `${chat.slot_duration} min`
-                              : "Chat"} 
+                              : "Chat"}
                           </p>
                         </div>
                       </div>
@@ -913,13 +962,13 @@ export default function ProfilePage() {
                             chat.status === "active"
                               ? "text-koru-golden"
                               : chat.status === "completed"
-                              ? "text-koru-lime"
-                              : "text-neutral-400"
+                                ? "text-koru-lime"
+                                : "text-neutral-400",
                           )}
                         >
                           {chat.status === "active" && chat.deadline_at
                             ? `Due ${new Date(
-                                chat.deadline_at
+                                chat.deadline_at,
                               ).toLocaleDateString()}`
                             : chat.status.charAt(0).toUpperCase() +
                               chat.status.slice(1)}
@@ -1003,12 +1052,12 @@ export default function ProfilePage() {
                                 targetHandle: summon.target_username,
                                 targetName: summon.target_name,
                                 pledgedAmount: `$${summon.pledged_amount.toFixed(
-                                  2
+                                  2,
                                 )}`,
                                 backers: summon.backers_count,
                                 status: summon.status,
                                 date: new Date(
-                                  summon.created_at
+                                  summon.created_at,
                                 ).toLocaleDateString(),
                               });
                             }}
@@ -1106,8 +1155,8 @@ export default function ProfilePage() {
                             tx.type === "payment"
                               ? "bg-koru-purple/10"
                               : tx.type === "refund"
-                              ? "bg-koru-golden/10"
-                              : "bg-koru-lime/10"
+                                ? "bg-koru-golden/10"
+                                : "bg-koru-lime/10",
                           )}
                         >
                           {tx.type === "payment" ? (
@@ -1116,7 +1165,7 @@ export default function ProfilePage() {
                                 "w-5 h-5",
                                 tx.status === "refunded"
                                   ? "text-koru-golden"
-                                  : "text-koru-purple"
+                                  : "text-koru-purple",
                               )}
                             />
                           ) : tx.type === "refund" ? (
@@ -1131,8 +1180,8 @@ export default function ProfilePage() {
                               {tx.type === "payment"
                                 ? `Payment to ${tx.personName}`
                                 : tx.type === "refund"
-                                ? "Refunded"
-                                : "Withdrawal"}
+                                  ? "Refunded"
+                                  : "Withdrawal"}
                             </h3>
                             <span
                               className={cn(
@@ -1140,15 +1189,15 @@ export default function ProfilePage() {
                                 tx.status === "completed"
                                   ? "bg-koru-lime/10 text-koru-lime"
                                   : tx.status === "refunded"
-                                  ? "bg-koru-golden/10 text-koru-golden"
-                                  : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500"
+                                    ? "bg-koru-golden/10 text-koru-golden"
+                                    : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500",
                               )}
                             >
                               {tx.status === "completed"
                                 ? "Completed"
                                 : tx.status === "refunded"
-                                ? "Refunded"
-                                : "Pending"}
+                                  ? "Refunded"
+                                  : "Pending"}
                             </span>
                           </div>
                           <p className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -1165,8 +1214,8 @@ export default function ProfilePage() {
                             tx.type === "refund"
                               ? "text-koru-golden"
                               : tx.type === "payment"
-                              ? "text-neutral-900 dark:text-neutral-100"
-                              : "text-koru-lime"
+                                ? "text-neutral-900 dark:text-neutral-100"
+                                : "text-koru-lime",
                           )}
                         >
                           {tx.type === "refund" ? "+" : "-"}$
@@ -1241,7 +1290,7 @@ export default function ProfilePage() {
                   targetName: selectedSummon.targetName,
                   totalPledged:
                     parseFloat(
-                      selectedSummon.pledgedAmount.replace(/[^0-9.]/g, "")
+                      selectedSummon.pledgedAmount.replace(/[^0-9.]/g, ""),
                     ) || 0,
                   backers: selectedSummon.backers,
                   category: "Summon",

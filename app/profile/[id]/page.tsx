@@ -8,7 +8,10 @@ import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
-import { OptimizedAvatar, BackgroundImage } from "@/components/ui/optimized-image";
+import {
+  OptimizedAvatar,
+  BackgroundImage,
+} from "@/components/ui/optimized-image";
 import { BookingModal } from "@/components/booking-modal";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
@@ -409,6 +412,7 @@ export default function ViewProfilePage() {
       pricePerMessage: profileData.pricePerMessage,
       responseTimeHours: profileData.responseTimeHours,
       availabilitySlots: profileData.availabilitySlots || [],
+      walletAddress: profileData.walletAddress || undefined,
     };
   }, [profileData]);
 
@@ -519,7 +523,7 @@ export default function ViewProfilePage() {
     slot: AvailabilitySlot,
     date: Date,
     timeSlot: string,
-    receipt: { id: string }
+    receipt: { id: string },
   ) => {
     try {
       // Create the chat in the database
@@ -557,6 +561,81 @@ export default function ViewProfilePage() {
   const hasAvailability =
     availabilityData.slots.length > 0 ||
     (profile?.availabilitySlots && profile.availabilitySlots.length > 0);
+
+  // Helper: Parse ISO date string (YYYY-MM-DD) to local Date at midnight
+  const parseLocalDate = (dateStr: string): Date => {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  // Helper: Check if a time slot is in the past for a given date
+  const isTimePast = (date: Date, timeStr: string): boolean => {
+    const now = new Date();
+    const [time, period] = timeStr.split(" ");
+    const [hours, minutes] = time.split(":").map(Number);
+
+    let hour24 = hours;
+    if (period?.toLowerCase() === "pm" && hours !== 12) {
+      hour24 = hours + 12;
+    } else if (period?.toLowerCase() === "am" && hours === 12) {
+      hour24 = 0;
+    }
+
+    const slotDateTime = new Date(date);
+    slotDateTime.setHours(hour24, minutes, 0, 0);
+
+    return slotDateTime <= now;
+  };
+
+  // Helper: Get available (future) times for a slot on a specific date
+  const getAvailableTimes = (
+    slot: AvailabilitySlot,
+    date: Date | null,
+  ): string[] => {
+    if (!date || !slot.times) return [];
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDay = new Date(date);
+    selectedDay.setHours(0, 0, 0, 0);
+
+    // If date is in the future (not today), all times are available
+    if (selectedDay > today) {
+      return slot.times;
+    }
+
+    // If date is today, filter out past times
+    if (selectedDay.getTime() === today.getTime()) {
+      return slot.times.filter((time) => !isTimePast(date, time));
+    }
+
+    // Date is in the past, no times available
+    return [];
+  };
+
+  // Helper: Check if a slot has any future available times
+  const slotHasFutureTimes = (slot: AvailabilitySlot): boolean => {
+    if (!slot.selectedDates || slot.selectedDates.length === 0) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (const dateStr of slot.selectedDates) {
+      // Parse date string as local date to avoid timezone issues
+      const date = parseLocalDate(dateStr);
+
+      // Future date - has available times
+      if (date > today) return true;
+
+      // Today - check if any times are still in the future
+      if (date.getTime() === today.getTime()) {
+        const futureTimes = getAvailableTimes(slot, date);
+        if (futureTimes.length > 0) return true;
+      }
+    }
+
+    return false;
+  };
 
   return (
     <div className="min-h-screen pb-[500px] sm:pb-96">
@@ -694,7 +773,7 @@ export default function ViewProfilePage() {
                         color.bg,
                         color.text,
                         "border",
-                        color.border
+                        color.border,
                       )}
                     >
                       {tag}
@@ -778,39 +857,65 @@ export default function ViewProfilePage() {
                     Available Sessions
                   </p>
                   <div className="space-y-2">
-                    {availabilityData.slots.map((slot) => (
-                      <div
-                        key={slot.id}
-                        className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700"
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium text-neutral-900 dark:text-neutral-100">
-                            {slot.name}
-                          </span>
-                          <span
-                            className={cn(
-                              "font-semibold",
-                              slot.price === 0
-                                ? "text-koru-lime"
-                                : "text-koru-golden"
-                            )}
-                          >
-                            {slot.price === 0 ? "Free" : `$${slot.price}`}
-                          </span>
+                    {availabilityData.slots.map((slot) => {
+                      const hasFutureTimes = slotHasFutureTimes(slot);
+                      return (
+                        <div
+                          key={slot.id}
+                          className={cn(
+                            "p-3 rounded-xl border",
+                            hasFutureTimes
+                              ? "bg-neutral-50 dark:bg-neutral-800/50 border-neutral-200 dark:border-neutral-700"
+                              : "bg-neutral-100 dark:bg-neutral-800/30 border-neutral-200 dark:border-neutral-700 opacity-60",
+                          )}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={cn(
+                                  "font-medium",
+                                  hasFutureTimes
+                                    ? "text-neutral-900 dark:text-neutral-100"
+                                    : "text-neutral-500 dark:text-neutral-400",
+                                )}
+                              >
+                                {slot.name}
+                              </span>
+                              {!hasFutureTimes && (
+                                <span className="px-2 py-0.5 text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full">
+                                  Past Times
+                                </span>
+                              )}
+                            </div>
+                            <span
+                              className={cn(
+                                "font-semibold",
+                                !hasFutureTimes
+                                  ? "text-neutral-400 dark:text-neutral-500"
+                                  : !slot.price || slot.price === 0
+                                    ? "text-koru-lime"
+                                    : "text-koru-golden",
+                              )}
+                            >
+                              {!slot.price || slot.price === 0
+                                ? "Free"
+                                : `$${slot.price}`}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
+                            <span className="flex items-center gap-1">
+                              <ClockIcon className="w-3 h-3" />
+                              {slot.duration} min
+                            </span>
+                            <span>·</span>
+                            <span>
+                              {slot.times.length} time
+                              {slot.times.length !== 1 ? "s" : ""}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
-                          <span className="flex items-center gap-1">
-                            <ClockIcon className="w-3 h-3" />
-                            {slot.duration} min
-                          </span>
-                          <span>·</span>
-                          <span>
-                            {slot.times.length} time
-                            {slot.times.length !== 1 ? "s" : ""}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -875,6 +980,7 @@ export default function ViewProfilePage() {
         onOpenChange={setBookingModalOpen}
         personName={profile.name}
         personId={profile.id}
+        recipientAddress={profile.walletAddress as `0x${string}` | undefined}
         availability={availabilityData}
         onBook={handleBook}
       />
@@ -980,7 +1086,7 @@ function SummonModal({
       setError(
         err instanceof Error
           ? err.message
-          : "An error occurred. Please try again."
+          : "An error occurred. Please try again.",
       );
     } finally {
       setIsSubmitting(false);
@@ -1236,7 +1342,7 @@ function StatCard({
       <div
         className={cn(
           "w-10 h-10 rounded-xl flex items-center justify-center mb-3",
-          colorClasses[color]
+          colorClasses[color],
         )}
       >
         {icon}
