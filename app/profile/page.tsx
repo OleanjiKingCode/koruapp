@@ -266,8 +266,17 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Wallet sync status
-  const { syncStatus, linkedWalletAddress, isWalletMismatch, isLinking } =
-    useWalletSync();
+  const {
+    syncStatus,
+    linkedWalletAddress,
+    isWalletMismatch,
+    isLinking,
+    isChanging,
+    changeSyncedWallet,
+    canChangeSyncedWallet,
+    daysUntilChange,
+    linkError,
+  } = useWalletSync();
 
   // Get real profile data
   const { chats, isLoading: isLoadingChats } = useUserChats();
@@ -627,56 +636,85 @@ export default function ProfilePage() {
                     {isWalletMismatch ? (
                       /* Wallet Mismatch Warning */
                       <div className="bg-gradient-to-r from-amber-500/10 to-amber-500/5 rounded-2xl border border-amber-500/30 p-4 h-full">
-                        <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
-                            <svg
-                              className="w-5 h-5 text-amber-500"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
+                              <svg
+                                className="w-5 h-5 text-amber-500"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                              </svg>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm text-amber-600 dark:text-amber-400">
+                                Different Wallet Connected
+                              </p>
+                              <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">
+                                Connected:{" "}
+                                <span className="font-mono">
+                                  {shortenAddress(walletAddress)}
+                                </span>
+                              </p>
+                              <p className="text-xs text-neutral-500 dark:text-neutral-500">
+                                Synced:{" "}
+                                <span className="font-mono">
+                                  {linkedWalletAddress
+                                    ? shortenAddress(linkedWalletAddress)
+                                    : "None"}
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+                          {/* Action buttons */}
+                          <div className="flex gap-2">
+                            {canChangeSyncedWallet ? (
+                              <button
+                                onClick={async () => {
+                                  const result = await changeSyncedWallet();
+                                  if (!result.success && result.error) {
+                                    console.error(result.error);
+                                  }
+                                }}
+                                disabled={isChanging}
+                                className="flex-1 text-xs px-3 py-2 rounded-lg bg-koru-purple text-white hover:bg-koru-purple/90 transition-all disabled:opacity-50"
+                              >
+                                {isChanging
+                                  ? "Updating..."
+                                  : "Change Synced Address"}
+                              </button>
+                            ) : (
+                              <div className="flex-1 text-xs px-3 py-2 rounded-lg bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 text-center">
+                                Can change in {daysUntilChange} day
+                                {daysUntilChange !== 1 ? "s" : ""}
+                              </div>
+                            )}
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await privyLogout();
+                                } catch (error) {
+                                  console.error(
+                                    "Error disconnecting wallet:",
+                                    error,
+                                  );
+                                }
+                              }}
+                              className="text-xs px-3 py-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all"
                             >
-                              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                              <line x1="12" y1="9" x2="12" y2="13" />
-                              <line x1="12" y1="17" x2="12.01" y2="17" />
-                            </svg>
+                              Disconnect
+                            </button>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm text-amber-600 dark:text-amber-400">
-                              Wrong Wallet
-                            </p>
-                            <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">
-                              Connected:{" "}
-                              <span className="font-mono">
-                                {shortenAddress(walletAddress)}
-                              </span>
-                            </p>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-500">
-                              Linked:{" "}
-                              <span className="font-mono">
-                                {linkedWalletAddress
-                                  ? shortenAddress(linkedWalletAddress)
-                                  : "None"}
-                              </span>
-                            </p>
-                          </div>
-                          <button
-                            onClick={async () => {
-                              try {
-                                await privyLogout();
-                              } catch (error) {
-                                console.error(
-                                  "Error disconnecting wallet:",
-                                  error,
-                                );
-                              }
-                            }}
-                            className="text-xs px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-500/30 transition-all shrink-0"
-                          >
-                            Switch
-                          </button>
+                          {linkError && (
+                            <p className="text-xs text-red-500">{linkError}</p>
+                          )}
                         </div>
                       </div>
                     ) : (
@@ -727,125 +765,87 @@ export default function ProfilePage() {
               transition={{ delay: 0.1 }}
               className="mb-8"
             >
-              <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft">
-                {/* Wallet Balance Section */}
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-4">
-                    Wallet Balance
-                  </h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {/* USDC Balance */}
-                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-koru-purple/10 via-koru-purple/5 to-transparent border border-koru-purple/20 p-4">
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-koru-purple/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-                      <div className="relative">
-                        <div className="flex items-center gap-2 mb-1">
-                          <CoinsIcon className="w-4 h-4 text-koru-purple" />
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                            USDC
-                          </span>
-                        </div>
-                        {walletAddress ? (
-                          <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-                            {isLoadingUsdc ? (
-                              <span className="animate-pulse">...</span>
-                            ) : (
-                              `$${parseFloat(usdcFormatted).toFixed(2)}`
-                            )}
-                          </p>
-                        ) : (
-                          <p className="text-2xl font-semibold text-neutral-400 dark:text-neutral-500">
-                            --
-                          </p>
-                        )}
+              {/* Compact Balance Row */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* Wallet Balance */}
+                <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 shadow-soft">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <WalletIcon className="w-4 h-4 text-neutral-500" />
+                      <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+                        Wallet
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                          {walletAddress
+                            ? isLoadingUsdc
+                              ? "..."
+                              : `$${parseFloat(usdcFormatted).toFixed(2)}`
+                            : "--"}
+                        </span>
+                        <span className="text-xs text-koru-purple font-medium">
+                          USDC
+                        </span>
                       </div>
                     </div>
-
-                    {/* ETH Balance */}
-                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-koru-golden/10 via-koru-golden/5 to-transparent border border-koru-golden/20 p-4">
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-koru-golden/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-                      <div className="relative">
-                        <div className="flex items-center gap-2 mb-1">
-                          <WalletIcon className="w-4 h-4 text-koru-golden" />
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                            ETH (Gas)
-                          </span>
-                        </div>
-                        {walletAddress ? (
-                          <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-                            {isLoadingEth ? (
-                              <span className="animate-pulse">...</span>
-                            ) : (
-                              `${parseFloat(ethFormatted).toFixed(4)}`
-                            )}
-                          </p>
-                        ) : (
-                          <p className="text-2xl font-semibold text-neutral-400 dark:text-neutral-500">
-                            --
-                          </p>
-                        )}
+                    <div className="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+                    <div className="flex-1">
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                          {walletAddress
+                            ? isLoadingEth
+                              ? "..."
+                              : parseFloat(ethFormatted).toFixed(4)
+                            : "--"}
+                        </span>
+                        <span className="text-xs text-koru-golden font-medium">
+                          ETH
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Divider */}
-                <div className="h-px bg-neutral-200 dark:bg-neutral-800 mb-6" />
-
-                {/* Koru Balance (Escrow) Section */}
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                      Koru Balance
-                    </h3>
-                    <Button variant="outline" size="sm" className="text-xs h-7">
+                {/* Koru Balance (Escrow) */}
+                <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 shadow-soft">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <CoinsIcon className="w-4 h-4 text-neutral-500" />
+                      <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+                        Koru
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs h-6 px-2 text-koru-purple hover:text-koru-purple/80"
+                    >
                       Withdraw
                     </Button>
                   </div>
-                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-koru-lime/10 via-koru-lime/5 to-transparent border border-koru-lime/20 p-5">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-koru-lime/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-                    <div className="relative">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <svg
-                              className="w-4 h-4 text-koru-lime"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                            </svg>
-                            <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                              Withdrawable
-                            </span>
-                          </div>
-                          {walletAddress ? (
-                            <p className="text-3xl font-semibold text-neutral-900 dark:text-neutral-100">
-                              $0.00
-                            </p>
-                          ) : (
-                            <p className="text-3xl font-semibold text-neutral-400 dark:text-neutral-500">
-                              --
-                            </p>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                            Pending
-                          </span>
-                          <p className="text-lg font-medium text-neutral-600 dark:text-neutral-300">
-                            {walletAddress ? "$0.00" : "--"}
-                          </p>
-                        </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-lg font-semibold text-koru-lime">
+                          {walletAddress ? "$0.00" : "--"}
+                        </span>
+                        <span className="text-xs text-neutral-500">ready</span>
                       </div>
-                      {walletAddress && (
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-3">
-                          Earnings from completed sessions
-                        </p>
-                      )}
+                    </div>
+                    <div className="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+                    <div className="flex-1">
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-lg font-semibold text-neutral-500 dark:text-neutral-400">
+                          {walletAddress ? "$0.00" : "--"}
+                        </span>
+                        <span className="text-xs text-neutral-400">
+                          pending
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>

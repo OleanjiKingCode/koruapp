@@ -122,32 +122,140 @@ export function useUser() {
     }
   };
 
-  // Link wallet to user account
+  // 14-day cooldown in milliseconds
+  const WALLET_CHANGE_COOLDOWN_DAYS = 14;
+  const WALLET_CHANGE_COOLDOWN_MS =
+    WALLET_CHANGE_COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
+
+  // Get the date when wallet can next be changed
+  const getNextWalletChangeDate = (): Date | null => {
+    if (!primaryWallet?.linked_at) return null;
+    const linkedDate = new Date(primaryWallet.linked_at);
+    return new Date(linkedDate.getTime() + WALLET_CHANGE_COOLDOWN_MS);
+  };
+
+  // Check if wallet change is allowed (14 days passed)
+  const canChangeWallet = (): boolean => {
+    if (!primaryWallet?.linked_at) return true; // No wallet linked, can add
+    const nextChangeDate = getNextWalletChangeDate();
+    if (!nextChangeDate) return true;
+    return new Date() >= nextChangeDate;
+  };
+
+  // Get days remaining until wallet can be changed
+  const getDaysUntilWalletChange = (): number => {
+    const nextChangeDate = getNextWalletChangeDate();
+    if (!nextChangeDate) return 0;
+    const now = new Date();
+    if (now >= nextChangeDate) return 0;
+    const diffMs = nextChangeDate.getTime() - now.getTime();
+    return Math.ceil(diffMs / (24 * 60 * 60 * 1000));
+  };
+
+  // Link wallet to user account (first time)
   const linkWallet = async (address: string, chain: string = "base") => {
     if (!twitterId || !address) return null;
 
     const normalizedAddress = address.toLowerCase();
     const existingWallets = dbUser?.connected_wallets || [];
 
-    // Check if wallet already linked
-    const alreadyLinked = existingWallets.some(
-      (w) => w.address.toLowerCase() === normalizedAddress,
+    // Check if this exact wallet already linked as primary
+    const alreadyPrimary = existingWallets.some(
+      (w) =>
+        w.address.toLowerCase() === normalizedAddress &&
+        w.is_primary &&
+        !w.unlinked_at,
     );
 
-    if (alreadyLinked) {
+    if (alreadyPrimary) {
       return dbUser;
     }
 
-    // Add new wallet as primary (first wallet is always primary)
+    // Add new wallet as primary
     const newWallet: ConnectedWallet = {
       address: normalizedAddress,
       chain,
-      is_primary: existingWallets.length === 0, // First wallet is primary
+      is_primary: true,
+      linked_at: new Date().toISOString(),
     };
 
-    const updatedWallets = [...existingWallets, newWallet];
+    // Mark any existing primary as not primary
+    const updatedWallets = existingWallets.map((w) => {
+      if (w.is_primary) {
+        return {
+          ...w,
+          is_primary: false,
+          unlinked_at: new Date().toISOString(),
+        };
+      }
+      return w;
+    });
 
-    return updateUserData({ connected_wallets: updatedWallets });
+    return updateUserData({
+      connected_wallets: [...updatedWallets, newWallet],
+    });
+  };
+
+  // Change primary wallet (with 14-day cooldown check)
+  const changePrimaryWallet = async (
+    newAddress: string,
+    chain: string = "base",
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (!twitterId || !newAddress)
+      return { success: false, error: "Invalid address" };
+
+    // Check cooldown
+    if (!canChangeWallet()) {
+      const daysRemaining = getDaysUntilWalletChange();
+      return {
+        success: false,
+        error: `You can change your wallet in ${daysRemaining} day${daysRemaining !== 1 ? "s" : ""}`,
+      };
+    }
+
+    const normalizedAddress = newAddress.toLowerCase();
+    const existingWallets = dbUser?.connected_wallets || [];
+
+    // Mark old primary as not primary (keep for history)
+    const updatedWallets = existingWallets.map((w) => {
+      if (w.is_primary) {
+        return {
+          ...w,
+          is_primary: false,
+          unlinked_at: new Date().toISOString(),
+        };
+      }
+      return w;
+    });
+
+    // Check if new address already exists in history
+    const existingWalletIndex = updatedWallets.findIndex(
+      (w) => w.address.toLowerCase() === normalizedAddress,
+    );
+
+    if (existingWalletIndex !== -1) {
+      // Reactivate existing wallet as primary
+      updatedWallets[existingWalletIndex] = {
+        ...updatedWallets[existingWalletIndex],
+        is_primary: true,
+        linked_at: new Date().toISOString(),
+        unlinked_at: undefined,
+      };
+      await updateUserData({ connected_wallets: updatedWallets });
+    } else {
+      // Add new wallet as primary
+      const newWallet: ConnectedWallet = {
+        address: normalizedAddress,
+        chain,
+        is_primary: true,
+        linked_at: new Date().toISOString(),
+      };
+      await updateUserData({
+        connected_wallets: [...updatedWallets, newWallet],
+      });
+    }
+
+    return { success: true };
   };
 
   // Check if a wallet address matches the user's stored primary wallet
@@ -170,8 +278,11 @@ export function useUser() {
     error,
     updateUser: updateUserData,
     linkWallet,
+    changePrimaryWallet,
     isWalletLinked,
     hasLinkedWallet,
+    canChangeWallet,
+    getDaysUntilWalletChange,
     primaryWalletAddress: primaryWallet?.address || null,
     refresh: mutate,
   };
