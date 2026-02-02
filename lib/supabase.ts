@@ -16,7 +16,7 @@ function getSupabaseClient(): SupabaseClient {
 
     if (!supabaseUrl || !supabaseAnonKey) {
       throw new Error(
-        "Supabase URL and key must be provided. Make sure SUPABASE_URL and SUPABASE_ANON_KEY are set in your environment variables."
+        "Supabase URL and key must be provided. Make sure SUPABASE_URL and SUPABASE_ANON_KEY are set in your environment variables.",
       );
     }
 
@@ -25,7 +25,7 @@ function getSupabaseClient(): SupabaseClient {
   }
 
   throw new Error(
-    "Supabase client can only be used on the server side. Use API routes instead."
+    "Supabase client can only be used on the server side. Use API routes instead.",
   );
 }
 
@@ -66,7 +66,7 @@ export interface CachedTwitterProfile {
 
 // Database operations for caching profiles
 export async function getCachedProfile(
-  username: string
+  username: string,
 ): Promise<CachedTwitterProfile | null> {
   const { data, error } = await supabase
     .from("twitter_profiles")
@@ -93,7 +93,7 @@ export async function getCachedProfile(
 }
 
 export async function getCachedProfilesByQuery(
-  query: string
+  query: string,
 ): Promise<CachedTwitterProfile[]> {
   const { data, error } = await supabase
     .from("twitter_profiles")
@@ -111,7 +111,7 @@ export async function getCachedProfilesByQuery(
 }
 
 export async function upsertTwitterProfile(
-  profile: Omit<CachedTwitterProfile, "id" | "created_at" | "updated_at">
+  profile: Omit<CachedTwitterProfile, "id" | "created_at" | "updated_at">,
 ): Promise<CachedTwitterProfile | null> {
   const { data, error } = await supabase
     .from("twitter_profiles")
@@ -123,13 +123,15 @@ export async function upsertTwitterProfile(
       },
       {
         onConflict: "twitter_id",
-      }
+      },
     )
     .select()
     .single();
 
   if (error) {
-    captureDbError(error, "upsertTwitterProfile", { username: profile.username });
+    captureDbError(error, "upsertTwitterProfile", {
+      username: profile.username,
+    });
     return null;
   }
 
@@ -145,7 +147,7 @@ type ProfileUpsertData = Partial<
 };
 
 export async function upsertManyTwitterProfiles(
-  profiles: ProfileUpsertData[]
+  profiles: ProfileUpsertData[],
 ): Promise<void> {
   const { error } = await supabase.from("twitter_profiles").upsert(
     profiles.map((profile) => ({
@@ -155,11 +157,13 @@ export async function upsertManyTwitterProfiles(
     })),
     {
       onConflict: "twitter_id",
-    }
+    },
   );
 
   if (error) {
-    captureDbError(error, "upsertManyTwitterProfiles", { count: profiles.length });
+    captureDbError(error, "upsertManyTwitterProfiles", {
+      count: profiles.length,
+    });
   }
 }
 
@@ -192,7 +196,7 @@ export interface FeaturedProfile {
 export async function getFeaturedProfiles(
   page: number = 0,
   limit: number = 50,
-  categories?: string[]
+  categories?: string[],
 ): Promise<{
   profiles: FeaturedProfile[];
   total: number;
@@ -218,7 +222,8 @@ export async function getFeaturedProfiles(
     .range(page * limit, (page + 1) * limit - 1);
 
   if (error || !data) {
-    if (error) captureDbError(error, "getFeaturedProfiles", { page, limit, categories });
+    if (error)
+      captureDbError(error, "getFeaturedProfiles", { page, limit, categories });
     return { profiles: [], total: 0, hasMore: false };
   }
 
@@ -232,7 +237,7 @@ export async function getFeaturedProfiles(
 // Get profile by username (for profile page)
 // Checks both featured_profiles and twitter_profiles tables
 export async function getProfileByUsername(
-  username: string
+  username: string,
 ): Promise<CachedTwitterProfile | null> {
   // First check featured_profiles (has category and tags from seed)
   // Use limit(1) to handle duplicates - just take the first match
@@ -283,7 +288,7 @@ export async function getProfileByUsername(
 // Search featured profiles
 export async function searchFeaturedProfiles(
   query: string,
-  limit: number = 20
+  limit: number = 20,
 ): Promise<CachedTwitterProfile[]> {
   const { data, error } = await supabase
     .from("twitter_profiles")
@@ -331,6 +336,8 @@ export interface ConnectedWallet {
   address: string;
   chain: string;
   is_primary: boolean;
+  linked_at: string; // ISO timestamp when wallet was linked
+  unlinked_at?: string; // ISO timestamp when wallet was unlinked (for history)
 }
 
 // Types for users
@@ -477,7 +484,7 @@ export interface AvailabilitySlot {
 
 // Get user by Twitter ID
 export async function getUserByTwitterId(
-  twitterId: string
+  twitterId: string,
 ): Promise<User | null> {
   const { data, error } = await supabase
     .from("users")
@@ -491,7 +498,7 @@ export async function getUserByTwitterId(
 
 // Get user by username
 export async function getUserByUsername(
-  username: string
+  username: string,
 ): Promise<User | null> {
   const { data, error } = await supabase
     .from("users")
@@ -560,7 +567,7 @@ export async function updateUser(
   twitterId: string,
   updates: Partial<
     Omit<User, "id" | "twitter_id" | "created_at" | "updated_at">
-  >
+  >,
 ): Promise<User | null> {
   const { data, error } = await supabase
     .from("users")
@@ -603,7 +610,7 @@ export async function getUserChats(userId: string): Promise<Chat[]> {
         username,
         profile_image_url
       )
-    `
+    `,
     )
     .or(`requester_id.eq.${userId},creator_id.eq.${userId}`)
     .order("updated_at", { ascending: false });
@@ -658,7 +665,10 @@ export async function createChat(chat: {
     .single();
 
   if (error) {
-    captureDbError(error, "createChat", { requester_id: chat.requester_id, creator_id: chat.creator_id });
+    captureDbError(error, "createChat", {
+      requester_id: chat.requester_id,
+      creator_id: chat.creator_id,
+    });
     return null;
   }
 
@@ -759,7 +769,10 @@ export async function createSummon(summon: {
     .single();
 
   if (error) {
-    captureDbError(error, "createSummon", { creator_id: summon.creator_id, target_username: summon.target_username });
+    captureDbError(error, "createSummon", {
+      creator_id: summon.creator_id,
+      target_username: summon.target_username,
+    });
     return null;
   }
 
@@ -771,7 +784,7 @@ export async function createSummon(summon: {
 
 // Get summon by target username
 export async function getSummonByTarget(
-  targetUsername: string
+  targetUsername: string,
 ): Promise<Summon | null> {
   const { data, error } = await supabase
     .from("appeals")
@@ -815,7 +828,7 @@ export interface SummonBacker {
 // Get backers for a summon with user info
 export async function getSummonBackers(
   summonId: string,
-  limit: number = 10
+  limit: number = 10,
 ): Promise<SummonBacker[]> {
   // Try appeal_backers first, then summon_backers
   const { data, error } = await supabase
@@ -832,7 +845,7 @@ export async function getSummonBackers(
         username,
         profile_image_url
       )
-    `
+    `,
     )
     .eq("appeal_id", summonId)
     .order("created_at", { ascending: false })
@@ -854,7 +867,7 @@ export async function getSummonBackers(
           username,
           profile_image_url
         )
-      `
+      `,
       )
       .eq("summon_id", summonId)
       .order("created_at", { ascending: false })
@@ -879,7 +892,7 @@ export async function getSummonBackers(
 export async function backSummon(
   summonId: string,
   userId: string,
-  amount: number
+  amount: number,
 ): Promise<boolean> {
   // First add the backer
   const { error: backerError } = await supabase.from("appeal_backers").insert({
@@ -889,7 +902,11 @@ export async function backSummon(
   });
 
   if (backerError) {
-    captureDbError(backerError, "backSummon:addBacker", { summonId, userId, amount });
+    captureDbError(backerError, "backSummon:addBacker", {
+      summonId,
+      userId,
+      amount,
+    });
     return false;
   }
 
@@ -899,11 +916,14 @@ export async function backSummon(
     {
       summon_id: summonId,
       backing_amount: amount,
-    }
+    },
   );
 
   if (updateError) {
-    captureDbError(updateError, "backSummon:updateSummon", { summonId, amount });
+    captureDbError(updateError, "backSummon:updateSummon", {
+      summonId,
+      amount,
+    });
     return false;
   }
 
@@ -917,7 +937,7 @@ export async function backSummon(
 // Get user's transactions
 export async function getUserTransactions(
   userId: string,
-  limit = 50
+  limit = 50,
 ): Promise<Transaction[]> {
   const { data, error } = await supabase
     .from("transactions")
@@ -933,7 +953,7 @@ export async function getUserTransactions(
 // Get recent transactions (for profile)
 export async function getRecentTransactions(
   userId: string,
-  limit = 5
+  limit = 5,
 ): Promise<Transaction[]> {
   const { data, error } = await supabase
     .from("transactions")
@@ -981,7 +1001,7 @@ export async function addWallet(
   userId: string,
   address: string,
   chain: string = "ethereum",
-  label?: string
+  label?: string,
 ): Promise<Wallet | null> {
   const { data, error } = await supabase
     .from("wallets")
@@ -1009,7 +1029,7 @@ export async function addWallet(
 
 // Get user's availability slots
 export async function getUserAvailabilitySlots(
-  userId: string
+  userId: string,
 ): Promise<AvailabilitySlot[]> {
   const { data, error } = await supabase
     .from("availability_slots")
@@ -1030,7 +1050,7 @@ export async function createAvailabilitySlot(
     duration: number;
     price: number;
     max_bookings_per_day?: number;
-  }
+  },
 ): Promise<AvailabilitySlot | null> {
   const { data, error } = await supabase
     .from("availability_slots")
@@ -1054,7 +1074,7 @@ export async function updateAvailabilitySlot(
   slotId: string,
   updates: Partial<
     Omit<AvailabilitySlot, "id" | "user_id" | "created_at" | "updated_at">
-  >
+  >,
 ): Promise<AvailabilitySlot | null> {
   const { data, error } = await supabase
     .from("availability_slots")
@@ -1098,7 +1118,7 @@ export interface Message {
 // Get messages for a chat
 export async function getChatMessages(
   chatId: string,
-  limit: number = 100
+  limit: number = 100,
 ): Promise<Message[]> {
   const { data, error } = await supabase
     .from("messages")
@@ -1111,7 +1131,7 @@ export async function getChatMessages(
         username,
         profile_image_url
       )
-    `
+    `,
     )
     .eq("chat_id", chatId)
     .order("created_at", { ascending: true })
@@ -1128,7 +1148,7 @@ export async function getChatMessages(
 export async function sendMessage(
   chatId: string,
   senderId: string,
-  content: string
+  content: string,
 ): Promise<Message | null> {
   const { data, error } = await supabase
     .from("messages")
@@ -1146,7 +1166,7 @@ export async function sendMessage(
         username,
         profile_image_url
       )
-    `
+    `,
     )
     .single();
 
@@ -1171,7 +1191,7 @@ export async function sendMessage(
 // Mark messages as read
 export async function markMessagesAsRead(
   chatId: string,
-  userId: string
+  userId: string,
 ): Promise<boolean> {
   const { error } = await supabase
     .from("messages")
@@ -1190,7 +1210,7 @@ export async function markMessagesAsRead(
 // Get unread message count for a chat
 export async function getUnreadCount(
   chatId: string,
-  userId: string
+  userId: string,
 ): Promise<number> {
   const { count, error } = await supabase
     .from("messages")
