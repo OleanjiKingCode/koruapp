@@ -870,23 +870,16 @@ export default function ViewProfilePage() {
                           )}
                         >
                           <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={cn(
-                                  "font-medium",
-                                  hasFutureTimes
-                                    ? "text-neutral-900 dark:text-neutral-100"
-                                    : "text-neutral-500 dark:text-neutral-400",
-                                )}
-                              >
-                                {slot.name}
-                              </span>
-                              {!hasFutureTimes && (
-                                <span className="px-2 py-0.5 text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full">
-                                  Past Times
-                                </span>
+                            <span
+                              className={cn(
+                                "font-medium",
+                                hasFutureTimes
+                                  ? "text-neutral-900 dark:text-neutral-100"
+                                  : "text-neutral-500 dark:text-neutral-400",
                               )}
-                            </div>
+                            >
+                              {slot.name}
+                            </span>
                             <span
                               className={cn(
                                 "font-semibold",
@@ -902,16 +895,23 @@ export default function ViewProfilePage() {
                                 : `$${slot.price}`}
                             </span>
                           </div>
-                          <div className="flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
-                            <span className="flex items-center gap-1">
-                              <ClockIcon className="w-3 h-3" />
-                              {slot.duration} min
-                            </span>
-                            <span>·</span>
-                            <span>
-                              {slot.times.length} time
-                              {slot.times.length !== 1 ? "s" : ""}
-                            </span>
+                          <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
+                            <div className="flex items-center gap-3">
+                              <span className="flex items-center gap-1">
+                                <ClockIcon className="w-3 h-3" />
+                                {slot.duration} min
+                              </span>
+                              <span>·</span>
+                              <span>
+                                {slot.times.length} time
+                                {slot.times.length !== 1 ? "s" : ""}
+                              </span>
+                            </div>
+                            {!hasFutureTimes && (
+                              <span className="px-2 py-0.5 text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full">
+                                Past Times
+                              </span>
+                            )}
                           </div>
                         </div>
                       );
@@ -981,6 +981,7 @@ export default function ViewProfilePage() {
         personName={profile.name}
         personId={profile.id}
         recipientAddress={profile.walletAddress as `0x${string}` | undefined}
+        isRecipientOnKoru={profile.isOnKoru}
         availability={availabilityData}
         onBook={handleBook}
       />

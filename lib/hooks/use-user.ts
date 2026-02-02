@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import useSWR from "swr";
-import { User } from "@/lib/supabase";
+import { User, ConnectedWallet } from "@/lib/supabase";
 import { API_ROUTES } from "@/lib/constants/routes";
 
 // Fetcher for SWR
@@ -26,11 +26,25 @@ export function useUser() {
     isLoading: isLoadingDb,
     mutate,
   } = useSWR(twitterId ? `user-${twitterId}` : null, () =>
-    twitterId ? fetcher(twitterId) : null
+    twitterId ? fetcher(twitterId) : null,
   );
 
   const isLoading = status === "loading" || isLoadingDb;
   const isAuthenticated = status === "authenticated";
+
+  // Get primary wallet address from connected_wallets
+  const getPrimaryWallet = (): ConnectedWallet | null => {
+    if (!dbUser?.connected_wallets || dbUser.connected_wallets.length === 0) {
+      return null;
+    }
+    // Find primary wallet, or return first one
+    return (
+      dbUser.connected_wallets.find((w) => w.is_primary) ||
+      dbUser.connected_wallets[0]
+    );
+  };
+
+  const primaryWallet = getPrimaryWallet();
 
   // Combined user data - session data merged with DB data
   const user = session?.user
@@ -54,6 +68,9 @@ export function useUser() {
         email: dbUser?.email || null,
         tags: dbUser?.tags || [],
         website: dbUser?.website || null,
+        // Wallet info
+        connectedWallets: dbUser?.connected_wallets || [],
+        primaryWalletAddress: primaryWallet?.address || null,
         // Balance info
         balance: dbUser?.balance || 0,
         pendingBalance: dbUser?.pending_balance || 0,
@@ -74,7 +91,8 @@ export function useUser() {
       email: string;
       tags: string[];
       website: string;
-    }>
+      connected_wallets: ConnectedWallet[];
+    }>,
   ) => {
     if (!twitterId) return null;
 
@@ -104,6 +122,45 @@ export function useUser() {
     }
   };
 
+  // Link wallet to user account
+  const linkWallet = async (address: string, chain: string = "base") => {
+    if (!twitterId || !address) return null;
+
+    const normalizedAddress = address.toLowerCase();
+    const existingWallets = dbUser?.connected_wallets || [];
+
+    // Check if wallet already linked
+    const alreadyLinked = existingWallets.some(
+      (w) => w.address.toLowerCase() === normalizedAddress,
+    );
+
+    if (alreadyLinked) {
+      return dbUser;
+    }
+
+    // Add new wallet as primary (first wallet is always primary)
+    const newWallet: ConnectedWallet = {
+      address: normalizedAddress,
+      chain,
+      is_primary: existingWallets.length === 0, // First wallet is primary
+    };
+
+    const updatedWallets = [...existingWallets, newWallet];
+
+    return updateUserData({ connected_wallets: updatedWallets });
+  };
+
+  // Check if a wallet address matches the user's stored primary wallet
+  const isWalletLinked = (address: string): boolean => {
+    if (!address || !primaryWallet) return false;
+    return primaryWallet.address.toLowerCase() === address.toLowerCase();
+  };
+
+  // Check if user has any wallet linked
+  const hasLinkedWallet = (): boolean => {
+    return !!primaryWallet;
+  };
+
   return {
     user,
     dbUser,
@@ -112,6 +169,10 @@ export function useUser() {
     isAuthenticated,
     error,
     updateUser: updateUserData,
+    linkWallet,
+    isWalletLinked,
+    hasLinkedWallet,
+    primaryWalletAddress: primaryWallet?.address || null,
     refresh: mutate,
   };
 }

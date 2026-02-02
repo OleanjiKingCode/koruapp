@@ -46,6 +46,7 @@ interface BookingModalProps {
   personName: string;
   personId: string;
   recipientAddress?: Address; // Wallet address of the person being booked (optional for now)
+  isRecipientOnKoru?: boolean; // Whether the recipient has a Koru account
   availability: AvailabilityData;
   onBook: (
     slot: AvailabilitySlot,
@@ -103,6 +104,7 @@ export function BookingModal({
   personName,
   personId,
   recipientAddress,
+  isRecipientOnKoru = true,
   availability,
   onBook,
 }: BookingModalProps) {
@@ -408,7 +410,7 @@ export function BookingModal({
         "[BookingModal] INVALID: Recipient has no valid wallet address",
       );
       setError(
-        `${personName} hasn't set up their wallet to receive payments yet. They need to connect their wallet on Koru first.`,
+        `${personName} hasn't linked a wallet to their Koru account yet. They need to connect and link their wallet on Koru to receive payments.`,
       );
       return;
     }
@@ -694,23 +696,16 @@ export function BookingModal({
                         )}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <h3
-                              className={cn(
-                                "font-semibold",
-                                hasFutureTimes
-                                  ? "text-neutral-900 dark:text-neutral-100"
-                                  : "text-neutral-500 dark:text-neutral-400",
-                              )}
-                            >
-                              {slot.name}
-                            </h3>
-                            {!hasFutureTimes && (
-                              <span className="px-2 py-0.5 text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full">
-                                Past Times
-                              </span>
+                          <h3
+                            className={cn(
+                              "font-semibold",
+                              hasFutureTimes
+                                ? "text-neutral-900 dark:text-neutral-100"
+                                : "text-neutral-500 dark:text-neutral-400",
                             )}
-                          </div>
+                          >
+                            {slot.name}
+                          </h3>
                           <span
                             className={cn(
                               "text-lg font-bold",
@@ -726,21 +721,28 @@ export function BookingModal({
                               : `$${slot.price}`}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
-                          <div className="flex items-center gap-1">
-                            <ClockIcon className="w-3.5 h-3.5" />
-                            <span>
-                              {
-                                DURATION_OPTIONS.find(
-                                  (d) => d.value === slot.duration,
-                                )?.label
-                              }
+                        <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1">
+                              <ClockIcon className="w-3.5 h-3.5" />
+                              <span>
+                                {
+                                  DURATION_OPTIONS.find(
+                                    (d) => d.value === slot.duration,
+                                  )?.label
+                                }
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <CalendarIcon className="w-3.5 h-3.5" />
+                              <span>{getSlotDateInfo(slot)}</span>
+                            </div>
+                          </div>
+                          {!hasFutureTimes && (
+                            <span className="px-2 py-0.5 text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full">
+                              Past Times
                             </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <CalendarIcon className="w-3.5 h-3.5" />
-                            <span>{getSlotDateInfo(slot)}</span>
-                          </div>
+                          )}
                         </div>
                       </motion.button>
                     );
@@ -1118,13 +1120,6 @@ export function BookingModal({
                       <CheckIcon className="w-4 h-4 mr-2" />
                       Confirm Booking
                     </Button>
-                  ) : !canReceivePayment ? (
-                    <Button
-                      disabled
-                      className="flex-1 bg-neutral-300 dark:bg-neutral-700 cursor-not-allowed"
-                    >
-                      Recipient Has No Wallet
-                    </Button>
                   ) : !authenticated || !walletAddress ? (
                     <Button
                       onClick={() => login()}
@@ -1132,6 +1127,15 @@ export function BookingModal({
                     >
                       <WalletIcon className="w-4 h-4 mr-2" />
                       Connect Wallet
+                    </Button>
+                  ) : !canReceivePayment ? (
+                    <Button
+                      disabled
+                      className="flex-1 bg-neutral-300 dark:bg-neutral-700 cursor-not-allowed"
+                    >
+                      {isRecipientOnKoru
+                        ? "Recipient Hasn't Linked Wallet"
+                        : "Recipient Not on Koru"}
                     </Button>
                   ) : !hasEnoughBalance ? (
                     <Button
