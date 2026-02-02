@@ -7,6 +7,7 @@ import { motion } from "motion/react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 // Loading fallback for Suspense
 function LoginLoading() {
@@ -106,7 +107,7 @@ function LoginContent() {
           "relative w-full max-w-md rounded-3xl p-8 md:p-10",
           isDark
             ? "bg-neutral-900/80 border border-neutral-800 backdrop-blur-xl"
-            : "bg-white/80 border border-neutral-200 backdrop-blur-xl shadow-2xl"
+            : "bg-white/80 border border-neutral-200 backdrop-blur-xl shadow-2xl",
         )}
       >
         {/* Logo */}
@@ -122,9 +123,13 @@ function LoginContent() {
               transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
               className="absolute inset-0 w-24 h-24 rounded-full bg-gradient-to-br from-koru-purple to-koru-golden opacity-50 blur-xl"
             />
-            <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-koru-purple via-koru-golden to-koru-lime flex items-center justify-center">
-              <span className="text-4xl font-bold text-white font-tenor">K</span>
-            </div>
+            <Image
+              src="/logo.png"
+              alt="Koru"
+              width={96}
+              height={96}
+              className="relative rounded-full"
+            />
           </div>
         </motion.div>
 
@@ -138,7 +143,7 @@ function LoginContent() {
           <h1
             className={cn(
               "text-3xl font-bold mb-3",
-              isDark ? "text-white" : "text-neutral-900"
+              isDark ? "text-white" : "text-neutral-900",
             )}
           >
             Welcome to Kōru
@@ -146,7 +151,7 @@ function LoginContent() {
           <p
             className={cn(
               "text-base",
-              isDark ? "text-neutral-400" : "text-neutral-600"
+              isDark ? "text-neutral-400" : "text-neutral-600",
             )}
           >
             Pay for access. Earn for time.
@@ -162,14 +167,20 @@ function LoginContent() {
               "mb-6 p-4 rounded-xl text-sm text-center",
               isDark
                 ? "bg-red-500/10 text-red-400 border border-red-500/20"
-                : "bg-red-50 text-red-600 border border-red-200"
+                : "bg-red-50 text-red-600 border border-red-200",
             )}
           >
             {error === "OAuthSignin" && "Error starting sign in flow"}
-            {error === "OAuthCallback" && "Error during authentication callback"}
+            {error === "OAuthCallback" &&
+              "Error during authentication callback"}
             {error === "OAuthCreateAccount" && "Could not create account"}
             {error === "Callback" && "Authentication error"}
-            {!["OAuthSignin", "OAuthCallback", "OAuthCreateAccount", "Callback"].includes(error) && "An error occurred"}
+            {![
+              "OAuthSignin",
+              "OAuthCallback",
+              "OAuthCreateAccount",
+              "Callback",
+            ].includes(error) && "An error occurred"}
           </motion.div>
         )}
 
@@ -188,7 +199,8 @@ function LoginContent() {
               "dark:bg-white dark:hover:bg-neutral-100 dark:text-neutral-900",
               "flex items-center justify-center gap-3",
               "shadow-lg hover:shadow-xl",
-              (isLoading || status === "loading") && "opacity-70 cursor-not-allowed"
+              (isLoading || status === "loading") &&
+                "opacity-70 cursor-not-allowed",
             )}
           >
             {isLoading || status === "loading" ? (
@@ -239,7 +251,7 @@ function LoginContent() {
               key={i}
               className={cn(
                 "flex items-center gap-3 text-sm",
-                isDark ? "text-neutral-400" : "text-neutral-600"
+                isDark ? "text-neutral-400" : "text-neutral-600",
               )}
             >
               <span>{feature.icon}</span>
@@ -255,7 +267,7 @@ function LoginContent() {
           transition={{ delay: 0.5 }}
           className={cn(
             "text-xs text-center mt-8",
-            isDark ? "text-neutral-500" : "text-neutral-500"
+            isDark ? "text-neutral-500" : "text-neutral-500",
           )}
         >
           By continuing, you agree to our terms and conditions.
@@ -273,6 +285,3 @@ function XIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-
-
-

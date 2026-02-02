@@ -6,6 +6,25 @@ import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { CheckIcon } from "@/components/icons";
 import type { UserData } from "@/lib/types";
 
+// Koru Logo component for share cards (using img for screenshot compatibility)
+function KoruLogo({
+  size = 24,
+  className = "",
+}: {
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <img
+      src="/logo.png"
+      alt="K"
+      width={size}
+      height={size}
+      className={`rounded-md ${className}`}
+    />
+  );
+}
+
 interface ProfileShareCardProps {
   userData: UserData;
   variant?: "default" | "minimal" | "gradient" | "neon" | "ticket";
@@ -92,9 +111,7 @@ export const ProfileShareCard = forwardRef<
           {/* Footer */}
           <div className="flex items-center justify-between pt-4 mt-4 border-t border-white/5">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-[#c385ee] to-[#9deb61] flex items-center justify-center">
-                <span className="text-white text-xs font-bold">K</span>
-              </div>
+              <KoruLogo size={24} className="rounded-lg" />
               <span className="text-white/60 text-sm font-medium">
                 koruapp.xyz
               </span>
@@ -298,9 +315,7 @@ export const ProfileShareCard = forwardRef<
           {/* Footer */}
           <div className="flex items-center justify-between pt-4 mt-4 border-t border-white/5">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-[#c385ee] to-[#9deb61] flex items-center justify-center">
-                <span className="text-black text-xs font-bold">K</span>
-              </div>
+              <KoruLogo size={24} className="rounded-lg" />
               <span className="text-white/60 text-sm font-medium">
                 koruapp.xyz
               </span>
@@ -332,7 +347,7 @@ export const ProfileShareCard = forwardRef<
     // Generate a ticket number from address
     const ticketNum = userData.address.slice(2, 8).toUpperCase();
     const seatCode = `${String.fromCharCode(
-      65 + (parseInt(userData.address.slice(8, 10), 16) % 6)
+      65 + (parseInt(userData.address.slice(8, 10), 16) % 6),
     )}${(parseInt(userData.address.slice(10, 12), 16) % 40) + 1}`;
 
     return (
@@ -431,9 +446,7 @@ export const ProfileShareCard = forwardRef<
               {/* Footer */}
               <div className="flex items-center justify-between pt-3 border-t border-neutral-200/50">
                 <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-md bg-gradient-to-br from-[#c385ee] to-[#9deb61] flex items-center justify-center">
-                    <span className="text-white text-[10px] font-bold">K</span>
-                  </div>
+                  <KoruLogo size={20} className="rounded-md" />
                   <span className="text-neutral-600 text-xs font-semibold">
                     koruapp.xyz
                   </span>
@@ -580,8 +593,8 @@ export const ProfileShareCard = forwardRef<
                   index === 0
                     ? "rgba(195,133,238,0.2)"
                     : index === 1
-                    ? "rgba(218,176,121,0.2)"
-                    : "rgba(157,235,97,0.2)",
+                      ? "rgba(218,176,121,0.2)"
+                      : "rgba(157,235,97,0.2)",
                 color:
                   index === 0 ? "#c385ee" : index === 1 ? "#dab079" : "#9deb61",
               }}
@@ -613,9 +626,7 @@ export const ProfileShareCard = forwardRef<
         {/* Footer */}
         <div className="flex items-center justify-between pt-4 border-t mt-4 border-white/10">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#c385ee] via-[#dab079] to-[#9deb61] flex items-center justify-center shadow-lg">
-              <span className="text-white text-sm font-black">K</span>
-            </div>
+            <KoruLogo size={32} className="rounded-xl shadow-lg" />
             <span className="text-white/70 text-sm font-semibold">
               koruapp.xyz
             </span>

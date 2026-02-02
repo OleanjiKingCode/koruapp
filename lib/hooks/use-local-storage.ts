@@ -9,7 +9,7 @@ import { FONT_OPTIONS, STORAGE_KEYS } from "@/lib/constants";
  */
 export function useLocalStorage<T>(
   key: string,
-  initialValue: T
+  initialValue: T,
 ): [T, (value: T | ((prev: T) => T)) => void] {
   // Initialize state
   const [storedValue, setStoredValue] = useState<T>(initialValue);
@@ -39,7 +39,7 @@ export function useLocalStorage<T>(
         console.warn(`Error setting localStorage key "${key}":`, error);
       }
     },
-    [key]
+    [key],
   );
 
   return [storedValue, setValue];
@@ -49,7 +49,10 @@ export function useLocalStorage<T>(
  * Hook specifically for font preference
  */
 export function useFontPreference(defaultFont = "quicksand") {
-  const [font, setFont] = useLocalStorage(STORAGE_KEYS.FONT_PREFERENCE, defaultFont);
+  const [font, setFont] = useLocalStorage(
+    STORAGE_KEYS.FONT_PREFERENCE,
+    defaultFont,
+  );
   const pathname = usePathname();
 
   const applySelectedOption = useCallback(
@@ -60,13 +63,13 @@ export function useFontPreference(defaultFont = "quicksand") {
         FONT_OPTIONS[0];
 
       FONT_OPTIONS.forEach((option) =>
-        document.body.classList.remove(option.className)
+        document.body.classList.remove(option.className),
       );
       document.body.classList.add(selectedOption.className);
 
       return selectedOption.value;
     },
-    [defaultFont]
+    [defaultFont],
   );
 
   const applyFont = useCallback(
@@ -76,13 +79,13 @@ export function useFontPreference(defaultFont = "quicksand") {
       const selectedValue = applySelectedOption(fontValue);
       setFont(selectedValue);
     },
-    [applySelectedOption, setFont]
+    [applySelectedOption, setFont],
   );
 
   useEffect(() => {
     if (pathname === "/") {
       FONT_OPTIONS.forEach((option) =>
-        document.body.classList.remove(option.className)
+        document.body.classList.remove(option.className),
       );
       return;
     }
@@ -110,6 +113,29 @@ export interface AvailabilityData {
   slots: AvailabilitySlot[];
 }
 
+// Format date to local ISO string (YYYY-MM-DD) to avoid timezone issues
+function formatLocalDateStr(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+// Parse a date string (YYYY-MM-DD) as local date
+function parseLocalDate(dateStr: string): Date {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+// Normalize date strings to local format (handles legacy UTC dates)
+function normalizeDateStrings(dates: string[]): string[] {
+  return dates.map((dateStr) => {
+    // Parse and re-format to ensure consistent local format
+    const date = parseLocalDate(dateStr);
+    return formatLocalDateStr(date);
+  });
+}
+
 function getDefaultSelectedDates(): string[] {
   const dates: string[] = [];
   const today = new Date();
@@ -117,7 +143,8 @@ function getDefaultSelectedDates(): string[] {
   for (let i = 1; i <= 14; i++) {
     const nextDay = new Date(today);
     nextDay.setDate(today.getDate() + i);
-    dates.push(nextDay.toISOString().split("T")[0]);
+    // Use local date formatting for consistency with booking modal
+    dates.push(formatLocalDateStr(nextDay));
   }
   return dates;
 }
@@ -182,9 +209,11 @@ export function useAvailability() {
                         duration: slot.duration || 30,
                         times: slot.times || [],
                         price: slot.price ?? 50,
-                        selectedDates:
-                          slot.selectedDates || defaultSelectedDates,
-                      })
+                        // Normalize dates to ensure consistent local format
+                        selectedDates: slot.selectedDates
+                          ? normalizeDateStrings(slot.selectedDates)
+                          : defaultSelectedDates,
+                      }),
                     )
                   : DEFAULT_AVAILABILITY.slots,
             });
@@ -205,7 +234,7 @@ export function useAvailability() {
     async (
       newAvailability:
         | AvailabilityData
-        | ((prev: AvailabilityData) => AvailabilityData)
+        | ((prev: AvailabilityData) => AvailabilityData),
     ) => {
       const valueToSave =
         typeof newAvailability === "function"
@@ -233,11 +262,11 @@ export function useAvailability() {
         setIsSaving(false);
       }
     },
-    [availability]
+    [availability],
   );
 
   const filledSlots = availability.slots.filter(
-    (s) => s.name && s.times.length > 0
+    (s) => s.name && s.times.length > 0,
   );
 
   const hasAvailability = filledSlots.length > 0;

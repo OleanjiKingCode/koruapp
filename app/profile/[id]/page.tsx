@@ -423,11 +423,43 @@ export default function ViewProfilePage() {
     notFound();
   }
 
+  // Helper: Format date to local ISO string (YYYY-MM-DD)
+  const formatLocalDateStr = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  // Helper: Parse date string as local date
+  const parseLocalDateStr = (dateStr: string): Date => {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  // Helper: Normalize date strings to local format
+  const normalizeDateStrings = (dates: string[]): string[] => {
+    return dates.map((dateStr) => {
+      const date = parseLocalDateStr(dateStr);
+      return formatLocalDateStr(date);
+    });
+  };
+
   // Availability data - use data from API for Koru users
   const availabilityData: AvailabilityData = useMemo(() => {
     // Use availability from API if user is on Koru
     if (profileData?.isOnKoru && profileData?.availability) {
-      return profileData.availability;
+      const availability = profileData.availability;
+      // Normalize dates to ensure consistent local format
+      return {
+        timezone: availability.timezone || "America/New_York",
+        slots: (availability.slots || []).map((slot: AvailabilitySlot) => ({
+          ...slot,
+          selectedDates: slot.selectedDates
+            ? normalizeDateStrings(slot.selectedDates)
+            : [],
+        })),
+      };
     }
     // Default empty availability
     return {
