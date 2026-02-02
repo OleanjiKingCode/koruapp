@@ -727,72 +727,65 @@ export default function ProfilePage() {
               transition={{ delay: 0.1 }}
               className="mb-8"
             >
-              <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft">
-                {/* Wallet Balance Section */}
-                <div className="mb-6">
+              {/* Two Balance Boxes */}
+              <div className="grid md:grid-cols-2 gap-4">
+                {/* Box 1: Wallet Balance */}
+                <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-5 shadow-soft">
                   <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-4">
                     Wallet Balance
                   </h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {/* USDC Balance */}
-                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-koru-purple/10 via-koru-purple/5 to-transparent border border-koru-purple/20 p-4">
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-koru-purple/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-                      <div className="relative">
-                        <div className="flex items-center gap-2 mb-1">
-                          <CoinsIcon className="w-4 h-4 text-koru-purple" />
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                  <div className="space-y-4">
+                    {/* USDC */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-koru-purple/10 flex items-center justify-center">
+                          <CoinsIcon className="w-5 h-5 text-koru-purple" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                             USDC
-                          </span>
+                          </p>
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                            Base Network
+                          </p>
                         </div>
-                        {walletAddress ? (
-                          <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-                            {isLoadingUsdc ? (
-                              <span className="animate-pulse">...</span>
-                            ) : (
-                              `$${parseFloat(usdcFormatted).toFixed(2)}`
-                            )}
-                          </p>
-                        ) : (
-                          <p className="text-2xl font-semibold text-neutral-400 dark:text-neutral-500">
-                            --
-                          </p>
-                        )}
                       </div>
+                      <p className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                        {walletAddress
+                          ? isLoadingUsdc
+                            ? "..."
+                            : `$${parseFloat(usdcFormatted).toFixed(2)}`
+                          : "--"}
+                      </p>
                     </div>
-
-                    {/* ETH Balance */}
-                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-koru-golden/10 via-koru-golden/5 to-transparent border border-koru-golden/20 p-4">
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-koru-golden/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-                      <div className="relative">
-                        <div className="flex items-center gap-2 mb-1">
-                          <WalletIcon className="w-4 h-4 text-koru-golden" />
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                            ETH (Gas)
-                          </span>
+                    {/* ETH */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-koru-golden/10 flex items-center justify-center">
+                          <WalletIcon className="w-5 h-5 text-koru-golden" />
                         </div>
-                        {walletAddress ? (
-                          <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-                            {isLoadingEth ? (
-                              <span className="animate-pulse">...</span>
-                            ) : (
-                              `${parseFloat(ethFormatted).toFixed(4)}`
-                            )}
+                        <div>
+                          <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                            ETH
                           </p>
-                        ) : (
-                          <p className="text-2xl font-semibold text-neutral-400 dark:text-neutral-500">
-                            --
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                            Base Network
                           </p>
-                        )}
+                        </div>
                       </div>
+                      <p className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                        {walletAddress
+                          ? isLoadingEth
+                            ? "..."
+                            : `${parseFloat(ethFormatted).toFixed(4)}`
+                          : "--"}
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Divider */}
-                <div className="h-px bg-neutral-200 dark:bg-neutral-800 mb-6" />
-
-                {/* Koru Balance (Escrow) Section */}
-                <div>
+                {/* Box 2: Koru Balance (Escrow) */}
+                <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-5 shadow-soft">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                       Koru Balance
@@ -801,52 +794,58 @@ export default function ProfilePage() {
                       Withdraw
                     </Button>
                   </div>
-                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-koru-lime/10 via-koru-lime/5 to-transparent border border-koru-lime/20 p-5">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-koru-lime/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-                    <div className="relative">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <svg
-                              className="w-4 h-4 text-koru-lime"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                            </svg>
-                            <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                              Withdrawable
-                            </span>
-                          </div>
-                          {walletAddress ? (
-                            <p className="text-3xl font-semibold text-neutral-900 dark:text-neutral-100">
-                              $0.00
-                            </p>
-                          ) : (
-                            <p className="text-3xl font-semibold text-neutral-400 dark:text-neutral-500">
-                              --
-                            </p>
-                          )}
+
+                  {/* Withdrawable */}
+                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-koru-lime/10 via-koru-lime/5 to-transparent border border-koru-lime/20 p-4 mb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-koru-lime/20 flex items-center justify-center">
+                          <CheckIcon className="w-5 h-5 text-koru-lime" />
                         </div>
-                        <div className="text-right">
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                            Pending
-                          </span>
-                          <p className="text-lg font-medium text-neutral-600 dark:text-neutral-300">
-                            {walletAddress ? "$0.00" : "--"}
+                        <div>
+                          <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                            Withdrawable
+                          </p>
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                            Ready to withdraw
                           </p>
                         </div>
                       </div>
-                      {walletAddress && (
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-3">
-                          Earnings from completed sessions
-                        </p>
-                      )}
+                      <p className="text-xl font-semibold text-koru-lime">
+                        {walletAddress ? "$0.00" : "--"}
+                      </p>
                     </div>
+                  </div>
+
+                  {/* Pending in Escrow */}
+                  <div className="flex items-center justify-between p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                        <svg
+                          className="w-5 h-5 text-amber-500"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12,6 12,12 16,14" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                          Pending
+                        </p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                          In escrow
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-xl font-semibold text-neutral-600 dark:text-neutral-300">
+                      {walletAddress ? "$0.00" : "--"}
+                    </p>
                   </div>
                 </div>
               </div>
