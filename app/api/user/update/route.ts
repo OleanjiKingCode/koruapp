@@ -21,6 +21,7 @@ export async function PATCH(request: NextRequest) {
       "tags",
       "website",
       "availability",
+      "connected_wallets",
     ];
 
     // Filter out any fields that aren't allowed
@@ -34,7 +35,7 @@ export async function PATCH(request: NextRequest) {
     if (Object.keys(updates).length === 0) {
       return NextResponse.json(
         { error: "No valid fields to update" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -53,7 +54,7 @@ export async function PATCH(request: NextRequest) {
       console.error("Error updating user:", error);
       return NextResponse.json(
         { error: "Failed to update user" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -66,7 +67,7 @@ export async function PATCH(request: NextRequest) {
     console.error("Error updating user:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
