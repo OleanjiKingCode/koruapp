@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   useAccount,
   useBalance,
@@ -9,6 +9,8 @@ import {
   useSimulateContract,
   useWriteContract,
   useWaitForTransactionReceipt,
+  usePublicClient,
+  useWalletClient,
 } from "wagmi";
 import { Address, formatUnits, parseUnits } from "viem";
 import {
@@ -508,6 +510,139 @@ export function useCreateEscrow(recipient: Address, amount: bigint) {
     simError,
     writeError,
     reset: writeReset,
+  };
+}
+
+/**
+ * Simple async hook for escrow payment flow
+ * Call approveAndCreateEscrow() and it handles everything
+ */
+export function useEscrowPayment(recipient: Address, amount: bigint) {
+  const { address, isConnected } = useAccount();
+  const publicClient = usePublicClient();
+  const { data: walletClient } = useWalletClient();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [currentStep, setCurrentStep] = useState<
+    "idle" | "approving" | "creating" | "confirming" | "done" | "error"
+  >("idle");
+  const [error, setError] = useState<Error | null>(null);
+  const [txHash, setTxHash] = useState<`0x${string}` | null>(null);
+  const [escrowId, setEscrowId] = useState<bigint | null>(null);
+
+  const reset = useCallback(() => {
+    setIsProcessing(false);
+    setCurrentStep("idle");
+    setError(null);
+    setTxHash(null);
+    setEscrowId(null);
+  }, []);
+
+  const approveAndCreateEscrow = useCallback(async () => {
+    if (!walletClient || !publicClient || !address) {
+      throw new Error("Wallet not connected");
+    }
+    if (
+      !recipient ||
+      recipient === "0x0000000000000000000000000000000000000000"
+    ) {
+      throw new Error("Invalid recipient address");
+    }
+    if (amount <= BigInt(0)) {
+      throw new Error("Invalid amount");
+    }
+
+    setIsProcessing(true);
+    setError(null);
+    setCurrentStep("approving");
+
+    try {
+      const usdcAddress = getUsdcAddress();
+      const escrowAddress = getContractAddress();
+
+      // Check current allowance
+      const currentAllowance = await publicClient.readContract({
+        address: usdcAddress,
+        abi: ERC20_ABI,
+        functionName: "allowance",
+        args: [address, escrowAddress],
+      });
+
+      // Step 1: Approve if needed
+      if ((currentAllowance as bigint) < amount) {
+        console.log("[EscrowPayment] Approving USDC spend...");
+        const approveHash = await walletClient.writeContract({
+          address: usdcAddress,
+          abi: ERC20_ABI,
+          functionName: "approve",
+          args: [escrowAddress, amount],
+        });
+
+        console.log("[EscrowPayment] Waiting for approval confirmation...");
+        await publicClient.waitForTransactionReceipt({ hash: approveHash });
+        console.log("[EscrowPayment] Approval confirmed!");
+      } else {
+        console.log("[EscrowPayment] Already approved, skipping...");
+      }
+
+      // Step 2: Create escrow
+      setCurrentStep("creating");
+      console.log("[EscrowPayment] Creating escrow...");
+
+      // Simulate first to get escrow ID
+      const { result: simulatedEscrowId } = await publicClient.simulateContract(
+        {
+          address: escrowAddress,
+          abi: KORU_ESCROW_ABI,
+          functionName: "createEscrow",
+          args: [recipient, amount],
+          account: address,
+        },
+      );
+
+      const createHash = await walletClient.writeContract({
+        address: escrowAddress,
+        abi: KORU_ESCROW_ABI,
+        functionName: "createEscrow",
+        args: [recipient, amount],
+      });
+
+      setTxHash(createHash);
+      setCurrentStep("confirming");
+      console.log("[EscrowPayment] Waiting for escrow confirmation...");
+
+      await publicClient.waitForTransactionReceipt({ hash: createHash });
+
+      setEscrowId(simulatedEscrowId as bigint);
+      setCurrentStep("done");
+      console.log(
+        "[EscrowPayment] Escrow created! ID:",
+        (simulatedEscrowId as bigint).toString(),
+      );
+
+      return {
+        txHash: createHash,
+        escrowId: simulatedEscrowId as bigint,
+      };
+    } catch (err) {
+      console.error("[EscrowPayment] Error:", err);
+      setError(err as Error);
+      setCurrentStep("error");
+      throw err;
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [walletClient, publicClient, address, recipient, amount]);
+
+  return {
+    approveAndCreateEscrow,
+    isProcessing,
+    currentStep,
+    error,
+    txHash,
+    escrowId,
+    reset,
+    address,
+    isConnected,
   };
 }
 

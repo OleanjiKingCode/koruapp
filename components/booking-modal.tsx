@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -28,13 +28,11 @@ import {
 } from "@/components/icons";
 import { usePrivy } from "@privy-io/react-auth";
 import {
-  useCreateEscrow,
-  useApproveUsdc,
+  useEscrowPayment,
   useUsdcBalance,
   useUsdcAllowance,
   parseUsdcAmount,
   formatUsdcAmount,
-  getEscrowAddress,
 } from "@/lib/hooks/use-koru-escrow";
 import { getSupabaseClient } from "@/lib/supabase-client";
 import { getChainId, getDefaultChain } from "@/lib/wagmi-config";
@@ -74,14 +72,7 @@ export interface Receipt {
   recipientAddress?: string;
 }
 
-type Step =
-  | "slots"
-  | "date"
-  | "time"
-  | "confirm"
-  | "approving"
-  | "paying"
-  | "receipt";
+type Step = "slots" | "date" | "time" | "confirm" | "paying" | "receipt";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
@@ -231,32 +222,16 @@ export function BookingModal({
   const needsApproval = escrowAmount > BigInt(0) && allowance < escrowAmount;
   const hasEnoughBalance = usdcBalance >= escrowAmount;
 
-  // Approval hook
+  // Simple escrow payment hook
   const {
-    approve,
-    isSimulating: isApprovalSimulating,
-    isPending: isApprovalPending,
-    isConfirming: isApprovalConfirming,
-    isConfirmed: isApprovalConfirmed,
-    simError: approvalSimError,
-    writeError: approvalWriteError,
-    reset: resetApproval,
-  } = useApproveUsdc(escrowAmount);
-
-  // Create escrow hook - only enabled if we have a recipient address
-  const {
-    createEscrow,
-    escrowId,
+    approveAndCreateEscrow,
+    isProcessing,
+    currentStep: paymentStep,
+    error: paymentError,
     txHash,
-    address: depositorAddress,
-    isSimulating: isEscrowSimulating,
-    isPending: isEscrowPending,
-    isConfirming: isEscrowConfirming,
-    isConfirmed: isEscrowConfirmed,
-    simError: escrowSimError,
-    writeError: escrowWriteError,
+    escrowId,
     reset: resetEscrow,
-  } = useCreateEscrow(
+  } = useEscrowPayment(
     recipientAddress ||
       ("0x0000000000000000000000000000000000000000" as Address),
     escrowAmount,
@@ -270,55 +245,6 @@ export function BookingModal({
   const targetChain = getDefaultChain();
   const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain();
   const isWrongChain = currentChainId !== targetChain.id;
-
-  // Handle approval confirmation - proceed to create escrow
-  useEffect(() => {
-    if (isApprovalConfirmed && step === "approving") {
-      setStep("paying");
-      createEscrow();
-    }
-  }, [isApprovalConfirmed, step]);
-
-  // Handle escrow confirmation - save to DB and show receipt
-  // This ONLY fires after a REAL blockchain transaction is confirmed
-  useEffect(() => {
-    if (
-      isEscrowConfirmed &&
-      escrowId !== undefined &&
-      txHash &&
-      step === "paying"
-    ) {
-      console.log(
-        "[BookingModal] ===== TRANSACTION CONFIRMED ON BLOCKCHAIN =====",
-      );
-      console.log("[BookingModal] Transaction Hash:", txHash);
-      console.log("[BookingModal] Escrow ID:", escrowId.toString());
-      console.log(
-        "[BookingModal] USDC has been transferred to the escrow contract",
-      );
-      saveEscrowAndShowReceipt();
-    }
-  }, [isEscrowConfirmed, escrowId, txHash, step]);
-
-  // Handle errors
-  useEffect(() => {
-    const err =
-      approvalSimError ||
-      approvalWriteError ||
-      escrowSimError ||
-      escrowWriteError;
-    if (err) {
-      setError(err.message || "Transaction failed. Please try again.");
-      if (step === "approving") setStep("confirm");
-      if (step === "paying") setStep("confirm");
-    }
-  }, [
-    approvalSimError,
-    approvalWriteError,
-    escrowSimError,
-    escrowWriteError,
-    step,
-  ]);
 
   // Get configured slots only
   const configuredSlots = useMemo(() => {
@@ -489,16 +415,22 @@ export function BookingModal({
     console.log("[BookingModal] From:", walletAddress);
     console.log("[BookingModal] To escrow for recipient:", recipientAddress);
 
-    if (needsApproval) {
-      console.log("[BookingModal] Step 1: Approving USDC spend...");
-      setStep("approving");
-      approve();
-    } else {
-      console.log(
-        "[BookingModal] Approval exists, creating escrow directly...",
+    setStep("paying");
+
+    try {
+      const result = await approveAndCreateEscrow();
+      console.log("[BookingModal] ===== TRANSACTION CONFIRMED =====");
+      console.log("[BookingModal] Transaction Hash:", result.txHash);
+      console.log("[BookingModal] Escrow ID:", result.escrowId.toString());
+
+      // Save to DB and show receipt
+      await saveEscrowAndShowReceiptWithData(result.escrowId, result.txHash);
+    } catch (err) {
+      console.error("[BookingModal] Payment failed:", err);
+      setError(
+        (err as Error).message || "Transaction failed. Please try again.",
       );
-      setStep("paying");
-      createEscrow();
+      setStep("confirm");
     }
   };
 
@@ -535,19 +467,15 @@ export function BookingModal({
     );
   };
 
-  const saveEscrowAndShowReceipt = async () => {
-    if (
-      !selectedSlot ||
-      !selectedDate ||
-      !selectedTime ||
-      escrowId === undefined ||
-      !txHash
-    )
-      return;
+  const saveEscrowAndShowReceiptWithData = async (
+    resultEscrowId: bigint,
+    resultTxHash: `0x${string}`,
+  ) => {
+    if (!selectedSlot || !selectedDate || !selectedTime) return;
 
     const now = new Date();
     const newReceipt: Receipt = {
-      id: `ESC-${escrowId}`,
+      id: `ESC-${resultEscrowId}`,
       personName,
       personId,
       slotName: selectedSlot.name,
@@ -556,8 +484,8 @@ export function BookingModal({
       time: selectedTime,
       createdAt: now.toISOString(),
       expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
-      escrowId: Number(escrowId),
-      txHash,
+      escrowId: Number(resultEscrowId),
+      txHash: resultTxHash,
       depositorAddress: walletAddress,
       recipientAddress,
     };
@@ -568,13 +496,13 @@ export function BookingModal({
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await (supabase as any).from("escrows").insert({
-          escrow_id: Number(escrowId),
+          escrow_id: Number(resultEscrowId),
           chain_id: getChainId(),
           depositor_address: walletAddress?.toLowerCase(),
           recipient_address: recipientAddress.toLowerCase(),
           amount: selectedSlot.price,
           status: "pending",
-          create_tx_hash: txHash,
+          create_tx_hash: resultTxHash,
           accept_deadline: new Date(
             now.getTime() + 24 * 60 * 60 * 1000,
           ).toISOString(),
@@ -598,8 +526,8 @@ export function BookingModal({
         time: selectedTime,
         createdAt: now.toISOString(),
         receiptId: newReceipt.id,
-        escrowId: Number(escrowId),
-        txHash,
+        escrowId: Number(resultEscrowId),
+        txHash: resultTxHash,
       }),
     );
   };
@@ -618,7 +546,6 @@ export function BookingModal({
     setSelectedTime(null);
     setReceipt(null);
     setError(null);
-    resetApproval();
     resetEscrow();
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -1180,123 +1107,24 @@ export function BookingModal({
                   ) : (
                     <Button
                       onClick={handlePay}
-                      disabled={isSwitchingChain}
+                      disabled={isSwitchingChain || isProcessing}
                       className="flex-1 bg-koru-lime hover:bg-koru-lime/90 text-neutral-900"
                     >
                       <CheckIcon className="w-4 h-4 mr-2" />
                       {isSwitchingChain
                         ? "Switching Chain..."
-                        : needsApproval
-                          ? `Approve & Pay $${selectedSlot.price}`
-                          : `Pay $${selectedSlot.price}`}
+                        : isProcessing
+                          ? "Processing..."
+                          : needsApproval
+                            ? `Approve & Pay $${selectedSlot.price}`
+                            : `Pay $${selectedSlot.price}`}
                     </Button>
                   )}
                 </div>
               </motion.div>
             )}
 
-          {/* Step 5: Approving USDC */}
-          {step === "approving" && (
-            <motion.div
-              key="approving"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className="p-8 flex flex-col items-center justify-center min-h-[300px]"
-            >
-              {/* Loading Animation Container */}
-              <div className="relative mb-6">
-                <motion.div
-                  animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.2, 0.5] }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                  className="absolute inset-0 w-20 h-20 rounded-full bg-koru-golden/20"
-                />
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    ease: "linear",
-                  }}
-                  className="relative w-20 h-20"
-                >
-                  <svg className="w-20 h-20" viewBox="0 0 80 80">
-                    <circle
-                      cx="40"
-                      cy="40"
-                      r="34"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                      className="text-neutral-200 dark:text-neutral-700"
-                    />
-                    <circle
-                      cx="40"
-                      cy="40"
-                      r="34"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                      strokeDasharray="160"
-                      strokeDashoffset="120"
-                      strokeLinecap="round"
-                      className="text-koru-golden"
-                    />
-                  </svg>
-                </motion.div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <motion.div
-                    animate={{ scale: [1, 0.9, 1] }}
-                    transition={{
-                      duration: 1,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                  >
-                    <CheckIcon className="w-8 h-8 text-koru-golden" />
-                  </motion.div>
-                </div>
-              </div>
-
-              <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
-                {isApprovalSimulating
-                  ? "Preparing Approval..."
-                  : isApprovalPending
-                    ? "Confirm in Wallet"
-                    : isApprovalConfirming
-                      ? "Confirming Approval..."
-                      : "Approving USDC"}
-              </h2>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center mb-4">
-                {isApprovalPending
-                  ? "Please confirm the approval transaction in your wallet"
-                  : "Allowing the escrow contract to use your USDC..."}
-              </p>
-
-              <div className="flex gap-1.5">
-                {[0, 1, 2].map((i) => (
-                  <motion.div
-                    key={i}
-                    animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
-                    transition={{
-                      duration: 0.8,
-                      repeat: Infinity,
-                      delay: i * 0.2,
-                      ease: "easeInOut",
-                    }}
-                    className="w-2 h-2 rounded-full bg-koru-golden"
-                  />
-                ))}
-              </div>
-            </motion.div>
-          )}
-
-          {/* Step 6: Processing Payment */}
+          {/* Step 5: Processing Payment */}
           {step === "paying" && (
             <motion.div
               key="paying"
@@ -1316,7 +1144,12 @@ export function BookingModal({
                     repeat: Infinity,
                     ease: "easeInOut",
                   }}
-                  className="absolute inset-0 w-20 h-20 rounded-full bg-koru-purple/20"
+                  className={cn(
+                    "absolute inset-0 w-20 h-20 rounded-full",
+                    paymentStep === "approving"
+                      ? "bg-koru-golden/20"
+                      : "bg-koru-purple/20",
+                  )}
                 />
 
                 {/* Spinning ring */}
@@ -1349,7 +1182,11 @@ export function BookingModal({
                       strokeDasharray="160"
                       strokeDashoffset="120"
                       strokeLinecap="round"
-                      className="text-koru-purple"
+                      className={
+                        paymentStep === "approving"
+                          ? "text-koru-golden"
+                          : "text-koru-purple"
+                      }
                     />
                   </svg>
                 </motion.div>
@@ -1364,26 +1201,32 @@ export function BookingModal({
                       ease: "easeInOut",
                     }}
                   >
-                    <CreditCardIcon className="w-8 h-8 text-koru-purple" />
+                    {paymentStep === "approving" ? (
+                      <CheckIcon className="w-8 h-8 text-koru-golden" />
+                    ) : (
+                      <CreditCardIcon className="w-8 h-8 text-koru-purple" />
+                    )}
                   </motion.div>
                 </div>
               </div>
 
               <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
-                {isEscrowSimulating
-                  ? "Preparing Transaction..."
-                  : isEscrowPending
-                    ? "Confirm in Wallet"
-                    : isEscrowConfirming
-                      ? "Confirming Payment..."
-                      : "Creating Escrow"}
+                {paymentStep === "approving"
+                  ? "Approving USDC..."
+                  : paymentStep === "creating"
+                    ? "Creating Escrow..."
+                    : paymentStep === "confirming"
+                      ? "Confirming Transaction..."
+                      : "Processing Payment..."}
               </h2>
               <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center mb-4">
-                {isEscrowPending
-                  ? "Please confirm the escrow transaction in your wallet"
-                  : isEscrowConfirming
-                    ? "Waiting for blockchain confirmation..."
-                    : "Creating a secure escrow for your payment..."}
+                {paymentStep === "approving"
+                  ? "Please confirm the approval in your wallet"
+                  : paymentStep === "creating"
+                    ? "Please confirm the escrow transaction in your wallet"
+                    : paymentStep === "confirming"
+                      ? "Waiting for blockchain confirmation..."
+                      : "Preparing your transaction..."}
               </p>
 
               {/* Progress dots */}
@@ -1398,7 +1241,12 @@ export function BookingModal({
                       delay: i * 0.2,
                       ease: "easeInOut",
                     }}
-                    className="w-2 h-2 rounded-full bg-koru-purple"
+                    className={cn(
+                      "w-2 h-2 rounded-full",
+                      paymentStep === "approving"
+                        ? "bg-koru-golden"
+                        : "bg-koru-purple",
+                    )}
                   />
                 ))}
               </div>
