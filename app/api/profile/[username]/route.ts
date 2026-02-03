@@ -14,6 +14,7 @@ import {
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
 const RAPIDAPI_HOST = "twitter241.p.rapidapi.com";
 const API_TIMEOUT = 5000; // 5 second timeout
+const CACHE_FRESH_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes - if cache is newer than this, use it directly
 
 async function fetchProfileFromTwitter(username: string): Promise<{
   profile_image_url?: string;
@@ -172,13 +173,38 @@ export async function GET(
       });
     }
 
-    // For non-Koru users: Try Twitter API first, fall back to cache
-    const [freshData, cachedProfile] = await Promise.all([
-      fetchProfileFromTwitter(username),
-      getProfileByUsername(username),
-    ]);
+    // For non-Koru users: First check if we have recently cached data
+    const cachedProfile = await getProfileByUsername(username);
 
-    console.log({ freshData });
+    // Check if cached data is fresh (updated within the threshold - likely from a recent search)
+    const isCacheFresh = cachedProfile?.updated_at
+      ? Date.now() - new Date(cachedProfile.updated_at).getTime() <
+        CACHE_FRESH_THRESHOLD_MS
+      : false;
+
+    // If we have fresh cached data, use it directly without making another API call
+    // This handles the case where user just searched and data was cached from that search
+    if (cachedProfile && isCacheFresh) {
+      return NextResponse.json({
+        profile: {
+          twitterId: cachedProfile.twitter_id,
+          name: cachedProfile.name,
+          handle: cachedProfile.username,
+          bio: cachedProfile.bio || undefined,
+          profileImageUrl: cachedProfile.profile_image_url || undefined,
+          bannerUrl: cachedProfile.banner_url || undefined,
+          followersCount: cachedProfile.followers_count || undefined,
+          followingCount: cachedProfile.following_count || undefined,
+          isVerified: cachedProfile.verified,
+          category: cachedProfile.category || undefined,
+          tags: cachedProfile.tags || undefined,
+          isOnKoru: false,
+        },
+      });
+    }
+
+    // Cache is stale or doesn't exist - try Twitter API
+    const freshData = await fetchProfileFromTwitter(username);
 
     // If we got fresh data from API
     if (freshData && freshData.name) {
@@ -209,7 +235,7 @@ export async function GET(
       });
     }
 
-    // API failed/timed out - fall back to cached data
+    // API failed/timed out - fall back to cached data (even if stale)
     if (cachedProfile) {
       return NextResponse.json({
         profile: {

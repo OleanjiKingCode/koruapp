@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   if (!query) {
     return NextResponse.json(
       { error: "Query parameter is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     if (!RAPIDAPI_KEY) {
       return NextResponse.json(
         { error: "API key not configured" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
           "x-rapidapi-key": RAPIDAPI_KEY,
           "x-rapidapi-host": RAPIDAPI_HOST,
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
       console.error("RapidAPI error:", errorText);
       return NextResponse.json(
         { error: "Failed to fetch from Twitter API" },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
             "x-rapidapi-key": RAPIDAPI_KEY,
             "x-rapidapi-host": RAPIDAPI_HOST,
           },
-        }
+        },
       );
 
       if (topResponse.ok) {
@@ -120,10 +120,14 @@ export async function GET(request: NextRequest) {
     if (profiles.length > 0) {
       const profilesToCache = profiles.map(profileToSupabaseFormat);
 
-      // Don't await - fire and forget to not slow down response
-      upsertManyTwitterProfiles(profilesToCache).catch((err) =>
-        console.error("Cache write error:", err)
-      );
+      // Await the cache write to ensure data is available when user clicks on a profile
+      // This typically takes < 100ms and ensures profile page shows fresh data
+      try {
+        await upsertManyTwitterProfiles(profilesToCache);
+      } catch (err) {
+        console.error("Cache write error:", err);
+        // Don't fail the request if cache write fails
+      }
     }
 
     return NextResponse.json({
@@ -135,7 +139,7 @@ export async function GET(request: NextRequest) {
     console.error("Twitter search error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
