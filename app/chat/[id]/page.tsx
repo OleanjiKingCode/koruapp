@@ -496,8 +496,8 @@ export default function ChatPage() {
           </main>
 
           {/* Sidebar */}
-          <aside className="hidden lg:block w-80 p-4 pt-4 pr-4 pb-4">
-            <div className="sticky top-24 bg-white/50 dark:bg-neutral-900/50 border border-neutral-200/50 dark:border-neutral-800/50 rounded-2xl p-5">
+          <aside className="hidden lg:block w-80 my-4 mr-4">
+            <div className="sticky top-24 h-fit bg-white/50 dark:bg-neutral-900/50 border border-neutral-200/50 dark:border-neutral-800/50 rounded-2xl p-5">
               <h2 className="text-lg text-neutral-900 dark:text-neutral-100 mb-6">
                 Session Details
               </h2>

@@ -154,12 +154,14 @@ export function useUser() {
 
   // Link wallet to user account (first time)
   const linkWallet = async (address: string, chain: string = "base") => {
-    if (!twitterId || !address) return null;
+    if (!twitterId || !address) {
+      throw new Error("Invalid address or not authenticated");
+    }
 
     const normalizedAddress = address.toLowerCase();
     const existingWallets = dbUser?.connected_wallets || [];
 
-    // Check if this exact wallet already linked as primary
+    // Check if this exact wallet already linked as primary to THIS account
     const alreadyPrimary = existingWallets.some(
       (w) =>
         w.address.toLowerCase() === normalizedAddress &&
@@ -191,6 +193,7 @@ export function useUser() {
       return w;
     });
 
+    // This will throw an error if the wallet is already linked to another account
     return updateUserData({
       connected_wallets: [...updatedWallets, newWallet],
     });

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { createChat, getUserByUsername } from "@/lib/supabase";
+import { createChat, getUserByUsername, supabase } from "@/lib/supabase";
 import { captureApiError } from "@/lib/sentry";
 
 // POST - Create a new chat
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     if (!creatorUsername) {
       return NextResponse.json(
         { error: "Creator username is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     if (!creator) {
       return NextResponse.json(
         { error: "Creator not found on Koru" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     if (creator.id === session.user.dbId) {
       return NextResponse.json(
         { error: "Cannot create a chat with yourself" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -51,8 +51,23 @@ export async function POST(request: NextRequest) {
     if (!chat) {
       return NextResponse.json(
         { error: "Failed to create chat" },
-        { status: 500 }
+        { status: 500 },
       );
+    }
+
+    // If this is a paid chat, update the creator's pending balance
+    if (amount && amount > 0) {
+      const { error: balanceError } = await supabase
+        .from("users")
+        .update({
+          pending_balance: (creator.pending_balance || 0) + amount,
+        })
+        .eq("id", creator.id);
+
+      if (balanceError) {
+        console.error("Failed to update pending balance:", balanceError);
+        // Don't fail the request, chat was created successfully
+      }
     }
 
     return NextResponse.json({ chat });
@@ -60,8 +75,7 @@ export async function POST(request: NextRequest) {
     captureApiError(error, "POST /api/chats");
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

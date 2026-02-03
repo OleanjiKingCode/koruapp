@@ -100,9 +100,18 @@ export function useWalletSync() {
       try {
         await linkWallet(connectedWalletAddress, "base");
         refresh();
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Failed to auto-link wallet:", error);
-        setLinkError("Failed to link wallet to your account");
+        // Check if it's the "already linked" error
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes("already linked")) {
+          setLinkError(
+            "This wallet is already linked to another Koru account. Please use a different wallet.",
+          );
+        } else {
+          setLinkError("Failed to link wallet to your account");
+        }
         // Reset so user can try again manually
         linkAttemptedRef.current = null;
       } finally {
@@ -137,9 +146,17 @@ export function useWalletSync() {
       await linkWallet(connectedWalletAddress, "base");
       refresh();
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to link wallet:", error);
-      setLinkError("Failed to link wallet to your account");
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes("already linked")) {
+        setLinkError(
+          "This wallet is already linked to another Koru account. Please use a different wallet.",
+        );
+      } else {
+        setLinkError("Failed to link wallet to your account");
+      }
       return false;
     } finally {
       setIsLinking(false);
