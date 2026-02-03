@@ -6,14 +6,38 @@ import {
   supabase,
   CachedTwitterProfile,
 } from "@/lib/supabase";
-import {
-  parseTwitterSearchResponse,
-  type TwitterSearchResponse,
-} from "@/lib/types/twitter";
 
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
 const RAPIDAPI_HOST = "twitter241.p.rapidapi.com";
 const API_TIMEOUT = 5000; // 5 second timeout
+
+// Response type for /user endpoint
+interface TwitterUserResponse {
+  result?: {
+    data?: {
+      user?: {
+        result?: {
+          rest_id?: string;
+          is_blue_verified?: boolean;
+          avatar?: {
+            image_url?: string;
+          };
+          core?: {
+            name?: string;
+            screen_name?: string;
+          };
+          legacy?: {
+            description?: string;
+            followers_count?: number;
+            friends_count?: number;
+            profile_banner_url?: string;
+            verified?: boolean;
+          };
+        };
+      };
+    };
+  };
+}
 
 async function fetchProfileFromTwitter(username: string): Promise<{
   profile_image_url?: string;
@@ -31,13 +55,9 @@ async function fetchProfileFromTwitter(username: string): Promise<{
   const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
 
   try {
+    // Use /user endpoint for direct lookup (more reliable than search)
     const response = await fetch(
-      `https://${RAPIDAPI_HOST}/search?` +
-        new URLSearchParams({
-          type: "People",
-          count: "5",
-          query: username,
-        }),
+      `https://${RAPIDAPI_HOST}/user?username=${encodeURIComponent(username)}`,
       {
         method: "GET",
         headers: {
@@ -52,26 +72,31 @@ async function fetchProfileFromTwitter(username: string): Promise<{
 
     if (!response.ok) return null;
 
-    const data: TwitterSearchResponse = await response.json();
-    const profiles = parseTwitterSearchResponse(data);
+    const data: TwitterUserResponse = await response.json();
+    const user = data?.result?.data?.user?.result;
 
-    // Find exact username match (case-insensitive)
-    const matchedProfile = profiles.find(
-      (p) => p.username.toLowerCase() === username.toLowerCase(),
-    );
+    if (!user || !user.core?.screen_name) return null;
 
-    if (!matchedProfile) return null;
+    // Get profile image URL and convert to larger size
+    let profileImageUrl = user.avatar?.image_url;
+    if (profileImageUrl) {
+      profileImageUrl = profileImageUrl.replace("_normal", "_400x400");
+    }
 
-    return {
-      twitter_id: matchedProfile.twitterId,
-      profile_image_url: matchedProfile.profileImageUrl || undefined,
-      banner_url: matchedProfile.bannerUrl || undefined,
-      bio: matchedProfile.bio || undefined,
-      followers_count: matchedProfile.followersCount,
-      following_count: matchedProfile.followingCount,
-      verified: matchedProfile.verified,
-      name: matchedProfile.name,
+    const result = {
+      twitter_id: user.rest_id,
+      profile_image_url: profileImageUrl || undefined,
+      banner_url: user.legacy?.profile_banner_url || undefined,
+      bio: user.legacy?.description || undefined,
+      followers_count: user.legacy?.followers_count,
+      following_count: user.legacy?.friends_count,
+      verified: user.is_blue_verified || user.legacy?.verified || false,
+      name: user.core.name,
     };
+
+    console.log(`[Twitter API] Fresh data for @${username}:`, result);
+
+    return result;
   } catch (error) {
     clearTimeout(timeoutId);
     if (error instanceof Error && error.name === "AbortError") {
