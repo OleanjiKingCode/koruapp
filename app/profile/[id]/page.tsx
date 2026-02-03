@@ -716,7 +716,15 @@ export default function ViewProfilePage() {
           <div className="px-6 pb-6 relative">
             {/* Avatar - positioned to overlap banner */}
             <div className="absolute -top-14 left-6">
-              <div className="w-28 h-28 rounded-2xl border-4 border-white dark:border-neutral-900 shadow-xl overflow-hidden bg-white dark:bg-neutral-800">
+              <div
+                className={cn(
+                  "w-28 h-28 rounded-2xl overflow-hidden",
+                  // Only show border and background when no profile image
+                  profile.avatar
+                    ? ""
+                    : "border-4 border-white dark:border-neutral-900 shadow-xl bg-white dark:bg-neutral-800",
+                )}
+              >
                 <OptimizedAvatar
                   src={profile.avatar}
                   alt={profile.name}
