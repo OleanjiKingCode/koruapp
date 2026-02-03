@@ -143,6 +143,63 @@ async function updateCachedProfile(
     });
 }
 
+// Check if Koru user's Twitter data has changed
+function hasKoruUserChanged(
+  user: {
+    profile_image_url?: string | null;
+    bio?: string | null;
+    name?: string | null;
+    followers_count?: number | null;
+    following_count?: number | null;
+    is_verified?: boolean | null;
+  },
+  fresh: NonNullable<Awaited<ReturnType<typeof fetchProfileFromTwitter>>>,
+): boolean {
+  return !!(
+    (fresh.profile_image_url &&
+      fresh.profile_image_url !== user.profile_image_url) ||
+    (fresh.bio && fresh.bio !== user.bio) ||
+    (fresh.name && fresh.name !== user.name) ||
+    (fresh.followers_count !== undefined &&
+      fresh.followers_count !== user.followers_count) ||
+    (fresh.following_count !== undefined &&
+      fresh.following_count !== user.following_count) ||
+    (fresh.verified !== undefined && fresh.verified !== user.is_verified)
+  );
+}
+
+// Update Koru user with fresh Twitter data
+async function updateKoruUser(
+  userId: string,
+  freshData: NonNullable<Awaited<ReturnType<typeof fetchProfileFromTwitter>>>,
+): Promise<void> {
+  const updateData: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (freshData.profile_image_url)
+    updateData.profile_image_url = freshData.profile_image_url;
+  if (freshData.bio) updateData.bio = freshData.bio;
+  if (freshData.name) updateData.name = freshData.name;
+  if (freshData.followers_count !== undefined)
+    updateData.followers_count = freshData.followers_count;
+  if (freshData.following_count !== undefined)
+    updateData.following_count = freshData.following_count;
+  if (freshData.verified !== undefined)
+    updateData.is_verified = freshData.verified;
+
+  // Update in background
+  supabase
+    .from("users")
+    .update(updateData)
+    .eq("id", userId)
+    .then(({ error }) => {
+      if (error) {
+        console.error(`Error updating Koru user ${userId}:`, error);
+      }
+    });
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ username: string }> },
@@ -157,8 +214,13 @@ export async function GET(
       );
     }
 
-    // First check if user is registered on Koru (these users manage their own profiles)
-    const koruUser = await getUserByUsername(username);
+    // First check if user is registered on Koru
+    // Fetch Koru user and fresh Twitter data in parallel
+    const [koruUser, freshTwitterData] = await Promise.all([
+      getUserByUsername(username),
+      fetchProfileFromTwitter(username),
+    ]);
+
     if (koruUser) {
       let availabilitySlots = null;
       if (koruUser.is_creator) {
@@ -172,6 +234,48 @@ export async function GET(
       const walletAddress =
         primaryWallet?.address || koruUser.connected_wallets?.[0]?.address;
 
+      // If we got fresh Twitter data, check if it's different and update
+      if (freshTwitterData && freshTwitterData.name) {
+        if (hasKoruUserChanged(koruUser, freshTwitterData)) {
+          // Update Koru user in background
+          updateKoruUser(koruUser.id, freshTwitterData);
+        }
+
+        // Return profile with fresh Twitter data
+        return NextResponse.json({
+          profile: {
+            id: koruUser.id,
+            twitterId: koruUser.twitter_id,
+            name: freshTwitterData.name || koruUser.name,
+            handle: koruUser.username,
+            bio: freshTwitterData.bio || koruUser.bio || undefined,
+            profileImageUrl:
+              freshTwitterData.profile_image_url ||
+              koruUser.profile_image_url ||
+              undefined,
+            followersCount:
+              freshTwitterData.followers_count ??
+              koruUser.followers_count ??
+              undefined,
+            followingCount:
+              freshTwitterData.following_count ??
+              koruUser.following_count ??
+              undefined,
+            isVerified: freshTwitterData.verified ?? koruUser.is_verified,
+            tags: koruUser.tags || undefined,
+            location: koruUser.location || undefined,
+            isOnKoru: true,
+            isCreator: koruUser.is_creator,
+            pricePerMessage: koruUser.price_per_message,
+            responseTimeHours: koruUser.response_time_hours,
+            availability: koruUser.availability,
+            availabilitySlots: availabilitySlots || [],
+            walletAddress: walletAddress || undefined,
+          },
+        });
+      }
+
+      // Twitter API failed - return cached Koru user data
       return NextResponse.json({
         profile: {
           id: koruUser.id,
@@ -191,39 +295,36 @@ export async function GET(
           responseTimeHours: koruUser.response_time_hours,
           availability: koruUser.availability,
           availabilitySlots: availabilitySlots || [],
-          walletAddress: walletAddress || undefined, // For escrow payments
+          walletAddress: walletAddress || undefined,
         },
       });
     }
 
-    // For non-Koru users: Fetch cached profile and fresh Twitter data in parallel
-    // Always check Twitter to ensure we have the latest data
-    const [cachedProfile, freshData] = await Promise.all([
-      getProfileByUsername(username),
-      fetchProfileFromTwitter(username),
-    ]);
+    // For non-Koru users: Check cached profile
+    // (Twitter data was already fetched above in parallel with Koru user check)
+    const cachedProfile = await getProfileByUsername(username);
 
-    // If we got fresh data from API
-    if (freshData && freshData.name) {
+    // If we got fresh data from API (already fetched above)
+    if (freshTwitterData && freshTwitterData.name) {
       // Update cache in background if we have a cached version
       if (cachedProfile) {
         const tableName = cachedProfile.is_featured
           ? "featured_profiles"
           : "twitter_profiles";
-        updateCachedProfile(cachedProfile, freshData, tableName);
+        updateCachedProfile(cachedProfile, freshTwitterData, tableName);
       }
 
       return NextResponse.json({
         profile: {
-          twitterId: freshData.twitter_id,
-          name: freshData.name,
+          twitterId: freshTwitterData.twitter_id,
+          name: freshTwitterData.name,
           handle: username,
-          bio: freshData.bio || undefined,
-          profileImageUrl: freshData.profile_image_url || undefined,
-          bannerUrl: freshData.banner_url || undefined,
-          followersCount: freshData.followers_count || undefined,
-          followingCount: freshData.following_count || undefined,
-          isVerified: freshData.verified || false,
+          bio: freshTwitterData.bio || undefined,
+          profileImageUrl: freshTwitterData.profile_image_url || undefined,
+          bannerUrl: freshTwitterData.banner_url || undefined,
+          followersCount: freshTwitterData.followers_count || undefined,
+          followingCount: freshTwitterData.following_count || undefined,
+          isVerified: freshTwitterData.verified || false,
           // Preserve category/tags from cache if available
           category: cachedProfile?.category || undefined,
           tags: cachedProfile?.tags || undefined,
