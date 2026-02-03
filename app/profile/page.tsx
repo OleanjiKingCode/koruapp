@@ -24,6 +24,7 @@ import {
   DURATION_OPTIONS,
 } from "@/components/availability-modal";
 import { AuthGuard } from "@/components/auth";
+import { VerifiedBadge } from "@/components/discover/verified-badge";
 import {
   useAvailability,
   useTransactions,
@@ -379,12 +380,7 @@ export default function ProfilePage() {
                         <h1 className="text-2xl md:text-3xl text-neutral-900 dark:text-neutral-100">
                           {user?.name || "User"}
                         </h1>
-                        {user?.isVerified && (
-                          <Badge className="bg-blue-500/20 text-blue-500 border-0">
-                            <CheckIcon className="w-3 h-3 mr-1" />
-                            Verified
-                          </Badge>
-                        )}
+                        {user?.isVerified && <VerifiedBadge size={20} />}
                         {user?.isCreator && (
                           <Badge className="bg-koru-purple/20 text-koru-purple border-0">
                             Creator

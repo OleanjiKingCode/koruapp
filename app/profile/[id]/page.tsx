@@ -13,6 +13,7 @@ import {
   BackgroundImage,
 } from "@/components/ui/optimized-image";
 import { BookingModal } from "@/components/booking-modal";
+import { VerifiedBadge } from "@/components/discover/verified-badge";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
 
@@ -741,21 +742,7 @@ export default function ViewProfilePage() {
                     <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                       {profile.name}
                     </h1>
-                    {profile.verified && (
-                      <Badge
-                        variant="secondary"
-                        className="bg-blue-500/10 text-blue-500 border-0"
-                      >
-                        <svg
-                          className="w-3.5 h-3.5 mr-1"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                        >
-                          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
-                        </svg>
-                        Verified
-                      </Badge>
-                    )}
+                    {profile.verified && <VerifiedBadge size={20} />}
                     {/* Show "Not on Koru" badge for profiles not on Koru */}
                     {profileData && !profileData.isOnKoru && (
                       <Badge

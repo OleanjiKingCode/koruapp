@@ -12,7 +12,12 @@ import {
 } from "@/components/shared";
 import { ShareModal } from "@/components/share";
 import { LoginModal } from "@/components/auth";
-import { TreemapView, ListView, SummonDetailsModal } from "@/components/summons";
+import { VerifiedBadge } from "@/components/discover/verified-badge";
+import {
+  TreemapView,
+  ListView,
+  SummonDetailsModal,
+} from "@/components/summons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -80,7 +85,7 @@ export default function SummonsPage() {
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-    }
+    },
   );
 
   const allSummons = data?.summons || [];
@@ -107,7 +112,7 @@ export default function SummonsPage() {
   const [step, setStep] = useState<"info" | "form">("info");
   const [targetSearch, setTargetSearch] = useState("");
   const [selectedProfile, setSelectedProfile] = useState<TwitterProfile | null>(
-    null
+    null,
   );
   const [requestText, setRequestText] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -224,7 +229,7 @@ export default function SummonsPage() {
       mutate(); // Refresh the summons list
     } catch (err) {
       setBackError(
-        err instanceof Error ? err.message : "Failed to back summon"
+        err instanceof Error ? err.message : "Failed to back summon",
       );
     } finally {
       setIsBackingSubmitting(false);
@@ -292,7 +297,7 @@ export default function SummonsPage() {
 
   const totalPledged = filteredSummons.reduce(
     (sum, a) => sum + a.totalPledged,
-    0
+    0,
   );
 
   // Reset modal state when it opens/closes
@@ -384,7 +389,7 @@ export default function SummonsPage() {
       setError(
         err instanceof Error
           ? err.message
-          : "An error occurred. Please try again."
+          : "An error occurred. Please try again.",
       );
     } finally {
       setIsSubmitting(false);
@@ -445,8 +450,8 @@ export default function SummonsPage() {
                               {step === "info"
                                 ? "Create a Summon"
                                 : selectedProfile
-                                ? `Summon ${selectedProfile.name.split(" ")[0]}`
-                                : "Create Summon"}
+                                  ? `Summon ${selectedProfile.name.split(" ")[0]}`
+                                  : "Create Summon"}
                             </h2>
                             <p className="text-sm text-neutral-500 dark:text-neutral-400">
                               {selectedProfile
@@ -608,9 +613,7 @@ export default function SummonsPage() {
                                                   {profile.name}
                                                 </p>
                                                 {profile.verified && (
-                                                  <Badge className="bg-blue-500/20 text-blue-500 border-0 text-xs px-1.5 py-0">
-                                                    ✓
-                                                  </Badge>
+                                                  <VerifiedBadge size={14} />
                                                 )}
                                               </div>
                                               <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
@@ -678,8 +681,8 @@ export default function SummonsPage() {
                                             if (isSelected) {
                                               setSelectedTags(
                                                 selectedTags.filter(
-                                                  (t) => t !== tag
-                                                )
+                                                  (t) => t !== tag,
+                                                ),
                                               );
                                             } else {
                                               setSelectedTags([
@@ -693,7 +696,7 @@ export default function SummonsPage() {
                                             isSelected
                                               ? "bg-koru-purple text-white ring-2 ring-koru-purple/30"
                                               : getTagColor(tag) +
-                                                  " hover:ring-2 hover:ring-koru-purple/20"
+                                                  " hover:ring-2 hover:ring-koru-purple/20",
                                           )}
                                         >
                                           {tag}
@@ -801,7 +804,7 @@ export default function SummonsPage() {
                   "px-3 py-1.5 rounded-lg text-sm  font-medium transition-all",
                   selectedCategory === cat
                     ? "bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm"
-                    : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                    : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300",
                 )}
               >
                 {cat}
@@ -840,7 +843,7 @@ export default function SummonsPage() {
                   "px-3 py-1.5 text-sm  font-medium transition-all",
                   selectedTime === time
                     ? "text-koru-purple"
-                    : "text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                    : "text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300",
                 )}
               >
                 {time}
@@ -856,7 +859,7 @@ export default function SummonsPage() {
                 "p-2 rounded-lg transition-all",
                 viewMode === "treemap"
                   ? "bg-white dark:bg-neutral-700 shadow-sm"
-                  : "text-neutral-500 hover:text-neutral-700"
+                  : "text-neutral-500 hover:text-neutral-700",
               )}
             >
               <GridIcon className="w-4 h-4" />
@@ -867,7 +870,7 @@ export default function SummonsPage() {
                 "p-2 rounded-lg transition-all",
                 viewMode === "list"
                   ? "bg-white dark:bg-neutral-700 shadow-sm"
-                  : "text-neutral-500 hover:text-neutral-700"
+                  : "text-neutral-500 hover:text-neutral-700",
               )}
             >
               <ListIcon className="w-4 h-4" />
@@ -1042,7 +1045,7 @@ export default function SummonsPage() {
                                     key={tag}
                                     className={cn(
                                       "px-2 py-0.5 rounded-full text-xs font-medium",
-                                      getTagColor(tag)
+                                      getTagColor(tag),
                                     )}
                                   >
                                     {tag}{" "}
@@ -1077,8 +1080,8 @@ export default function SummonsPage() {
                                     if (isSelected) {
                                       setBackSelectedTags(
                                         backSelectedTags.filter(
-                                          (t) => t !== tag
-                                        )
+                                          (t) => t !== tag,
+                                        ),
                                       );
                                     } else {
                                       setBackSelectedTags([
@@ -1092,7 +1095,7 @@ export default function SummonsPage() {
                                     isSelected
                                       ? "bg-koru-purple text-white ring-2 ring-koru-purple/30"
                                       : getTagColor(tag) +
-                                          " hover:ring-1 hover:ring-koru-purple/20"
+                                          " hover:ring-1 hover:ring-koru-purple/20",
                                   )}
                                 >
                                   {tag}

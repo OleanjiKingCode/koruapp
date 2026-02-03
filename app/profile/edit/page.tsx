@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import { AuthGuard } from "@/components/auth";
+import { VerifiedBadge } from "@/components/discover/verified-badge";
 import { cn } from "@/lib/utils";
 import { CheckIcon, ChevronRightIcon } from "@/components/icons";
 import {
@@ -185,8 +186,8 @@ export default function EditProfilePage() {
       prev.includes(tag)
         ? prev.filter((t) => t !== tag)
         : prev.length < 5
-        ? [...prev, tag]
-        : prev
+          ? [...prev, tag]
+          : prev,
     );
   };
 
@@ -251,7 +252,7 @@ export default function EditProfilePage() {
       alert(
         error instanceof Error
           ? error.message
-          : "Failed to save profile. Please try again."
+          : "Failed to save profile. Please try again.",
       );
     } finally {
       setIsSaving(false);
@@ -327,7 +328,10 @@ export default function EditProfilePage() {
                   <div className="flex justify-center">
                     <div className="w-32 h-32 rounded-full border-4 border-koru-purple/20 shadow-xl overflow-hidden bg-white dark:bg-neutral-800">
                       <OptimizedAvatar
-                        src={user?.profileImageUrl?.replace("_normal", "_400x400")}
+                        src={user?.profileImageUrl?.replace(
+                          "_normal",
+                          "_400x400",
+                        )}
                         alt={user?.name || "Profile"}
                         size={128}
                         fallbackSeed={user?.username || "user"}
@@ -360,16 +364,19 @@ export default function EditProfilePage() {
                     <div className="flex items-start gap-3 -mt-10 relative z-10">
                       <div className="w-16 h-16 rounded-full border-3 border-white dark:border-neutral-800 shadow-lg overflow-hidden">
                         <OptimizedAvatar
-                          src={user?.profileImageUrl?.replace("_normal", "_400x400")}
+                          src={user?.profileImageUrl?.replace(
+                            "_normal",
+                            "_400x400",
+                          )}
                           alt={user?.name || "Profile"}
                           size={64}
                           fallbackSeed={user?.username || "user"}
                         />
                         ) : (
-                          <AvatarGenerator
-                            seed={user?.username || "user"}
-                            size={64}
-                          />
+                        <AvatarGenerator
+                          seed={user?.username || "user"}
+                          size={64}
+                        />
                       </div>
                       <div className="pt-8">
                         <h4 className="  font-bold text-neutral-900 dark:text-neutral-100">
@@ -387,11 +394,7 @@ export default function EditProfilePage() {
 
                     {/* Badges preview */}
                     <div className="flex flex-wrap gap-1 mt-3">
-                      {user?.isVerified && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500">
-                          Verified
-                        </span>
-                      )}
+                      {user?.isVerified && <VerifiedBadge size={14} />}
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-koru-purple/10 text-koru-purple">
                         Early Adopter
                       </span>
@@ -566,7 +569,7 @@ export default function EditProfilePage() {
                               : "bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700 hover:border-koru-purple hover:text-koru-purple",
                             selectedTags.length >= 5 &&
                               !selectedTags.includes(tag) &&
-                              "opacity-50 cursor-not-allowed"
+                              "opacity-50 cursor-not-allowed",
                           )}
                         >
                           {tag}
@@ -776,12 +779,7 @@ export default function EditProfilePage() {
                         @{user?.username || "user"}
                       </p>
                     </div>
-                    {user?.isVerified && (
-                      <Badge className="bg-blue-500/20 text-blue-500 border-0">
-                        <CheckIcon className="w-3 h-3 mr-1" />
-                        Verified
-                      </Badge>
-                    )}
+                    {user?.isVerified && <VerifiedBadge size={18} />}
                   </div>
 
                   <div className="grid grid-cols-3 gap-4">

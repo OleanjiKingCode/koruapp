@@ -70,7 +70,7 @@ function DiscoverContent() {
       const newUrl = params.toString() ? `?${params.toString()}` : "/discover";
       router.replace(newUrl, { scroll: false });
     },
-    [router, searchParams]
+    [router, searchParams],
   );
 
   // Sync URL when search query changes (debounced)
@@ -92,7 +92,7 @@ function DiscoverContent() {
 
   // Table sorting - map sortBy to tableSortField
   const getSortFieldFromSortBy = (
-    sortByValue: string
+    sortByValue: string,
   ): "followers" | "earnings" => {
     switch (sortByValue) {
       case "most_followers":
@@ -258,7 +258,6 @@ function DiscoverContent() {
           />
         </motion.div>
 
-
         {isShowingSearchResults && !isActivelySearching && hasSearchResults && (
           <SearchStatusIndicator
             searchQuery={searchQuery}
@@ -270,9 +269,9 @@ function DiscoverContent() {
         <AnimatePresence mode="wait">
           {/* Loading State */}
           {(isActivelySearching && isShowingSearchResults) ||
-            (isLoadingFeatured &&
-              !isShowingSearchResults &&
-              featuredProfiles.length === 0) ? (
+          (isLoadingFeatured &&
+            !isShowingSearchResults &&
+            featuredProfiles.length === 0) ? (
             <LoadingGrid />
           ) : isShowingSearchResults ? (
             // Twitter Search Results
@@ -485,7 +484,7 @@ function TwitterResultsTable({
                   </td>
                   <td className="p-4">
                     {profile.verified ? (
-                      <span className="text-blue-500">✓</span>
+                      <VerifiedBadge size={16} />
                     ) : (
                       <span className="text-neutral-400">—</span>
                     )}
@@ -542,9 +541,7 @@ function FeaturedProfilesGrid({
         ))}
       </div>
 
-
       <div ref={sentinelRef} className="h-10" />
-
 
       {(isLoading || hasMore) && (
         <motion.div
