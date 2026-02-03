@@ -56,16 +56,46 @@ export default function ChatPage() {
     data: chatData,
     error: chatError,
     isLoading: chatLoading,
+    mutate: mutateChats,
   } = useSWR<{ chats: ChatData[] }>(
     userId ? API_ROUTES.USER_CHATS : null,
-    fetcher
+    fetcher,
+    {
+      // Revalidate more frequently when chat might be newly created
+      refreshInterval: 0,
+      revalidateOnFocus: true,
+    },
   );
 
-  // Find the specific chat
-  const chat = useMemo(() => {
+  // Find the specific chat from the list
+  const chatFromList = useMemo(() => {
     if (!chatData?.chats) return null;
     return chatData.chats.find((c) => c.id === chatId);
   }, [chatData, chatId]);
+
+  // Fallback: fetch the specific chat directly if not in list (handles newly created chats)
+  const { data: directChatData, isLoading: directChatLoading } = useSWR<{
+    chat: ChatData;
+  }>(
+    // Only fetch directly if we have userId, chatId, list is loaded but chat not found
+    userId && chatId && !chatLoading && !chatFromList
+      ? `/api/chat/${chatId}`
+      : null,
+    fetcher,
+    {
+      // Retry a few times for newly created chats
+      errorRetryCount: 3,
+      errorRetryInterval: 1000,
+      onSuccess: () => {
+        // When we find the chat directly, refresh the main list to include it
+        mutateChats();
+      },
+    },
+  );
+
+  // Use chat from list first, fallback to direct fetch
+  const chat = chatFromList || directChatData?.chat || null;
+  const isStillLoading = chatLoading || (!chatFromList && directChatLoading);
 
   // Use real-time chat messages hook
   const {
@@ -117,10 +147,10 @@ export default function ChatPage() {
     const deadlineDate = chat?.deadline_at
       ? new Date(chat.deadline_at)
       : bookingInfo?.createdAt
-      ? new Date(
-          new Date(bookingInfo.createdAt).getTime() + 24 * 60 * 60 * 1000
-        )
-      : null;
+        ? new Date(
+            new Date(bookingInfo.createdAt).getTime() + 24 * 60 * 60 * 1000,
+          )
+        : null;
 
     if (!deadlineDate) return "24h";
 
@@ -170,7 +200,7 @@ export default function ChatPage() {
     const date = new Date(dateString);
     const now = new Date();
     const diffDays = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
     );
     const time = date.toLocaleTimeString([], {
       hour: "numeric",
@@ -187,8 +217,8 @@ export default function ChatPage() {
     })} ${time}`;
   };
 
-  // Loading state
-  if (chatLoading) {
+  // Loading state - wait for both list and direct fetch attempts
+  if (isStillLoading) {
     return (
       <AuthGuard>
         <div className="min-h-screen flex items-center justify-center">
@@ -222,12 +252,12 @@ export default function ChatPage() {
     chat.status === "active"
       ? "Active"
       : chat.status === "pending"
-      ? "Pending"
-      : chat.status === "completed"
-      ? "Completed"
-      : chat.status === "refunded"
-      ? "Refunded"
-      : "Active";
+        ? "Pending"
+        : chat.status === "completed"
+          ? "Completed"
+          : chat.status === "refunded"
+            ? "Refunded"
+            : "Active";
 
   const canSendMessages = chat.status === "active" || chat.status === "pending";
 
@@ -346,7 +376,7 @@ export default function ChatPage() {
                           transition={{ duration: 0.2 }}
                           className={cn(
                             "flex gap-2",
-                            isMe ? "justify-end" : "justify-start"
+                            isMe ? "justify-end" : "justify-start",
                           )}
                         >
                           {!isMe && (
@@ -370,7 +400,7 @@ export default function ChatPage() {
                               isMe
                                 ? "bg-koru-purple text-white rounded-br-md"
                                 : "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border border-neutral-200/50 dark:border-neutral-700/50 rounded-bl-md",
-                              isOptimistic && "opacity-70"
+                              isOptimistic && "opacity-70",
                             )}
                           >
                             <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
@@ -379,13 +409,13 @@ export default function ChatPage() {
                             <div
                               className={cn(
                                 "flex items-center gap-1.5 mt-1.5",
-                                isMe ? "justify-end" : "justify-start"
+                                isMe ? "justify-end" : "justify-start",
                               )}
                             >
                               <span
                                 className={cn(
                                   "text-[10px]",
-                                  isMe ? "text-white/60" : "text-neutral-400"
+                                  isMe ? "text-white/60" : "text-neutral-400",
                                 )}
                               >
                                 {formatMessageTime(message.created_at)}
@@ -413,18 +443,18 @@ export default function ChatPage() {
             </div>
 
             {/* Input */}
-            <div className="sticky bottom-0 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border-t border-neutral-200/50 dark:border-neutral-800/50 p-4 pb-24 sm:pb-4">
+            <div className="sticky bottom-0 p-4 pb-6 sm:pb-6">
               {canSendMessages ? (
                 <form
                   onSubmit={handleSend}
-                  className="flex items-center gap-3 max-w-3xl mx-auto"
+                  className="flex items-center max-w-3xl mx-auto bg-neutral-100 dark:bg-neutral-800 rounded-2xl border border-neutral-200/50 dark:border-neutral-700/50 overflow-hidden"
                 >
                   <Input
                     ref={inputRef}
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Type your message..."
-                    className="flex-1 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 border-0 focus:ring-2 focus:ring-koru-purple/50 transition-all"
+                    className="flex-1 h-14 bg-transparent border-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-4"
                     disabled={isSending}
                     maxLength={2000}
                   />
@@ -432,10 +462,10 @@ export default function ChatPage() {
                     type="submit"
                     size="icon"
                     className={cn(
-                      "h-12 w-12 rounded-xl transition-all",
+                      "h-11 w-11 rounded-xl transition-all m-1.5 flex-shrink-0",
                       newMessage.trim()
                         ? "bg-koru-purple hover:bg-koru-purple/90 shadow-lg shadow-koru-purple/25"
-                        : "bg-neutral-200 dark:bg-neutral-700 cursor-not-allowed"
+                        : "bg-neutral-200 dark:bg-neutral-700 cursor-not-allowed",
                     )}
                     disabled={!newMessage.trim() || isSending}
                   >
@@ -449,7 +479,7 @@ export default function ChatPage() {
                       <SendIcon
                         className={cn(
                           "w-5 h-5",
-                          newMessage.trim() ? "text-white" : "text-neutral-400"
+                          newMessage.trim() ? "text-white" : "text-neutral-400",
                         )}
                       />
                     </motion.div>
@@ -531,7 +561,7 @@ export default function ChatPage() {
                   "rounded-xl p-4 mb-4 border",
                   isConnected
                     ? "bg-koru-lime/10 border-koru-lime/30"
-                    : "bg-orange-500/10 border-orange-500/30"
+                    : "bg-orange-500/10 border-orange-500/30",
                 )}
               >
                 <div className="flex items-center gap-2">
@@ -540,13 +570,13 @@ export default function ChatPage() {
                       "w-2 h-2 rounded-full",
                       isConnected
                         ? "bg-koru-lime animate-pulse"
-                        : "bg-orange-500"
+                        : "bg-orange-500",
                     )}
                   />
                   <span
                     className={cn(
                       "text-xs font-medium",
-                      isConnected ? "text-koru-lime" : "text-orange-500"
+                      isConnected ? "text-koru-lime" : "text-orange-500",
                     )}
                   >
                     {isConnected ? "Real-time connected" : "Connecting..."}
@@ -564,7 +594,7 @@ export default function ChatPage() {
                       <span className="text-koru-lime font-medium">
                         automatically refunded
                       </span>{" "}
-                      to your wallet.
+                      to your Koru withdrawable balance.
                     </p>
                   </div>
                 </div>

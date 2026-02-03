@@ -1422,8 +1422,8 @@ export function BookingModal({
                       <span className="text-koru-golden font-medium">
                         24 hours
                       </span>
-                      , your payment will be automatically refunded to your
-                      wallet.
+                      , your payment will be automatically refunded to your Koru
+                      withdrawable balance.
                     </p>
                   </div>
                 </div>
