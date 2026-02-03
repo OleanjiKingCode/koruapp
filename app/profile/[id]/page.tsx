@@ -367,7 +367,8 @@ export default function ViewProfilePage() {
   } = useSWR(handle ? API_ROUTES.PROFILE(handle) : null, fetcher, {
     revalidateOnFocus: false,
     revalidateOnReconnect: true,
-    dedupingInterval: 60000, // Cache for 1 minute
+    revalidateOnMount: true, // Always fetch fresh data when navigating to profile
+    dedupingInterval: 5000, // Reduced from 60s to 5s to allow more frequent updates
     errorRetryCount: 2,
   });
 
@@ -589,10 +590,11 @@ export default function ViewProfilePage() {
     }
   };
 
-  // User has availability if they have time slots OR pricing slots set up
-  const hasAvailability =
-    availabilityData.slots.length > 0 ||
-    (profile?.availabilitySlots && profile.availabilitySlots.length > 0);
+  // User has availability if they have properly configured slots (with name and times)
+  const configuredSlots = availabilityData.slots.filter(
+    (slot) => slot.name && slot.times.length > 0,
+  );
+  const hasAvailability = configuredSlots.length > 0;
 
   // Helper: Parse ISO date string (YYYY-MM-DD) to local Date at midnight
   const parseLocalDate = (dateStr: string): Date => {
@@ -889,7 +891,7 @@ export default function ViewProfilePage() {
                     Available Sessions
                   </p>
                   <div className="space-y-2">
-                    {availabilityData.slots.map((slot) => {
+                    {configuredSlots.map((slot) => {
                       const hasFutureTimes = slotHasFutureTimes(slot);
                       return (
                         <div
