@@ -589,11 +589,11 @@ export function BookingModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className={cn(
-          "p-0 gap-0 overflow-hidden transition-all duration-300",
-          step === "slots"
+          "p-0 gap-0 transition-all duration-300",
+          step === "slots" || step === "confirm"
             ? "max-w-sm"
-            : step === "confirm"
-              ? "max-w-sm"
+            : step === "paying"
+              ? "max-w-xs"
               : "max-w-md",
         )}
       >
