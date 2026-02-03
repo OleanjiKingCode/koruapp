@@ -352,157 +352,167 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <div className="px-6 md:px-8 pb-6 -mt-16 relative">
-                  <div className="flex flex-col md:flex-row md:items-end gap-4">
-                    {/* Avatar */}
-                    <motion.div
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ delay: 0.2 }}
-                      className="relative"
+                <div className="px-6 md:px-8 pb-6 relative">
+                  {/* Avatar - positioned to overlap banner */}
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="absolute -top-14 left-6 md:left-8"
+                  >
+                    <div
+                      className={cn(
+                        "w-28 h-28 rounded-2xl overflow-hidden",
+                        user?.profileImageUrl
+                          ? ""
+                          : "border-4 border-white dark:border-neutral-900 shadow-xl bg-white dark:bg-neutral-800",
+                      )}
                     >
-                      <div className="w-28 h-28 md:w-32 md:h-32 rounded-2xl border-4 border-white dark:border-neutral-900 shadow-xl overflow-hidden bg-white dark:bg-neutral-800">
-                        <OptimizedAvatar
-                          src={user?.profileImageUrl?.replace(
-                            "_normal",
-                            "_400x400",
+                      <OptimizedAvatar
+                        src={user?.profileImageUrl?.replace(
+                          "_normal",
+                          "_400x400",
+                        )}
+                        alt={user?.name || "Profile"}
+                        size={112}
+                        fallbackSeed={user?.username || "user"}
+                      />
+                    </div>
+                  </motion.div>
+
+                  {/* Content below avatar */}
+                  <div className="pt-16">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                      {/* Info */}
+                      <div className="flex-1">
+                        <div className="flex flex-wrap items-center gap-3 mb-1">
+                          <h1 className="text-2xl md:text-3xl text-neutral-900 dark:text-neutral-100">
+                            {user?.name || "User"}
+                          </h1>
+                          {user?.isVerified && <VerifiedBadge size={20} />}
+                          {user?.isCreator && (
+                            <Badge className="bg-koru-purple/20 text-koru-purple border-0">
+                              Creator
+                            </Badge>
                           )}
-                          alt={user?.name || "Profile"}
-                          size={128}
-                          fallbackSeed={user?.username || "user"}
-                        />
-                      </div>
-                    </motion.div>
-
-                    {/* Info */}
-                    <div className="flex-1 pt-4 md:pt-0">
-                      <div className="flex flex-wrap items-center gap-3 mb-1">
-                        <h1 className="text-2xl md:text-3xl text-neutral-900 dark:text-neutral-100">
-                          {user?.name || "User"}
-                        </h1>
-                        {user?.isVerified && <VerifiedBadge size={20} />}
-                        {user?.isCreator && (
-                          <Badge className="bg-koru-purple/20 text-koru-purple border-0">
-                            Creator
-                          </Badge>
-                        )}
-                      </div>
-
-                      {/* Username & Followers */}
-                      <div className="flex flex-wrap items-center gap-2 mb-3">
-                        <a
-                          href={`https://x.com/${user?.username}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 text-sm text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors"
-                        >
-                          <XIcon className="w-4 h-4" />@
-                          {user?.username || "username"}
-                        </a>
-                        {user?.followersCount ? (
-                          <>
-                            <span className="text-neutral-300 dark:text-neutral-600">
-                              •
-                            </span>
-                            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                              {user.followersCount.toLocaleString()} followers
-                            </span>
-                          </>
-                        ) : null}
-                        {user?.createdAt && (
-                          <>
-                            <span className="text-neutral-300 dark:text-neutral-600">
-                              •
-                            </span>
-                            <span className="text-xs text-neutral-400 dark:text-neutral-500">
-                              Member since{" "}
-                              {new Date(user.createdAt).toLocaleDateString(
-                                "en-US",
-                                {
-                                  month: "long",
-                                  year: "numeric",
-                                },
-                              )}
-                            </span>
-                          </>
-                        )}
-                      </div>
-
-                      {/* Bio */}
-                      {user?.bio && (
-                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3 max-w-lg">
-                          {user.bio}
-                        </p>
-                      )}
-
-                      {/* Tags */}
-                      {user?.tags && user.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {user.tags.map((tag: string) => {
-                            const color = getTagColor(tag);
-                            return (
-                              <Badge
-                                key={tag}
-                                variant="secondary"
-                                className={cn(
-                                  color.bg,
-                                  color.text,
-                                  "border",
-                                  color.border,
-                                  "font-medium",
-                                )}
-                              >
-                                {tag}
-                              </Badge>
-                            );
-                          })}
                         </div>
-                      )}
 
-                      {/* Website link if exists */}
-                      {user?.website && (
-                        <div className="mb-3">
+                        {/* Username & Followers */}
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
                           <a
-                            href={user.website}
+                            href={`https://x.com/${user?.username}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors group"
+                            className="flex items-center gap-1.5 text-sm text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors"
                           >
-                            <LinkIcon className="w-4 h-4" />
-                            <span className="group-hover:underline">
-                              Website
-                            </span>
+                            <XIcon className="w-4 h-4" />@
+                            {user?.username || "username"}
                           </a>
+                          {user?.followersCount ? (
+                            <>
+                              <span className="text-neutral-300 dark:text-neutral-600">
+                                •
+                              </span>
+                              <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                                {user.followersCount.toLocaleString()} followers
+                              </span>
+                            </>
+                          ) : null}
+                          {user?.createdAt && (
+                            <>
+                              <span className="text-neutral-300 dark:text-neutral-600">
+                                •
+                              </span>
+                              <span className="text-xs text-neutral-400 dark:text-neutral-500">
+                                Member since{" "}
+                                {new Date(user.createdAt).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    month: "long",
+                                    year: "numeric",
+                                  },
+                                )}
+                              </span>
+                            </>
+                          )}
                         </div>
-                      )}
 
-                      {/* Badges */}
-                      <div className="flex flex-wrap gap-2">
-                        <Badge
-                          variant="outline"
-                          className="text-xs border-koru-golden text-koru-golden bg-koru-golden/10"
-                        >
-                          Early Adopter
-                        </Badge>
+                        {/* Bio */}
+                        {user?.bio && (
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3 max-w-lg">
+                            {user.bio}
+                          </p>
+                        )}
+
+                        {/* Tags */}
+                        {user?.tags && user.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {user.tags.map((tag: string) => {
+                              const color = getTagColor(tag);
+                              return (
+                                <Badge
+                                  key={tag}
+                                  variant="secondary"
+                                  className={cn(
+                                    color.bg,
+                                    color.text,
+                                    "border",
+                                    color.border,
+                                    "font-medium",
+                                  )}
+                                >
+                                  {tag}
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* Website link if exists */}
+                        {user?.website && (
+                          <div className="mb-3">
+                            <a
+                              href={user.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors group"
+                            >
+                              <LinkIcon className="w-4 h-4" />
+                              <span className="group-hover:underline">
+                                Website
+                              </span>
+                            </a>
+                          </div>
+                        )}
+
+                        {/* Badges */}
+                        <div className="flex flex-wrap gap-2">
+                          <Badge
+                            variant="outline"
+                            className="text-xs border-koru-golden text-koru-golden bg-koru-golden/10"
+                          >
+                            Early Adopter
+                          </Badge>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Actions */}
-                    <div className="flex gap-2 pt-4 md:pt-0">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleShareProfile}
-                      >
-                        <ShareIcon className="w-4 h-4 mr-2" />
-                        Share
-                      </Button>
-                      <Link href="/profile/edit">
-                        <Button size="sm">
-                          <EditIcon className="w-4 h-4 mr-2" />
-                          Edit Profile
+                      {/* Actions */}
+                      <div className="flex gap-2 shrink-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleShareProfile}
+                        >
+                          <ShareIcon className="w-4 h-4 mr-2" />
+                          Share
                         </Button>
-                      </Link>
+                        <Link href="/profile/edit">
+                          <Button size="sm">
+                            <EditIcon className="w-4 h-4 mr-2" />
+                            Edit Profile
+                          </Button>
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </div>
