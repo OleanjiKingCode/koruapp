@@ -3,7 +3,7 @@ import { Address } from "viem";
 // Contract addresses per chain
 export const KORU_ESCROW_ADDRESSES: Record<number, Address> = {
   8453: "0x0000000000000000000000000000000000000000" as Address, // Base Mainnet - TODO: Deploy
-  84532: "0xef6B722516f9D8aDbA594311DE72bfCfa57b9683" as Address, // Base Sepolia
+  84532: "0x9015823566842CA047f7A6D4089FaAE535cCd25b" as Address, // Base Sepolia
 };
 
 // USDC addresses per chain
