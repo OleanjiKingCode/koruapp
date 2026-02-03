@@ -326,7 +326,7 @@ export default function ProfilePage() {
     <AuthGuard>
       <div className="min-h-screen pb-[500px] sm:pb-96">
         <main className="max-w-container mx-auto px-4 sm:px-6 py-8">
-          <div className="flex flex-col gap-3 mb-8">
+          <div className="flex flex-col gap-3 mb-3">
             {isLoading ? (
               <ProfileHeaderSkeleton />
             ) : (
@@ -769,7 +769,7 @@ export default function ProfilePage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.1 }}
-              className="mb-8"
+              className="mb-3"
             >
               {/* Compact Balance Row */}
               <div className="grid grid-cols-2 gap-3">
@@ -864,7 +864,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.15 }}
-            className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+            className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-3"
           >
             {isLoading ? (
               <>
@@ -906,7 +906,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="mb-8"
+            className="mb-3"
           >
             <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft">
               <div className="flex items-center justify-between mb-6">
