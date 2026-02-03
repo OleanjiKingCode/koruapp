@@ -37,7 +37,8 @@ import {
   getEscrowAddress,
 } from "@/lib/hooks/use-koru-escrow";
 import { getSupabaseClient } from "@/lib/supabase-client";
-import { getChainId } from "@/lib/wagmi-config";
+import { getChainId, getDefaultChain } from "@/lib/wagmi-config";
+import { useChainId, useSwitchChain } from "wagmi";
 import type { Address } from "viem";
 
 interface BookingModalProps {
@@ -264,6 +265,12 @@ export function BookingModal({
   // Check if recipient can receive payment
   const canReceivePayment = !!recipientAddress;
 
+  // Chain switching
+  const currentChainId = useChainId();
+  const targetChain = getDefaultChain();
+  const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain();
+  const isWrongChain = currentChainId !== targetChain.id;
+
   // Handle approval confirmation - proceed to create escrow
   useEffect(() => {
     if (isApprovalConfirmed && step === "approving") {
@@ -451,6 +458,23 @@ export function BookingModal({
       );
       setError("Invalid payment amount. Please try again.");
       return;
+    }
+
+    // Check if on correct chain, switch if needed
+    if (isWrongChain) {
+      console.log(
+        `[BookingModal] Wrong chain (${currentChainId}), switching to ${targetChain.name} (${targetChain.id})...`,
+      );
+      try {
+        await switchChainAsync({ chainId: targetChain.id });
+        console.log("[BookingModal] Chain switched successfully");
+      } catch (switchError) {
+        console.error("[BookingModal] Failed to switch chain:", switchError);
+        setError(
+          `Please switch your wallet to ${targetChain.name} to complete this transaction.`,
+        );
+        return;
+      }
     }
 
     // Start REAL payment flow
@@ -1050,6 +1074,15 @@ export function BookingModal({
                         </span>
                       )}
                     </div>
+                    {/* Wrong chain warning */}
+                    {walletAddress && isWrongChain && (
+                      <div className="mt-2 flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                        <AlertCircleIcon className="w-4 h-4 flex-shrink-0" />
+                        <span className="text-xs">
+                          Will switch to {targetChain.name} on payment
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1147,12 +1180,15 @@ export function BookingModal({
                   ) : (
                     <Button
                       onClick={handlePay}
+                      disabled={isSwitchingChain}
                       className="flex-1 bg-koru-lime hover:bg-koru-lime/90 text-neutral-900"
                     >
                       <CheckIcon className="w-4 h-4 mr-2" />
-                      {needsApproval
-                        ? `Approve & Pay $${selectedSlot.price}`
-                        : `Pay $${selectedSlot.price}`}
+                      {isSwitchingChain
+                        ? "Switching Chain..."
+                        : needsApproval
+                          ? `Approve & Pay $${selectedSlot.price}`
+                          : `Pay $${selectedSlot.price}`}
                     </Button>
                   )}
                 </div>
