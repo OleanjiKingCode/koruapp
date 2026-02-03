@@ -14,7 +14,6 @@ import {
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
 const RAPIDAPI_HOST = "twitter241.p.rapidapi.com";
 const API_TIMEOUT = 5000; // 5 second timeout
-const CACHE_FRESH_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes - if cache is newer than this, use it directly
 
 async function fetchProfileFromTwitter(username: string): Promise<{
   profile_image_url?: string;
@@ -84,11 +83,35 @@ async function fetchProfileFromTwitter(username: string): Promise<{
   }
 }
 
+function hasProfileChanged(
+  cached: CachedTwitterProfile,
+  fresh: NonNullable<Awaited<ReturnType<typeof fetchProfileFromTwitter>>>,
+): boolean {
+  // Check if any key fields have changed
+  return (
+    (fresh.profile_image_url &&
+      fresh.profile_image_url !== cached.profile_image_url) ||
+    (fresh.banner_url && fresh.banner_url !== cached.banner_url) ||
+    (fresh.bio && fresh.bio !== cached.bio) ||
+    (fresh.name && fresh.name !== cached.name) ||
+    (fresh.followers_count !== undefined &&
+      fresh.followers_count !== cached.followers_count) ||
+    (fresh.following_count !== undefined &&
+      fresh.following_count !== cached.following_count) ||
+    (fresh.verified !== undefined && fresh.verified !== cached.verified)
+  );
+}
+
 async function updateCachedProfile(
   profile: CachedTwitterProfile,
   freshData: NonNullable<Awaited<ReturnType<typeof fetchProfileFromTwitter>>>,
   tableName: "featured_profiles" | "twitter_profiles",
 ): Promise<void> {
+  // Only update if data has actually changed
+  if (!hasProfileChanged(profile, freshData)) {
+    return;
+  }
+
   const updateData: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
@@ -173,38 +196,12 @@ export async function GET(
       });
     }
 
-    // For non-Koru users: First check if we have recently cached data
-    const cachedProfile = await getProfileByUsername(username);
-
-    // Check if cached data is fresh (updated within the threshold - likely from a recent search)
-    const isCacheFresh = cachedProfile?.updated_at
-      ? Date.now() - new Date(cachedProfile.updated_at).getTime() <
-        CACHE_FRESH_THRESHOLD_MS
-      : false;
-
-    // If we have fresh cached data, use it directly without making another API call
-    // This handles the case where user just searched and data was cached from that search
-    if (cachedProfile && isCacheFresh) {
-      return NextResponse.json({
-        profile: {
-          twitterId: cachedProfile.twitter_id,
-          name: cachedProfile.name,
-          handle: cachedProfile.username,
-          bio: cachedProfile.bio || undefined,
-          profileImageUrl: cachedProfile.profile_image_url || undefined,
-          bannerUrl: cachedProfile.banner_url || undefined,
-          followersCount: cachedProfile.followers_count || undefined,
-          followingCount: cachedProfile.following_count || undefined,
-          isVerified: cachedProfile.verified,
-          category: cachedProfile.category || undefined,
-          tags: cachedProfile.tags || undefined,
-          isOnKoru: false,
-        },
-      });
-    }
-
-    // Cache is stale or doesn't exist - try Twitter API
-    const freshData = await fetchProfileFromTwitter(username);
+    // For non-Koru users: Fetch cached profile and fresh Twitter data in parallel
+    // Always check Twitter to ensure we have the latest data
+    const [cachedProfile, freshData] = await Promise.all([
+      getProfileByUsername(username),
+      fetchProfileFromTwitter(username),
+    ]);
 
     // If we got fresh data from API
     if (freshData && freshData.name) {
