@@ -587,16 +587,7 @@ export function BookingModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
-        className={cn(
-          "p-0 gap-0 transition-all duration-300",
-          step === "slots" || step === "confirm"
-            ? "max-w-sm"
-            : step === "paying"
-              ? "max-w-xs"
-              : "max-w-md",
-        )}
-      >
+      <DialogContent className="p-0 gap-0 transition-all duration-300 w-fit min-w-[320px]">
         <DialogTitle className="sr-only">Book a Session</DialogTitle>
         <AnimatePresence mode="wait" initial={false}>
           {/* Step 1: Select Slot */}
