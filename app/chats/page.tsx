@@ -41,6 +41,7 @@ interface ChatFromAPI {
   updated_at: string;
   last_message: string | null;
   last_message_at: string | null;
+  last_message_sender_id: string | null;
   // Joined user data
   requester?: {
     id: string;
@@ -74,7 +75,6 @@ interface DisplayChat {
   lastMessage: string;
   type: "sent" | "received";
   createdAt: string;
-  awaitingReply: "me" | "them" | null;
 }
 
 // Icons
@@ -154,7 +154,6 @@ function ChatCard({
   variant?: "sent" | "received";
 }) {
   const isPaying = variant === "sent";
-  const needsMyResponse = chat.awaitingReply === "me";
   const isCompleted = chat.status === "Completed" || chat.status === "Refunded";
 
   return (
@@ -220,15 +219,15 @@ function ChatCard({
             <p
               className={cn(
                 "text-xs",
-                chat.deadline.includes("left")
-                  ? needsMyResponse
-                    ? "text-orange-500"
-                    : "text-koru-golden"
-                  : chat.status === "Completed"
+                chat.status === "Pending"
+                  ? "text-koru-golden"
+                  : chat.status === "Active"
                     ? "text-koru-lime"
-                    : chat.status === "Refunded"
-                      ? "text-red-400"
-                      : "text-neutral-400",
+                    : chat.status === "Completed"
+                      ? "text-koru-lime"
+                      : chat.status === "Refunded"
+                        ? "text-red-400"
+                        : "text-neutral-400",
               )}
             >
               {chat.deadline}
@@ -241,32 +240,20 @@ function ChatCard({
           {chat.lastMessage}
         </p>
 
-        {/* Status hints */}
-        {!isCompleted && (
+        {/* Status hints - only show for pending chats */}
+        {!isCompleted && chat.status === "Pending" && (
           <div className="mt-3 flex items-center justify-between">
-            {chat.status === "Pending" && isPaying ? (
+            {isPaying ? (
               // Requester waiting for creator to accept
               <span className="text-xs text-koru-golden flex items-center gap-1">
                 <ClockIcon className="w-3 h-3" />
                 Waiting for them to accept
               </span>
-            ) : chat.status === "Pending" && !isPaying ? (
+            ) : (
               // Creator needs to accept
               <span className="text-xs text-orange-500 flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
                 Accept to start chatting
-              </span>
-            ) : needsMyResponse ? (
-              // Active chat, my turn
-              <span className="text-xs text-orange-500 flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                Your turn to respond
-              </span>
-            ) : (
-              // Active chat, their turn
-              <span className="text-xs text-neutral-400 flex items-center gap-1">
-                <ClockIcon className="w-3 h-3" />
-                Waiting for their response
               </span>
             )}
             <ChevronRightIcon
@@ -374,7 +361,6 @@ function transformChat(chat: ChatFromAPI, userId: string): DisplayChat {
     lastMessage,
     type: isSent ? "sent" : "received",
     createdAt: chat.updated_at || chat.created_at,
-    awaitingReply: chat.status === "active" ? (isSent ? "them" : "me") : null,
   };
 }
 

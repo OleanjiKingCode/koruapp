@@ -5,13 +5,14 @@ import {
   getChatMessages,
   sendMessage,
   markMessagesAsRead,
+  supabase,
 } from "@/lib/supabase";
 import { notifyNewMessage } from "@/lib/notifications";
 
 // GET - Fetch messages for a chat
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth();
@@ -43,7 +44,7 @@ export async function GET(
     console.error("Error fetching messages:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -51,7 +52,7 @@ export async function GET(
 // POST - Send a message
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth();
@@ -63,10 +64,14 @@ export async function POST(
 
     const { content } = await request.json();
 
-    if (!content || typeof content !== "string" || content.trim().length === 0) {
+    if (
+      !content ||
+      typeof content !== "string" ||
+      content.trim().length === 0
+    ) {
       return NextResponse.json(
         { error: "Message content is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -85,7 +90,7 @@ export async function POST(
     if (chat.status !== "active" && chat.status !== "pending") {
       return NextResponse.json(
         { error: "Cannot send messages to this chat" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -95,14 +100,24 @@ export async function POST(
     if (!message) {
       return NextResponse.json(
         { error: "Failed to send message" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
+    // Update last_message_sender_id to track who needs to respond next
+    await supabase
+      .from("chats")
+      .update({
+        last_message_sender_id: userId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", chatId);
+
     // Notify the other user about the new message
-    const recipientId = chat.requester_id === userId ? chat.creator_id : chat.requester_id;
+    const recipientId =
+      chat.requester_id === userId ? chat.creator_id : chat.requester_id;
     const sender = chat.requester_id === userId ? chat.requester : chat.creator;
-    
+
     if (recipientId && sender) {
       try {
         await notifyNewMessage(
@@ -111,7 +126,7 @@ export async function POST(
           sender.username,
           sender.profile_image_url || null,
           content,
-          chatId
+          chatId,
         );
       } catch (notifyError) {
         console.error("Error sending notification:", notifyError);
@@ -124,10 +139,7 @@ export async function POST(
     console.error("Error sending message:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
-
-
