@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { creatorUsername, amount, slotName, slotDuration } = body;
+    const { creatorUsername, amount, slotName, slotDuration, escrowId } = body;
 
     if (!creatorUsername) {
       return NextResponse.json(
@@ -66,6 +66,19 @@ export async function POST(request: NextRequest) {
 
       if (balanceError) {
         console.error("Failed to update pending balance:", balanceError);
+        // Don't fail the request, chat was created successfully
+      }
+    }
+
+    // Link the escrow to this chat if escrowId is provided
+    if (escrowId !== undefined && escrowId !== null) {
+      const { error: escrowError } = await supabase
+        .from("escrows")
+        .update({ chat_id: chat.id })
+        .eq("escrow_id", escrowId);
+
+      if (escrowError) {
+        console.error("Failed to link escrow to chat:", escrowError);
         // Don't fail the request, chat was created successfully
       }
     }

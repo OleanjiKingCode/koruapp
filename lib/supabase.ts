@@ -648,6 +648,10 @@ export async function createChat(chat: {
   slot_duration?: number | null;
   deadline_at?: string | null;
 }): Promise<Chat | null> {
+  // Use pending status for paid chats (escrow needs acceptance)
+  // Use active status for free chats
+  const initialStatus = chat.amount > 0 ? "pending" : "active";
+
   const { data, error } = await supabase
     .from("chats")
     .insert({
@@ -659,7 +663,7 @@ export async function createChat(chat: {
       deadline_at:
         chat.deadline_at ||
         new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      status: "active",
+      status: initialStatus,
     })
     .select()
     .single();

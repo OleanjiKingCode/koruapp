@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
 import { useSession } from "next-auth/react";
@@ -12,6 +12,7 @@ import { StatusPill, EmptyState } from "@/components/shared";
 import { AuthGuard } from "@/components/auth";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { OptimizedAvatar } from "@/components/ui/optimized-image";
+import { AcceptEscrowModal } from "@/components/accept-escrow-modal";
 import { cn } from "@/lib/utils";
 import { API_ROUTES } from "@/lib/constants";
 import { useChatMessages } from "@/lib/hooks/use-chat-messages";
@@ -36,6 +37,7 @@ interface ChatData {
 
 export default function ChatPage() {
   const params = useParams();
+  const router = useRouter();
   const { data: session } = useSession();
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -97,6 +99,33 @@ export default function ChatPage() {
   const chat = chatFromList || directChatData?.chat || null;
   const isStillLoading = chatLoading || (!chatFromList && directChatLoading);
 
+  // Determine if we should check escrow (creator on pending paid chat)
+  const shouldCheckEscrow = useMemo(() => {
+    return (
+      chat &&
+      userId &&
+      chat.creator_id === userId &&
+      chat.status === "pending" &&
+      chat.amount > 0
+    );
+  }, [chat, userId]);
+
+  // Fetch escrow data using SWR (only when needed)
+  const { data: escrowResponse, mutate: mutateEscrow } = useSWR<{
+    escrow: { escrow_id: number; status: string };
+  }>(shouldCheckEscrow ? `/api/chat/${chatId}/escrow` : null, fetcher, {
+    revalidateOnFocus: false,
+    shouldRetryOnError: false,
+  });
+
+  // Determine if we should show the accept modal
+  const escrowData = escrowResponse?.escrow;
+  const showAcceptModal = !!(
+    shouldCheckEscrow &&
+    escrowData &&
+    escrowData.status === "pending"
+  );
+
   // Use real-time chat messages hook
   const {
     messages,
@@ -119,6 +148,14 @@ export default function ChatPage() {
       markChatAsSeen(chatId);
     }
   }, [chatId, chat, markChatAsSeen]);
+
+  // Handle escrow accepted - refresh both escrow and chat data
+  const handleEscrowAccepted = useCallback(() => {
+    // Refresh escrow data (will update status to "accepted", hiding modal)
+    mutateEscrow();
+    // Refresh chat data to reflect new status
+    mutateChats();
+  }, [mutateEscrow, mutateChats]);
 
   // Determine other party
   const otherParty = useMemo(() => {
@@ -263,6 +300,20 @@ export default function ChatPage() {
 
   return (
     <AuthGuard>
+      {/* Accept Escrow Modal - shown when creator needs to accept a paid chat */}
+      {showAcceptModal && escrowData && otherParty && (
+        <AcceptEscrowModal
+          isOpen={showAcceptModal}
+          escrowId={BigInt(escrowData.escrow_id)}
+          amount={chat.amount}
+          payerName={otherParty.name}
+          slotName={chat.slot_name}
+          deadlineAt={chat.deadline_at}
+          chatId={chatId}
+          onAccepted={handleEscrowAccepted}
+        />
+      )}
+
       <div className="min-h-screen flex flex-col bg-neutral-50 dark:bg-neutral-950">
         {/* Header */}
         <header className="sticky top-0 z-50 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border-b border-neutral-200/50 dark:border-neutral-800/50">

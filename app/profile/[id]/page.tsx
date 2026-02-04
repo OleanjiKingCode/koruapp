@@ -557,7 +557,7 @@ export default function ViewProfilePage() {
     slot: AvailabilitySlot,
     date: Date,
     timeSlot: string,
-    receipt: { id: string },
+    receipt: { id: string; escrowId?: number },
   ) => {
     try {
       // Create the chat in the database
@@ -569,6 +569,7 @@ export default function ViewProfilePage() {
           amount: slot.price,
           slotName: slot.name,
           slotDuration: slot.duration,
+          escrowId: receipt.escrowId,
         }),
       });
 
