@@ -362,12 +362,14 @@ export default function ChatPage() {
 
             <div className="flex items-center gap-3">
               <StatusPill status={displayStatus} />
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800">
-                <ClockIcon className="w-4 h-4 text-neutral-500" />
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                  {deadline}
-                </span>
-              </div>
+              {chat.status === "pending" && (
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800">
+                  <ClockIcon className="w-4 h-4 text-neutral-500" />
+                  <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                    {deadline}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -564,7 +566,7 @@ export default function ChatPage() {
                 </p>
               </div>
 
-              {chat.amount > 0 && (
+              {chat.amount > 0 && chat.status === "pending" && (
                 <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 mb-4 border border-neutral-200 dark:border-neutral-700">
                   <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
                     Auto-Refund In
@@ -573,6 +575,20 @@ export default function ChatPage() {
                     <ClockIcon className="w-5 h-5 text-koru-golden" />
                     <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                       {deadline}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {chat.amount > 0 && chat.status === "active" && (
+                <div className="bg-koru-lime/10 rounded-2xl p-5 mb-4 border border-koru-lime/20">
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
+                    Status
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <CheckIcon className="w-5 h-5 text-koru-lime" />
+                    <p className="text-lg font-semibold text-koru-lime">
+                      Accepted
                     </p>
                   </div>
                 </div>
@@ -635,17 +651,31 @@ export default function ChatPage() {
                 </div>
               </div>
 
-              {chat.amount > 0 ? (
+              {chat.amount > 0 && chat.status === "pending" ? (
+                <div className="bg-koru-golden/10 rounded-xl p-4 border border-koru-golden/30">
+                  <div className="flex items-start gap-3">
+                    <InfoIcon className="w-5 h-5 text-koru-golden flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                      If {otherParty.name.split(" ")[0]} doesn&apos;t accept
+                      within 24 hours, your payment will be{" "}
+                      <span className="text-koru-golden font-medium">
+                        automatically refunded
+                      </span>{" "}
+                      to your Koru withdrawable balance.
+                    </p>
+                  </div>
+                </div>
+              ) : chat.amount > 0 && chat.status === "active" ? (
                 <div className="bg-koru-lime/10 rounded-xl p-4 border border-koru-lime/30">
                   <div className="flex items-start gap-3">
                     <InfoIcon className="w-5 h-5 text-koru-lime flex-shrink-0 mt-0.5" />
                     <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                      If {otherParty.name.split(" ")[0]} doesn&apos;t reply
-                      within 24 hours, your payment will be{" "}
+                      {otherParty.name.split(" ")[0]} has accepted! Your payment
+                      is held in escrow until you mark this chat as{" "}
                       <span className="text-koru-lime font-medium">
-                        automatically refunded
-                      </span>{" "}
-                      to your Koru withdrawable balance.
+                        complete
+                      </span>
+                      .
                     </p>
                   </div>
                 </div>

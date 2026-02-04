@@ -244,17 +244,26 @@ function ChatCard({
         {/* Status hints */}
         {!isCompleted && (
           <div className="mt-3 flex items-center justify-between">
-            {needsMyResponse ? (
-              <span className="text-xs text-orange-500 flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                Your turn to respond
-              </span>
-            ) : chat.status === "Pending" && isPaying ? (
+            {chat.status === "Pending" && isPaying ? (
+              // Requester waiting for creator to accept
               <span className="text-xs text-koru-golden flex items-center gap-1">
                 <ClockIcon className="w-3 h-3" />
                 Waiting for them to accept
               </span>
+            ) : chat.status === "Pending" && !isPaying ? (
+              // Creator needs to accept
+              <span className="text-xs text-orange-500 flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                Accept to start chatting
+              </span>
+            ) : needsMyResponse ? (
+              // Active chat, my turn
+              <span className="text-xs text-orange-500 flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                Your turn to respond
+              </span>
             ) : (
+              // Active chat, their turn
               <span className="text-xs text-neutral-400 flex items-center gap-1">
                 <ClockIcon className="w-3 h-3" />
                 Waiting for their response
@@ -287,7 +296,9 @@ function ChatCard({
 // Helper function to format deadline
 function formatDeadline(deadlineAt: string | null, status: string): string {
   if (status === "completed") return "Completed";
-  if (status === "refunded") return "Expired";
+  if (status === "refunded" || status === "expired" || status === "cancelled")
+    return "Expired";
+  if (status === "active") return "Active"; // No deadline for accepted chats
   if (!deadlineAt) return "24h left";
 
   const deadline = new Date(deadlineAt);
