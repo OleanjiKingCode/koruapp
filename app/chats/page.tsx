@@ -295,8 +295,36 @@ function formatDeadline(deadlineAt: string | null, status: string): string {
   const diff = deadline.getTime() - now.getTime();
 
   if (diff <= 0) return "Expired";
+
+  // Format the time (e.g., "2:30 PM")
+  const timeStr = deadline.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  // Check if deadline is today or tomorrow
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const isToday = deadline.toDateString() === today.toDateString();
+  const isTomorrow = deadline.toDateString() === tomorrow.toDateString();
+
   const hours = Math.floor(diff / (1000 * 60 * 60));
-  return `${hours}h left`;
+
+  if (isToday) {
+    return `${hours}h left · Due today at ${timeStr}`;
+  } else if (isTomorrow) {
+    return `${hours}h left · Due tomorrow at ${timeStr}`;
+  } else {
+    // Format as date (e.g., "Feb 5 at 2:30 PM")
+    const dateStr = deadline.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+    return `${hours}h left · Due ${dateStr} at ${timeStr}`;
+  }
 }
 
 // Helper function to transform API chat to display chat
