@@ -20,12 +20,7 @@ import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import { cn } from "@/lib/utils";
 import { API_ROUTES } from "@/lib/constants";
-import {
-  ChatIcon,
-  ChevronRightIcon,
-  ClockIcon,
-  RefundIcon,
-} from "@/components/icons";
+import { ChatIcon, ChevronRightIcon, RefundIcon } from "@/components/icons";
 
 // Chat type from API
 interface ChatFromAPI {
