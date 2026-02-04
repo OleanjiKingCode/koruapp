@@ -59,6 +59,8 @@ import {
   TwitterIcon,
   ChevronRightIcon,
   LinkIcon,
+  BellIcon,
+  CreditCardIcon,
 } from "@/components/icons";
 
 // Tag color configurations
@@ -1012,21 +1014,24 @@ export default function ProfilePage() {
             <TabsList className="bg-neutral-100 dark:bg-neutral-800/50 p-1 rounded-xl mb-6">
               <TabsTrigger
                 value="chats"
-                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700 data-[state=active]:shadow-sm"
+                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700 data-[state=active]:shadow-sm flex items-center gap-1.5"
               >
-                💬 Chats ({chats.length})
+                <ChatIcon className="w-4 h-4" />
+                Chats ({chats.length})
               </TabsTrigger>
               <TabsTrigger
                 value="summons"
-                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700 data-[state=active]:shadow-sm"
+                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700 data-[state=active]:shadow-sm flex items-center gap-1.5"
               >
-                🔔 Summons ({createdSummons.length + backedSummons.length})
+                <BellIcon className="w-4 h-4" />
+                Summons ({createdSummons.length + backedSummons.length})
               </TabsTrigger>
               <TabsTrigger
                 value="transactions"
-                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700 data-[state=active]:shadow-sm"
+                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700 data-[state=active]:shadow-sm flex items-center gap-1.5"
               >
-                💳 Transactions
+                <CreditCardIcon className="w-4 h-4" />
+                Transactions
               </TabsTrigger>
             </TabsList>
 

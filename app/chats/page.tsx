@@ -20,7 +20,12 @@ import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import { cn } from "@/lib/utils";
 import { API_ROUTES } from "@/lib/constants";
-import { ChatIcon, ChevronRightIcon } from "@/components/icons";
+import {
+  ChatIcon,
+  ChevronRightIcon,
+  ClockIcon,
+  RefundIcon,
+} from "@/components/icons";
 
 // Chat type from API
 interface ChatFromAPI {
@@ -164,7 +169,7 @@ function ChatCard({
           "bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-5 transition-all cursor-pointer group hover:shadow-lg",
           isPaying
             ? "hover:border-koru-purple/30 dark:hover:border-koru-purple/30"
-            : "hover:border-koru-golden/30 dark:hover:border-koru-golden/30"
+            : "hover:border-koru-golden/30 dark:hover:border-koru-golden/30",
         )}
       >
         <div className="flex items-start justify-between gap-4">
@@ -175,7 +180,7 @@ function ChatCard({
                 "w-12 h-12 rounded-xl overflow-hidden",
                 isPaying
                   ? "bg-gradient-to-br from-koru-purple/20 to-koru-golden/20"
-                  : "bg-gradient-to-br from-koru-golden/20 to-koru-lime/20"
+                  : "bg-gradient-to-br from-koru-golden/20 to-koru-lime/20",
               )}
             >
               <OptimizedAvatar
@@ -192,7 +197,7 @@ function ChatCard({
                     "font-semibold text-neutral-900 dark:text-neutral-100 transition-colors",
                     isPaying
                       ? "group-hover:text-koru-purple"
-                      : "group-hover:text-koru-golden"
+                      : "group-hover:text-koru-golden",
                   )}
                 >
                   {chat.otherParty}
@@ -212,7 +217,7 @@ function ChatCard({
                 "font-semibold",
                 isPaying
                   ? "text-neutral-900 dark:text-neutral-100"
-                  : "text-koru-golden"
+                  : "text-koru-golden",
               )}
             >
               {isPaying ? chat.amount : `+${chat.amount}`}
@@ -225,10 +230,10 @@ function ChatCard({
                     ? "text-orange-500"
                     : "text-koru-golden"
                   : chat.status === "Completed"
-                  ? "text-koru-lime"
-                  : chat.status === "Refunded"
-                  ? "text-red-400"
-                  : "text-neutral-400"
+                    ? "text-koru-lime"
+                    : chat.status === "Refunded"
+                      ? "text-red-400"
+                      : "text-neutral-400",
               )}
             >
               {chat.deadline}
@@ -250,12 +255,14 @@ function ChatCard({
                 Your turn to respond
               </span>
             ) : chat.status === "Pending" && isPaying ? (
-              <span className="text-xs text-koru-golden">
-                ⏳ Waiting for them to accept
+              <span className="text-xs text-koru-golden flex items-center gap-1">
+                <ClockIcon className="w-3 h-3" />
+                Waiting for them to accept
               </span>
             ) : (
-              <span className="text-xs text-neutral-400">
-                ⏳ Waiting for their response
+              <span className="text-xs text-neutral-400 flex items-center gap-1">
+                <ClockIcon className="w-3 h-3" />
+                Waiting for their response
               </span>
             )}
             <ChevronRightIcon
@@ -263,7 +270,7 @@ function ChatCard({
                 "w-4 h-4 text-neutral-400 group-hover:translate-x-1 transition-all",
                 isPaying
                   ? "group-hover:text-koru-purple"
-                  : "group-hover:text-koru-golden"
+                  : "group-hover:text-koru-golden",
               )}
             />
           </div>
@@ -271,8 +278,9 @@ function ChatCard({
 
         {chat.status === "Refunded" && (
           <div className="mt-3 flex items-center">
-            <span className="text-xs text-red-400">
-              💸 Payment refunded - no response within 24h
+            <span className="text-xs text-red-400 flex items-center gap-1">
+              <RefundIcon className="w-3 h-3" />
+              Payment refunded - no response within 24h
             </span>
           </div>
         )}
@@ -355,7 +363,7 @@ export default function ChatsPage() {
 
   const { data, error, isLoading } = useSWR<{ chats: ChatFromAPI[] }>(
     session?.user?.dbId ? API_ROUTES.USER_CHATS : null,
-    fetcher
+    fetcher,
   );
 
   // Unread count management
@@ -403,45 +411,45 @@ export default function ChatsPage() {
   // Filter chats by type
   const sentChats = useMemo(
     () => allChats.filter((c) => c.type === "sent"),
-    [allChats]
+    [allChats],
   );
   const receivedChats = useMemo(
     () => allChats.filter((c) => c.type === "received"),
-    [allChats]
+    [allChats],
   );
 
   // Sent sub-categories
   const sentPending = useMemo(
     () => sentChats.filter((c) => c.status === "Pending"),
-    [sentChats]
+    [sentChats],
   );
   const sentActive = useMemo(
     () => sentChats.filter((c) => c.status === "Active"),
-    [sentChats]
+    [sentChats],
   );
   const sentCompleted = useMemo(
     () =>
       sentChats.filter(
-        (c) => c.status === "Completed" || c.status === "Refunded"
+        (c) => c.status === "Completed" || c.status === "Refunded",
       ),
-    [sentChats]
+    [sentChats],
   );
 
   // Received sub-categories
   const receivedPending = useMemo(
     () => receivedChats.filter((c) => c.status === "Pending"),
-    [receivedChats]
+    [receivedChats],
   );
   const receivedActive = useMemo(
     () => receivedChats.filter((c) => c.status === "Active"),
-    [receivedChats]
+    [receivedChats],
   );
   const receivedCompleted = useMemo(
     () =>
       receivedChats.filter(
-        (c) => c.status === "Completed" || c.status === "Refunded"
+        (c) => c.status === "Completed" || c.status === "Refunded",
       ),
-    [receivedChats]
+    [receivedChats],
   );
 
   return (
@@ -560,13 +568,15 @@ export default function ChatsPage() {
               >
                 <InboxIcon className="w-4 h-4 mr-2" />
                 Inbox
-                {(receivedPending.length + receivedActive.length) > 0 && (
-                  <Badge className={cn(
-                    "ml-2 text-xs h-5 px-1.5",
-                    receivedPending.length > 0 
-                      ? "bg-orange-500 text-white" 
-                      : "bg-koru-golden/20 text-koru-golden"
-                  )}>
+                {receivedPending.length + receivedActive.length > 0 && (
+                  <Badge
+                    className={cn(
+                      "ml-2 text-xs h-5 px-1.5",
+                      receivedPending.length > 0
+                        ? "bg-orange-500 text-white"
+                        : "bg-koru-golden/20 text-koru-golden",
+                    )}
+                  >
                     {receivedPending.length + receivedActive.length}
                   </Badge>
                 )}
@@ -577,13 +587,15 @@ export default function ChatsPage() {
               >
                 <SendIcon className="w-4 h-4 mr-2" />
                 Sent
-                {(sentPending.length + sentActive.length) > 0 && (
-                  <Badge className={cn(
-                    "ml-2 text-xs h-5 px-1.5",
-                    sentPending.length > 0 
-                      ? "bg-koru-purple text-white" 
-                      : "bg-koru-purple/20 text-koru-purple"
-                  )}>
+                {sentPending.length + sentActive.length > 0 && (
+                  <Badge
+                    className={cn(
+                      "ml-2 text-xs h-5 px-1.5",
+                      sentPending.length > 0
+                        ? "bg-koru-purple text-white"
+                        : "bg-koru-purple/20 text-koru-purple",
+                    )}
+                  >
                     {sentPending.length + sentActive.length}
                   </Badge>
                 )}

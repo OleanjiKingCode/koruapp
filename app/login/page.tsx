@@ -8,6 +8,7 @@ import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import { LockIcon, CalendarIcon, DollarIcon } from "@/components/icons";
 
 // Loading fallback for Suspense
 function LoginLoading() {
@@ -243,9 +244,9 @@ function LoginContent() {
           className="mt-8 space-y-3"
         >
           {[
-            { icon: "🔒", text: "Secure authentication via X" },
-            { icon: "⚡", text: "Book sessions with experts" },
-            { icon: "💰", text: "Earn by sharing your time" },
+            { icon: LockIcon, text: "Secure authentication via X" },
+            { icon: CalendarIcon, text: "Book sessions with experts" },
+            { icon: DollarIcon, text: "Earn by sharing your time" },
           ].map((feature, i) => (
             <div
               key={i}
@@ -254,7 +255,7 @@ function LoginContent() {
                 isDark ? "text-neutral-400" : "text-neutral-600",
               )}
             >
-              <span>{feature.icon}</span>
+              <feature.icon className="w-4 h-4" />
               <span>{feature.text}</span>
             </div>
           ))}
