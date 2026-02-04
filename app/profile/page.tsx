@@ -35,6 +35,7 @@ import {
   useUsdcBalance,
   useEthBalance,
 } from "@/lib/hooks";
+import { useContractPendingBalance } from "@/lib/hooks/use-koru-escrow";
 import {
   useWalletSync,
   shortenAddress as shortenWalletAddress,
@@ -261,6 +262,13 @@ export default function ProfilePage() {
     formatted: ethFormatted,
     isLoading: isLoadingEth,
   } = useEthBalance(walletAddress as Address | undefined);
+
+  // Contract pending/ready balance (read directly from blockchain)
+  const {
+    pendingFormatted: contractPending,
+    readyFormatted: contractReady,
+    isLoading: isLoadingContractBalance,
+  } = useContractPendingBalance(walletAddress as Address | undefined);
 
   // Get real user data
   const { user, isLoading: isUserLoading } = useUser();
@@ -837,7 +845,11 @@ export default function ProfilePage() {
                     <div className="flex-1">
                       <div className="flex items-baseline gap-1.5">
                         <span className="text-lg font-semibold text-koru-lime">
-                          {walletAddress ? "$0.00" : "--"}
+                          {walletAddress
+                            ? isLoadingContractBalance
+                              ? "..."
+                              : `$${contractReady}`
+                            : "--"}
                         </span>
                         <span className="text-xs text-neutral-500">ready</span>
                       </div>
@@ -846,7 +858,11 @@ export default function ProfilePage() {
                     <div className="flex-1">
                       <div className="flex items-baseline gap-1.5">
                         <span className="text-lg font-semibold text-neutral-500 dark:text-neutral-400">
-                          {walletAddress ? "$0.00" : "--"}
+                          {walletAddress
+                            ? isLoadingContractBalance
+                              ? "..."
+                              : `$${contractPending}`
+                            : "--"}
                         </span>
                         <span className="text-xs text-neutral-400">
                           pending

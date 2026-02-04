@@ -1236,3 +1236,123 @@ export function useEscrowsByIds(escrowIds: bigint[]) {
     refetch,
   };
 }
+
+// =============================================================================
+// PENDING BALANCE FROM CONTRACT (Read directly from blockchain)
+// =============================================================================
+
+/**
+ * Hook to get user's pending balance directly from the smart contract
+ * This reads all escrows and calculates pending amounts for the given wallet
+ * - Pending: status is Pending (0) or Accepted (1) - funds locked for recipient
+ * - Ready: status is Released (2) - recipient can withdraw
+ */
+export function useContractPendingBalance(walletAddress?: Address) {
+  const publicClient = usePublicClient();
+  const [pendingBalance, setPendingBalance] = useState<bigint>(BigInt(0));
+  const [readyBalance, setReadyBalance] = useState<bigint>(BigInt(0));
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchBalances = useCallback(async () => {
+    if (!walletAddress || !publicClient) {
+      setPendingBalance(BigInt(0));
+      setReadyBalance(BigInt(0));
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const escrowAddress = getContractAddress();
+      const normalizedWallet = walletAddress.toLowerCase();
+
+      // Get total escrow count
+      const escrowCount = await publicClient.readContract({
+        address: escrowAddress,
+        abi: KORU_ESCROW_ABI,
+        functionName: "getEscrowCount",
+      });
+
+      const count = Number(escrowCount);
+      if (count === 0) {
+        setPendingBalance(BigInt(0));
+        setReadyBalance(BigInt(0));
+        setIsLoading(false);
+        return;
+      }
+
+      // Fetch all escrows in batches
+      const batchSize = 50;
+      let totalPending = BigInt(0);
+      let totalReady = BigInt(0);
+
+      for (let i = 0; i < count; i += batchSize) {
+        const batch = [];
+        for (let j = i; j < Math.min(i + batchSize, count); j++) {
+          batch.push({
+            address: escrowAddress,
+            abi: KORU_ESCROW_ABI,
+            functionName: "getEscrow" as const,
+            args: [BigInt(j)] as const,
+          });
+        }
+
+        const results = await publicClient.multicall({ contracts: batch });
+
+        for (const result of results) {
+          if (result.status === "success" && result.result) {
+            const escrow = result.result as Escrow;
+            const isRecipient =
+              escrow.recipient.toLowerCase() === normalizedWallet;
+
+            if (isRecipient) {
+              const status = escrow.status;
+              // Pending (0) or Accepted (1) = funds locked, waiting
+              if (
+                status === EscrowStatus.Pending ||
+                status === EscrowStatus.Accepted
+              ) {
+                totalPending += escrow.amount;
+              }
+              // Released (2) = ready to withdraw
+              else if (status === EscrowStatus.Released) {
+                totalReady += escrow.amount;
+              }
+            }
+          }
+        }
+      }
+
+      setPendingBalance(totalPending);
+      setReadyBalance(totalReady);
+    } catch (err) {
+      console.error("Error fetching contract balances:", err);
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [walletAddress, publicClient]);
+
+  // Fetch on mount and when wallet changes
+  useEffect(() => {
+    fetchBalances();
+  }, [fetchBalances]);
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(fetchBalances, 30000);
+    return () => clearInterval(interval);
+  }, [fetchBalances]);
+
+  return {
+    pendingBalance,
+    readyBalance,
+    pendingFormatted: formatUsdcAmount(pendingBalance),
+    readyFormatted: formatUsdcAmount(readyBalance),
+    isLoading,
+    error,
+    refetch: fetchBalances,
+  };
+}
