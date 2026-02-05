@@ -176,10 +176,7 @@ function TwitterIcon({ className }: { className?: string }) {
   );
 }
 
-// Extended backer type with backed date
-interface ExtendedBacker extends SummonBacker {
-  backedAt?: string;
-}
+// Use the base SummonBacker type which now includes backedAt and reason
 
 interface SummonDetailsModalProps {
   open: boolean;
@@ -247,7 +244,7 @@ export function SummonDetailsModal({
   // Get sorted tags
   const sortedTags = summon.tags
     ? Object.entries(summon.tags).sort(
-        ([, a], [, b]) => (b as number) - (a as number)
+        ([, a], [, b]) => (b as number) - (a as number),
       )
     : [];
 
@@ -304,7 +301,7 @@ export function SummonDetailsModal({
                         "flex items-center gap-1 px-3 py-1.5 rounded-full",
                         summon.trend === "up"
                           ? "bg-emerald-500/10 text-emerald-500"
-                          : "bg-rose-500/10 text-rose-500"
+                          : "bg-rose-500/10 text-rose-500",
                       )}
                     >
                       {summon.trend === "up" ? (
@@ -363,7 +360,10 @@ export function SummonDetailsModal({
                           <Badge
                             key={tag}
                             variant="secondary"
-                            className={cn("text-xs font-medium", getTagColor(tag))}
+                            className={cn(
+                              "text-xs font-medium",
+                              getTagColor(tag),
+                            )}
                           >
                             {tag}
                             <span className="ml-1 opacity-60">
@@ -396,13 +396,13 @@ export function SummonDetailsModal({
                     </div>
 
                     {summon.backersData && summon.backersData.length > 0 ? (
-                      <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {(summon.backersData as ExtendedBacker[]).map(
-                          (backer, idx) => (
-                            <div
-                              key={backer.id || idx}
-                              className="flex items-center gap-3 p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-700"
-                            >
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {summon.backersData.map((backer, idx) => (
+                          <div
+                            key={backer.id || idx}
+                            className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-700"
+                          >
+                            <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
                                 <OptimizedAvatar
                                   src={backer.profileImageUrl}
@@ -425,8 +425,15 @@ export function SummonDetailsModal({
                                 </p>
                               </div>
                             </div>
-                          )
-                        )}
+                            {backer.reason && (
+                              <div className="mt-2 pt-2 border-t border-neutral-200 dark:border-neutral-700">
+                                <p className="text-xs text-neutral-600 dark:text-neutral-400 italic">
+                                  "{backer.reason}"
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-2 py-6 text-center">
@@ -455,7 +462,8 @@ export function SummonDetailsModal({
                       variant="outline"
                       className={cn(
                         "flex-1 transition-all",
-                        linkCopied && "!bg-koru-lime/20 !text-koru-lime !border-koru-lime/30"
+                        linkCopied &&
+                          "!bg-koru-lime/20 !text-koru-lime !border-koru-lime/30",
                       )}
                       onClick={handleCopyLink}
                     >

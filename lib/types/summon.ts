@@ -7,6 +7,8 @@ export interface SummonBacker {
   username: string;
   profileImageUrl: string | null;
   amount: number;
+  backedAt?: string;
+  reason?: string;
 }
 
 export interface Summon {

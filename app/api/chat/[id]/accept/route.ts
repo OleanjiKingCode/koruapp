@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { captureApiError } from "@/lib/sentry";
+import { notifyChatAccepted } from "@/lib/notifications";
 
 // POST - Accept a chat (after on-chain escrow acceptance)
 export async function POST(
@@ -79,6 +80,29 @@ export async function POST(
         console.error("Error updating escrow:", updateEscrowError);
         // Don't fail the request, chat status was updated
       }
+    }
+
+    // Notify the requester that their chat was accepted
+    try {
+      // Get creator info for the notification
+      const { data: creator } = await supabase
+        .from("users")
+        .select("name, username, profile_image_url")
+        .eq("id", userId)
+        .single();
+
+      if (creator && chat.requester_id) {
+        await notifyChatAccepted(
+          chat.requester_id,
+          creator.name || creator.username || "Someone",
+          creator.username || "user",
+          creator.profile_image_url,
+          chatId,
+        );
+      }
+    } catch (notifyError) {
+      console.error("Failed to send notification:", notifyError);
+      // Don't fail the request, chat was accepted successfully
     }
 
     return NextResponse.json({

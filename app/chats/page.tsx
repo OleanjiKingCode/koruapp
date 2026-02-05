@@ -369,10 +369,10 @@ export default function ChatsPage() {
   const [mainTab, setMainTab] = useState<"sent" | "received">("received");
   const [sentSubTab, setSentSubTab] = useState<
     "pending" | "active" | "completed"
-  >("pending");
+  >("active");
   const [receivedSubTab, setReceivedSubTab] = useState<
     "pending" | "active" | "completed"
-  >("pending");
+  >("active");
 
   // Fetch chats from API
   const fetcher = async (url: string) => {
@@ -632,17 +632,6 @@ export default function ChatsPage() {
               >
                 <TabsList className="bg-neutral-50 dark:bg-neutral-800/30 p-1 rounded-lg mb-4">
                   <TabsTrigger
-                    value="pending"
-                    className="rounded-md text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
-                  >
-                    Pending
-                    {receivedPending.length > 0 && (
-                      <Badge className="ml-1.5 bg-orange-500/20 text-orange-500 text-xs h-4 px-1">
-                        {receivedPending.length}
-                      </Badge>
-                    )}
-                  </TabsTrigger>
-                  <TabsTrigger
                     value="active"
                     className="rounded-md text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
                   >
@@ -650,6 +639,17 @@ export default function ChatsPage() {
                     {receivedActive.length > 0 && (
                       <Badge className="ml-1.5 bg-koru-lime/20 text-koru-lime text-xs h-4 px-1">
                         {receivedActive.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="pending"
+                    className="rounded-md text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
+                  >
+                    Pending
+                    {receivedPending.length > 0 && (
+                      <Badge className="ml-1.5 bg-orange-500/20 text-orange-500 text-xs h-4 px-1">
+                        {receivedPending.length}
                       </Badge>
                     )}
                   </TabsTrigger>
@@ -808,17 +808,6 @@ export default function ChatsPage() {
               >
                 <TabsList className="bg-neutral-50 dark:bg-neutral-800/30 p-1 rounded-lg mb-4">
                   <TabsTrigger
-                    value="pending"
-                    className="rounded-md text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
-                  >
-                    Pending
-                    {sentPending.length > 0 && (
-                      <Badge className="ml-1.5 bg-koru-purple/20 text-koru-purple text-xs h-4 px-1">
-                        {sentPending.length}
-                      </Badge>
-                    )}
-                  </TabsTrigger>
-                  <TabsTrigger
                     value="active"
                     className="rounded-md text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
                   >
@@ -826,6 +815,17 @@ export default function ChatsPage() {
                     {sentActive.length > 0 && (
                       <Badge className="ml-1.5 bg-koru-lime/20 text-koru-lime text-xs h-4 px-1">
                         {sentActive.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="pending"
+                    className="rounded-md text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700"
+                  >
+                    Pending
+                    {sentPending.length > 0 && (
+                      <Badge className="ml-1.5 bg-koru-purple/20 text-koru-purple text-xs h-4 px-1">
+                        {sentPending.length}
                       </Badge>
                     )}
                   </TabsTrigger>

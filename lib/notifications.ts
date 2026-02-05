@@ -12,7 +12,9 @@ function getSupabase(): SupabaseClient {
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!url || !key) {
-      throw new Error("Supabase URL and service role key are required for notifications");
+      throw new Error(
+        "Supabase URL and service role key are required for notifications",
+      );
     }
 
     supabaseInstance = createClient(url, key);
@@ -92,7 +94,7 @@ export async function notifyNewChatRequest(
   senderUsername: string,
   senderImage: string | null,
   amount: number,
-  chatId: string
+  chatId: string,
 ) {
   return createNotification({
     userId: recipientId,
@@ -115,13 +117,15 @@ export async function notifyNewMessage(
   senderUsername: string,
   senderImage: string | null,
   messagePreview: string,
-  chatId: string
+  chatId: string,
 ) {
   return createNotification({
     userId: recipientId,
     type: "message",
     title: `New message from @${senderUsername}`,
-    description: messagePreview.substring(0, 100) + (messagePreview.length > 100 ? "..." : ""),
+    description:
+      messagePreview.substring(0, 100) +
+      (messagePreview.length > 100 ? "..." : ""),
     link: `/chat/${chatId}`,
     relatedUserUsername: senderUsername,
     relatedUserImage: senderImage || undefined,
@@ -138,7 +142,7 @@ export async function notifyPaymentReceived(
   payerUsername: string,
   payerImage: string | null,
   amount: number,
-  chatId?: string
+  chatId?: string,
 ) {
   return createNotification({
     userId: recipientId,
@@ -160,7 +164,7 @@ export async function notifyChatCompleted(
   otherUserName: string,
   otherUserUsername: string,
   otherUserImage: string | null,
-  chatId: string
+  chatId: string,
 ) {
   return createNotification({
     userId: recipientId,
@@ -184,7 +188,7 @@ export async function notifySummonBacked(
   backerImage: string | null,
   amount: number,
   targetHandle: string,
-  summonId: string
+  summonId: string,
 ) {
   return createNotification({
     userId: creatorId,
@@ -207,7 +211,7 @@ export async function notifySummonCreated(
   creatorUsername: string,
   creatorImage: string | null,
   totalPledged: number,
-  summonId: string
+  summonId: string,
 ) {
   return createNotification({
     userId: targetUserId,
@@ -221,4 +225,24 @@ export async function notifySummonCreated(
   });
 }
 
-
+/**
+ * Notify user that their chat request was accepted
+ */
+export async function notifyChatAccepted(
+  requesterId: string,
+  creatorName: string,
+  creatorUsername: string,
+  creatorImage: string | null,
+  chatId: string,
+) {
+  return createNotification({
+    userId: requesterId,
+    type: "request",
+    title: "Chat request accepted!",
+    description: `${creatorName} accepted your chat request`,
+    link: `/chat/${chatId}`,
+    relatedUserUsername: creatorUsername,
+    relatedUserImage: creatorImage || undefined,
+    metadata: { chatId },
+  });
+}

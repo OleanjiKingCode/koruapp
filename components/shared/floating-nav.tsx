@@ -662,51 +662,30 @@ export function FloatingNav() {
                     : "bg-white border border-neutral-200 shadow-black/10",
                 )}
               >
-                <h3
-                  className={cn(
-                    "text-base sm:text-lg mb-4",
-                    isDark ? "text-white" : "text-neutral-900",
-                  )}
-                >
-                  Settings
-                </h3>
-
-                {/* Theme Toggle */}
-                <div className="mb-4">
-                  <label
+                <div className="flex items-center justify-between mb-4">
+                  <h3
                     className={cn(
-                      "text-xs sm:text-sm font-medium mb-2 block",
-                      isDark ? "text-neutral-400" : "text-neutral-600",
+                      "text-base sm:text-lg",
+                      isDark ? "text-white" : "text-neutral-900",
                     )}
                   >
-                    Appearance
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setTheme("light")}
-                      className={cn(
-                        "flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs sm:text-sm transition-all",
-                        !isDark
-                          ? "bg-koru-purple text-white"
-                          : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700",
-                      )}
-                    >
+                    Settings
+                  </h3>
+                  <button
+                    onClick={() => setTheme(isDark ? "light" : "dark")}
+                    className={cn(
+                      "p-2 rounded-xl transition-all",
+                      isDark
+                        ? "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
+                        : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200",
+                    )}
+                  >
+                    {isDark ? (
                       <SunIcon className="w-4 h-4" />
-                      Light
-                    </button>
-                    <button
-                      onClick={() => setTheme("dark")}
-                      className={cn(
-                        "flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs sm:text-sm transition-all",
-                        isDark
-                          ? "bg-koru-purple text-white"
-                          : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200",
-                      )}
-                    >
+                    ) : (
                       <MoonIcon className="w-4 h-4" />
-                      Dark
-                    </button>
-                  </div>
+                    )}
+                  </button>
                 </div>
 
                 {/* Font Selector */}
@@ -735,36 +714,6 @@ export function FloatingNav() {
                         )}
                       >
                         {font.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Language Selector */}
-                <div className="mb-4">
-                  <label
-                    className={cn(
-                      "text-xs sm:text-sm font-medium mb-2 block",
-                      isDark ? "text-neutral-400" : "text-neutral-600",
-                    )}
-                  >
-                    Language
-                  </label>
-                  <div className="flex items-center gap-1.5 sm:gap-2">
-                    {LANGUAGE_OPTIONS.map((lang) => (
-                      <button
-                        key={lang.code}
-                        onClick={() => setSelectedLang(lang.code)}
-                        className={cn(
-                          "flex-1 py-2.5 px-2 sm:px-4 rounded-xl text-xs sm:text-sm transition-all",
-                          selectedLang === lang.code
-                            ? "bg-koru-golden text-neutral-900"
-                            : isDark
-                              ? "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
-                              : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200",
-                        )}
-                      >
-                        {lang.name}
                       </button>
                     ))}
                   </div>

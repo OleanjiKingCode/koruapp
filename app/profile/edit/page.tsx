@@ -205,8 +205,13 @@ export default function EditProfilePage() {
   };
 
   // Availability
-  const { availability, setAvailability, filledSlots, hasAvailability } =
-    useAvailability();
+  const {
+    availability,
+    setAvailability,
+    filledSlots,
+    hasAvailability,
+    isLoading: isAvailabilityLoading,
+  } = useAvailability();
   const [availabilityModalOpen, setAvailabilityModalOpen] = useState(false);
   const selectedTimezone =
     TIMEZONES.find((tz) => tz.value === availability.timezone) || TIMEZONES[0];
@@ -705,7 +710,26 @@ export default function EditProfilePage() {
                 </div>
 
                 {/* Configured Slots */}
-                {hasAvailability ? (
+                {isAvailabilityLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 animate-pulse"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 w-24 bg-neutral-200 dark:bg-neutral-700 rounded" />
+                          <div className="h-3 w-32 bg-neutral-200 dark:bg-neutral-700 rounded" />
+                        </div>
+                        <div className="flex gap-1.5">
+                          <div className="h-6 w-16 bg-neutral-200 dark:bg-neutral-700 rounded-lg" />
+                          <div className="h-6 w-16 bg-neutral-200 dark:bg-neutral-700 rounded-lg" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : hasAvailability ? (
                   <div className="space-y-3">
                     {filledSlots.map((slot) => {
                       const durationLabel =
@@ -728,7 +752,7 @@ export default function EditProfilePage() {
                               {slot.times.length !== 1 ? "s" : ""}
                             </p>
                           </div>
-                          <div className="flex flex-wrap gap-1.5 max-w-[220px]">
+                          <div className="hidden sm:flex flex-wrap gap-1.5 max-w-[220px]">
                             {slot.times.slice(0, 4).map((time) => (
                               <span
                                 key={time}

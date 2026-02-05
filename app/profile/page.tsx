@@ -61,6 +61,7 @@ import {
   LinkIcon,
   BellIcon,
   CreditCardIcon,
+  ClockIcon,
 } from "@/components/icons";
 
 // Tag color configurations
@@ -454,9 +455,9 @@ export default function ProfilePage() {
                           </p>
                         )}
 
-                        {/* Tags */}
+                        {/* Tags - hidden on mobile */}
                         {user?.tags && user.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mb-3">
+                          <div className="hidden sm:flex flex-wrap gap-2 mb-3">
                             {user.tags.map((tag: string) => {
                               const color = getTagColor(tag);
                               return (
@@ -504,26 +505,72 @@ export default function ProfilePage() {
                             Early Adopter
                           </Badge>
                         </div>
+
+                        {/* Mobile Response Time & Active Chats - hidden on desktop */}
+                        <div className="flex sm:hidden items-center gap-4 text-xs mt-3">
+                          <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2.5 py-1.5 rounded-lg">
+                            <ClockIcon className="w-3.5 h-3.5 text-koru-lime" />
+                            <span>
+                              {user?.responseTimeHours || 24}h response
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2.5 py-1.5 rounded-lg">
+                            <ChatIcon className="w-3.5 h-3.5 text-koru-golden" />
+                            <span>{stats.activeChats} active</span>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Actions */}
-                      <div className="flex gap-2 shrink-0">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleShareProfile}
-                        >
-                          <ShareIcon className="w-4 h-4 mr-2" />
-                          Share
-                        </Button>
-                        <Link href="/profile/edit">
-                          <Button size="sm">
-                            <EditIcon className="w-4 h-4 mr-2" />
-                            Edit Profile
+                      {/* Actions - hidden on mobile (moved to top) */}
+                      <div className="hidden sm:flex flex-col items-end gap-3 shrink-0">
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleShareProfile}
+                          >
+                            <ShareIcon className="w-4 h-4 mr-2" />
+                            Share
                           </Button>
-                        </Link>
+                          <Link href="/profile/edit">
+                            <Button size="sm">
+                              <EditIcon className="w-4 h-4 mr-2" />
+                              Edit Profile
+                            </Button>
+                          </Link>
+                        </div>
+                        {/* Response Time & Active Chats */}
+                        <div className="flex items-center gap-4 text-sm">
+                          <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
+                            <ClockIcon className="w-4 h-4 text-koru-lime" />
+                            <span>
+                              {user?.responseTimeHours || 24}h response
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
+                            <ChatIcon className="w-4 h-4 text-koru-golden" />
+                            <span>{stats.activeChats} active chats</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Mobile Action Buttons - top right */}
+                  <div className="absolute top-4 right-4 flex flex-col items-end gap-2 sm:hidden z-10">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleShareProfile}
+                      className="h-9 w-9 bg-white/80 dark:bg-neutral-800/80 backdrop-blur-sm"
+                    >
+                      <ShareIcon className="w-4 h-4" />
+                    </Button>
+                    <Link href="/profile/edit">
+                      <Button size="icon" className="h-9 w-9">
+                        <EditIcon className="w-4 h-4" />
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </motion.div>
@@ -781,8 +828,8 @@ export default function ProfilePage() {
               transition={{ delay: 0.1 }}
               className="mb-3"
             >
-              {/* Compact Balance Row */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Compact Balance Row - stacks on mobile */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Wallet Balance */}
                 <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 shadow-soft">
                   <div className="flex items-center justify-between mb-3">
@@ -974,7 +1021,8 @@ export default function ProfilePage() {
                             {slot.times.length !== 1 ? "s" : ""}
                           </p>
                         </div>
-                        <div className="flex flex-wrap gap-1 max-w-[180px]">
+                        {/* Times - hidden on mobile */}
+                        <div className="hidden sm:flex flex-wrap gap-1 max-w-[180px]">
                           {slot.times.slice(0, 3).map((time) => (
                             <span
                               key={time}

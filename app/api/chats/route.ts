@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { createChat, getUserByUsername, supabase } from "@/lib/supabase";
 import { captureApiError } from "@/lib/sentry";
+import { notifyNewChatRequest } from "@/lib/notifications";
 
 // POST - Create a new chat
 export async function POST(request: NextRequest) {
@@ -81,6 +82,30 @@ export async function POST(request: NextRequest) {
         console.error("Failed to link escrow to chat:", escrowError);
         // Don't fail the request, chat was created successfully
       }
+    }
+
+    // Notify the creator about the new chat request
+    try {
+      // Get requester info for the notification
+      const { data: requester } = await supabase
+        .from("users")
+        .select("name, username, profile_image_url")
+        .eq("id", session.user.dbId)
+        .single();
+
+      if (requester) {
+        await notifyNewChatRequest(
+          creator.id,
+          requester.name || requester.username || "Someone",
+          requester.username || "user",
+          requester.profile_image_url,
+          amount || 0,
+          chat.id,
+        );
+      }
+    } catch (notifyError) {
+      console.error("Failed to send notification:", notifyError);
+      // Don't fail the request, chat was created successfully
     }
 
     return NextResponse.json({ chat });

@@ -23,13 +23,15 @@ function CalendarPicker({
   onDateToggle,
   currentMonth,
   onMonthChange,
+  maxWeeks = 52, // Default to 1 year
 }: {
   selectedDates: string[];
   onDateToggle: (date: string) => void;
   currentMonth: Date;
   onMonthChange: (date: Date) => void;
+  maxWeeks?: number;
 }) {
-  const { minDate, maxDate } = getCalendarBounds();
+  const { minDate, maxDate } = getCalendarBounds(maxWeeks);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -209,14 +211,105 @@ export interface AvailabilitySlot {
   selectedDates: string[]; // Array of ISO date strings
 }
 
-// Helper to get calendar bounds (tomorrow to 8 weeks)
-export function getCalendarBounds(): { minDate: Date; maxDate: Date } {
+// Helper to get calendar bounds (tomorrow to specified weeks)
+export function getCalendarBounds(weeks: number = 8): {
+  minDate: Date;
+  maxDate: Date;
+} {
   const today = new Date();
   const minDate = new Date(today);
   minDate.setDate(minDate.getDate() + 1); // Tomorrow
   const maxDate = new Date(today);
-  maxDate.setDate(maxDate.getDate() + 56); // 8 weeks
+  maxDate.setDate(maxDate.getDate() + weeks * 7);
   return { minDate, maxDate };
+}
+
+// Quick selection types for date patterns
+export type DateSelectionPattern =
+  | "custom"
+  | "weekdays"
+  | "weekends"
+  | "every_monday"
+  | "every_tuesday"
+  | "every_wednesday"
+  | "every_thursday"
+  | "every_friday"
+  | "next_1_month"
+  | "next_3_months"
+  | "all_available";
+
+// Helper to generate dates based on a pattern
+export function generateDatesFromPattern(
+  pattern: DateSelectionPattern,
+  weeksAhead: number = 8,
+): string[] {
+  const dates: string[] = [];
+  const today = new Date();
+  const startDate = new Date(today);
+  startDate.setDate(startDate.getDate() + 1); // Tomorrow
+
+  let endDate: Date;
+  if (pattern === "next_1_month") {
+    endDate = new Date(today);
+    endDate.setMonth(endDate.getMonth() + 1);
+  } else if (pattern === "next_3_months") {
+    endDate = new Date(today);
+    endDate.setMonth(endDate.getMonth() + 3);
+  } else if (pattern === "all_available") {
+    endDate = new Date(today);
+    endDate.setFullYear(endDate.getFullYear() + 1);
+  } else {
+    endDate = new Date(today);
+    endDate.setDate(endDate.getDate() + weeksAhead * 7);
+  }
+
+  const current = new Date(startDate);
+  while (current <= endDate) {
+    const dayOfWeek = current.getDay(); // 0 = Sunday, 6 = Saturday
+    let shouldInclude = false;
+
+    switch (pattern) {
+      case "weekdays":
+        shouldInclude = dayOfWeek >= 1 && dayOfWeek <= 5;
+        break;
+      case "weekends":
+        shouldInclude = dayOfWeek === 0 || dayOfWeek === 6;
+        break;
+      case "every_monday":
+        shouldInclude = dayOfWeek === 1;
+        break;
+      case "every_tuesday":
+        shouldInclude = dayOfWeek === 2;
+        break;
+      case "every_wednesday":
+        shouldInclude = dayOfWeek === 3;
+        break;
+      case "every_thursday":
+        shouldInclude = dayOfWeek === 4;
+        break;
+      case "every_friday":
+        shouldInclude = dayOfWeek === 5;
+        break;
+      case "next_1_month":
+      case "next_3_months":
+      case "all_available":
+        shouldInclude = dayOfWeek >= 1 && dayOfWeek <= 5; // Default to weekdays
+        break;
+      default:
+        shouldInclude = false;
+    }
+
+    if (shouldInclude) {
+      const year = current.getFullYear();
+      const month = String(current.getMonth() + 1).padStart(2, "0");
+      const day = String(current.getDate()).padStart(2, "0");
+      dates.push(`${year}-${month}-${day}`);
+    }
+
+    current.setDate(current.getDate() + 1);
+  }
+
+  return dates;
 }
 
 // Format date for display
@@ -303,6 +396,8 @@ export function AvailabilityModal({
   const [configSubStep, setConfigSubStep] = useState<
     "name" | "duration" | "price" | "dates" | "times"
   >("name");
+  const [dateSelectionPattern, setDateSelectionPattern] =
+    useState<DateSelectionPattern>("custom");
 
   const activeSlot = useMemo(() => {
     return slots.find((s) => s.id === activeSlotId) || null;
@@ -325,9 +420,20 @@ export function AvailabilityModal({
       setConfigTimes(slot.times);
       setConfigPrice(slot.price || 50);
       setConfigSelectedDates(slot.selectedDates || []);
+      setDateSelectionPattern("custom");
       setConfigSubStep("name");
       setStep("configure");
     }
+  };
+
+  const handlePatternSelect = (pattern: DateSelectionPattern) => {
+    setDateSelectionPattern(pattern);
+    if (pattern === "custom") {
+      // Keep current selection
+      return;
+    }
+    const generatedDates = generateDatesFromPattern(pattern);
+    setConfigSelectedDates(generatedDates);
   };
 
   const handleBackToSlots = () => {
@@ -400,6 +506,7 @@ export function AvailabilityModal({
     setConfigTimes([]);
     setConfigPrice(50);
     setConfigSelectedDates([]);
+    setDateSelectionPattern("custom");
   };
 
   // Reset when modal closes
@@ -805,20 +912,111 @@ export function AvailabilityModal({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                   >
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        Select days when you're available
-                      </p>
-                      <span className="text-xs text-koru-purple font-medium">
-                        {configSelectedDates.length} selected
+                    {/* Quick Selection Patterns */}
+                    <div className="mb-4">
+                      <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2 block">
+                        Quick Select
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => handlePatternSelect("weekdays")}
+                          className={cn(
+                            "px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left",
+                            dateSelectionPattern === "weekdays"
+                              ? "bg-koru-purple text-white shadow-lg shadow-koru-purple/30"
+                              : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-koru-purple/10",
+                          )}
+                        >
+                          <span className="block">Weekdays</span>
+                          <span className="text-xs opacity-70">Mon - Fri</span>
+                        </button>
+                        <button
+                          onClick={() => handlePatternSelect("weekends")}
+                          className={cn(
+                            "px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left",
+                            dateSelectionPattern === "weekends"
+                              ? "bg-koru-purple text-white shadow-lg shadow-koru-purple/30"
+                              : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-koru-purple/10",
+                          )}
+                        >
+                          <span className="block">Weekends</span>
+                          <span className="text-xs opacity-70">Sat & Sun</span>
+                        </button>
+                        <button
+                          onClick={() => handlePatternSelect("next_1_month")}
+                          className={cn(
+                            "px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left",
+                            dateSelectionPattern === "next_1_month"
+                              ? "bg-koru-purple text-white shadow-lg shadow-koru-purple/30"
+                              : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-koru-purple/10",
+                          )}
+                        >
+                          <span className="block">Next Month</span>
+                          <span className="text-xs opacity-70">
+                            Weekdays only
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => handlePatternSelect("next_3_months")}
+                          className={cn(
+                            "px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left",
+                            dateSelectionPattern === "next_3_months"
+                              ? "bg-koru-purple text-white shadow-lg shadow-koru-purple/30"
+                              : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-koru-purple/10",
+                          )}
+                        >
+                          <span className="block">Next 3 Months</span>
+                          <span className="text-xs opacity-70">
+                            Weekdays only
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Day of Week Selection */}
+                    <div className="mb-4">
+                      <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2 block">
+                        Or select by day
+                      </label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { pattern: "every_monday" as const, label: "Mon" },
+                          { pattern: "every_tuesday" as const, label: "Tue" },
+                          { pattern: "every_wednesday" as const, label: "Wed" },
+                          { pattern: "every_thursday" as const, label: "Thu" },
+                          { pattern: "every_friday" as const, label: "Fri" },
+                        ].map(({ pattern, label }) => (
+                          <button
+                            key={pattern}
+                            onClick={() => handlePatternSelect(pattern)}
+                            className={cn(
+                              "px-3 py-2 rounded-lg text-xs font-medium transition-all",
+                              dateSelectionPattern === pattern
+                                ? "bg-koru-golden text-neutral-900 shadow-lg shadow-koru-golden/30"
+                                : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-koru-golden/10",
+                            )}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-700" />
+                      <span className="text-xs text-neutral-400">
+                        or pick custom dates
                       </span>
+                      <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-700" />
                     </div>
 
                     {/* Calendar */}
-                    <div className="mb-4">
+                    <div className="mb-3">
                       <CalendarPicker
                         selectedDates={configSelectedDates}
                         onDateToggle={(date) => {
+                          setDateSelectionPattern("custom");
                           setConfigSelectedDates((prev) =>
                             prev.includes(date)
                               ? prev.filter((d) => d !== date)
@@ -827,16 +1025,31 @@ export function AvailabilityModal({
                         }}
                         currentMonth={calendarMonth}
                         onMonthChange={setCalendarMonth}
+                        maxWeeks={52}
                       />
                     </div>
 
-                    {configSelectedDates.length > 0 && (
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-4 flex items-center gap-2">
-                        <CalendarIcon className="w-3.5 h-3.5" />
-                        {configSelectedDates.length} day
-                        {configSelectedDates.length !== 1 ? "s" : ""} selected
-                      </p>
-                    )}
+                    {/* Selection Summary */}
+                    <div className="flex items-center justify-between mb-4 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
+                      <div className="flex items-center gap-2">
+                        <CalendarIcon className="w-4 h-4 text-koru-purple" />
+                        <span className="text-sm text-neutral-700 dark:text-neutral-300">
+                          {configSelectedDates.length} day
+                          {configSelectedDates.length !== 1 ? "s" : ""} selected
+                        </span>
+                      </div>
+                      {configSelectedDates.length > 0 && (
+                        <button
+                          onClick={() => {
+                            setConfigSelectedDates([]);
+                            setDateSelectionPattern("custom");
+                          }}
+                          className="text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
+                        >
+                          Clear all
+                        </button>
+                      )}
+                    </div>
 
                     <div className="flex gap-2">
                       <Button

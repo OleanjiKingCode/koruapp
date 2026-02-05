@@ -176,6 +176,7 @@ export default function SummonsPage() {
     }
     setSummonToBack(summon);
     setBackAmount("5");
+    setBackReason("");
     setBackError(null);
     setBackSelectedTags([]);
     setBackModalOpen(true);
@@ -203,6 +204,18 @@ export default function SummonsPage() {
       return;
     }
 
+    // Validate reason - required and max 50 words
+    const trimmedReason = backReason.trim();
+    if (!trimmedReason) {
+      setBackError("Please provide a reason for backing");
+      return;
+    }
+    const wordCount = trimmedReason.split(/\s+/).filter(Boolean).length;
+    if (wordCount > 50) {
+      setBackError("Reason must be 50 words or less");
+      return;
+    }
+
     setIsBackingSubmitting(true);
     setBackError(null);
 
@@ -216,6 +229,7 @@ export default function SummonsPage() {
           summon_id: summonToBack.id,
           amount: amount,
           tags: backSelectedTags,
+          reason: trimmedReason,
         }),
       });
 
@@ -1104,6 +1118,28 @@ export default function SummonsPage() {
                             })}
                           </div>
                         </div>
+                      </div>
+
+                      {/* Reason for backing */}
+                      <div>
+                        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1 block">
+                          Why do you want them on Koru?
+                          <span className="text-neutral-400 text-xs ml-1">
+                            (
+                            {
+                              backReason.trim().split(/\s+/).filter(Boolean)
+                                .length
+                            }
+                            /50 words)
+                          </span>
+                        </label>
+                        <textarea
+                          value={backReason}
+                          onChange={(e) => setBackReason(e.target.value)}
+                          placeholder="Share why you think this person should join Koru..."
+                          rows={3}
+                          className="w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-koru-purple/50 p-3 text-sm resize-none"
+                        />
                       </div>
 
                       <div>

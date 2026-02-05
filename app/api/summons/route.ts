@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabase, getActiveSummons } from "@/lib/supabase";
 import { captureApiError } from "@/lib/sentry";
+import { notifySummonCreated } from "@/lib/notifications";
 
 interface BackerInfo {
   user_id: string;
@@ -10,6 +11,7 @@ interface BackerInfo {
   profile_image_url: string | null;
   amount: number;
   backed_at: string;
+  reason?: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -34,7 +36,7 @@ export async function GET(request: NextRequest) {
         (summon) =>
           summon.target_username?.toLowerCase().includes(query) ||
           summon.target_name?.toLowerCase().includes(query) ||
-          summon.message?.toLowerCase().includes(query)
+          summon.message?.toLowerCase().includes(query),
       );
     }
 
@@ -72,6 +74,8 @@ export async function GET(request: NextRequest) {
         username: b.username,
         profileImageUrl: b.profile_image_url,
         amount: Number(b.amount),
+        backedAt: b.backed_at,
+        reason: b.reason,
       }));
 
       // If no backers in array but we have a creator and backers_count > 0,
@@ -98,7 +102,7 @@ export async function GET(request: NextRequest) {
         targetProfileImage:
           summon.target_profile_image || summon.target_image || null,
         totalPledged: Number(
-          summon.total_backed || summon.pledged_amount || summon.amount || 0
+          summon.total_backed || summon.pledged_amount || summon.amount || 0,
         ),
         backers: summon.backers_count || backersData.length || 0,
         backersData,
@@ -119,7 +123,7 @@ export async function GET(request: NextRequest) {
     captureApiError(error, "GET /api/summons");
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -149,7 +153,7 @@ export async function POST(request: NextRequest) {
     if (!target_username || !pledged_amount) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -203,14 +207,14 @@ export async function POST(request: NextRequest) {
           error: "Failed to create summon",
           details: summonError.message,
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     if (!summon) {
       return NextResponse.json(
         { error: "Failed to create summon" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -239,12 +243,46 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Notify the target user if they're on the platform and this is their first summon
+    try {
+      // Check if target user exists on the platform by username
+      const { data: targetUser } = await supabase
+        .from("users")
+        .select("id, username")
+        .eq("username", target_username)
+        .single();
+
+      if (targetUser) {
+        // Check if this is the first summon for this user
+        const { count: previousSummons } = await supabase
+          .from("summons")
+          .select("*", { count: "exact", head: true })
+          .eq("target_handle", target_username)
+          .neq("id", summon.id);
+
+        // Only notify if this is the first summon for them
+        if (previousSummons === 0) {
+          await notifySummonCreated(
+            targetUser.id,
+            creatorData?.name || session.user.name || "Someone",
+            creatorData?.username || "user",
+            creatorData?.profile_image_url || null,
+            parseFloat(pledged_amount),
+            summon.id,
+          );
+        }
+      }
+    } catch (notifyError) {
+      console.error("Failed to send summon notification:", notifyError);
+      // Don't fail the request, summon was created successfully
+    }
+
     return NextResponse.json({ summon });
   } catch (error) {
     captureApiError(error, "POST /api/summons");
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

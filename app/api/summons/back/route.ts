@@ -10,6 +10,7 @@ interface BackerInfo {
   profile_image_url: string | null;
   amount: number;
   backed_at: string;
+  reason?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -21,12 +22,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { summon_id, amount, tags: backerTags } = body;
+    const { summon_id, amount, tags: backerTags, reason } = body;
 
     if (!summon_id || !amount) {
       return NextResponse.json(
         { error: "Missing required fields: summon_id and amount" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
     if (isNaN(pledgeAmount) || pledgeAmount < 1) {
       return NextResponse.json(
         { error: "Amount must be at least $1" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -44,7 +45,9 @@ export async function POST(request: NextRequest) {
     // Get the summon with current backers array, tags, and creator info
     const { data: summon, error: fetchError } = await supabase
       .from("summons")
-      .select("total_backed, backers_count, backers, tags, creator_id, target_username")
+      .select(
+        "total_backed, backers_count, backers, tags, creator_id, target_username",
+      )
       .eq("id", summon_id)
       .single();
 
@@ -56,13 +59,13 @@ export async function POST(request: NextRequest) {
     // Check if user already backed this summon (check the backers array)
     const existingBackers: BackerInfo[] = summon.backers || [];
     const alreadyBacked = existingBackers.some(
-      (b) => b.user_id === session.user.dbId
+      (b) => b.user_id === session.user.dbId,
     );
 
     if (alreadyBacked) {
       return NextResponse.json(
         { error: "You have already backed this summon" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -85,6 +88,7 @@ export async function POST(request: NextRequest) {
       profile_image_url: userData.profile_image_url,
       amount: pledgeAmount,
       backed_at: new Date().toISOString(),
+      reason: reason || undefined,
     };
 
     // Add to backers array
@@ -113,7 +117,7 @@ export async function POST(request: NextRequest) {
       console.error("Error updating summon:", updateError);
       return NextResponse.json(
         { error: "Failed to back summon", details: updateError.message },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -147,7 +151,7 @@ export async function POST(request: NextRequest) {
           userData.profile_image_url,
           pledgeAmount,
           summon.target_username || "",
-          summon_id
+          summon_id,
         );
       } catch (notifyError) {
         console.error("Error sending notification:", notifyError);
@@ -164,7 +168,7 @@ export async function POST(request: NextRequest) {
     console.error("Error backing summon:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

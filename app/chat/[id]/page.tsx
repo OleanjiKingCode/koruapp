@@ -13,6 +13,7 @@ import { AuthGuard } from "@/components/auth";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import { AcceptEscrowModal } from "@/components/accept-escrow-modal";
+import { EscrowDetailsModal } from "@/components/escrow-details-modal";
 import { cn } from "@/lib/utils";
 import { API_ROUTES } from "@/lib/constants";
 import { useChatMessages } from "@/lib/hooks/use-chat-messages";
@@ -40,6 +41,7 @@ export default function ChatPage() {
   const router = useRouter();
   const { data: session } = useSession();
   const [newMessage, setNewMessage] = useState("");
+  const [showEscrowModal, setShowEscrowModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -314,6 +316,12 @@ export default function ChatPage() {
         />
       )}
 
+      {/* Escrow Details Modal - shows all pending payments */}
+      <EscrowDetailsModal
+        isOpen={showEscrowModal}
+        onClose={() => setShowEscrowModal(false)}
+      />
+
       <div className="min-h-screen flex flex-col bg-neutral-50 dark:bg-neutral-950">
         {/* Header */}
         <header className="sticky top-0 z-50 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border-b border-neutral-200/50 dark:border-neutral-800/50">
@@ -403,12 +411,6 @@ export default function ChatPage() {
                       Send a message to {otherParty.name.split(" ")[0]} to begin
                       your chat session.
                     </p>
-                    {isConnected && (
-                      <p className="text-xs text-koru-lime mt-3 flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-koru-lime animate-pulse" />
-                        Real-time enabled
-                      </p>
-                    )}
                   </div>
                 ) : (
                   <AnimatePresence initial={false}>
@@ -496,7 +498,7 @@ export default function ChatPage() {
             </div>
 
             {/* Input */}
-            <div className="sticky bottom-0 p-4 pb-6 sm:pb-6">
+            <div className="sticky bottom-0 p-4 pb-24 sm:pb-6">
               {canSendMessages ? (
                 <form
                   onSubmit={handleSend}
@@ -555,16 +557,27 @@ export default function ChatPage() {
                 Session Details
               </h2>
 
-              <div className="bg-gradient-to-br from-koru-purple/10 to-koru-golden/10 rounded-2xl p-5 mb-4 border border-koru-purple/20">
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                  Amount Paid
+              <button
+                onClick={() => setShowEscrowModal(true)}
+                className="w-full text-left bg-gradient-to-br from-koru-purple/10 to-koru-golden/10 rounded-2xl p-5 mb-4 border border-koru-purple/20 hover:border-koru-purple/40 transition-colors group cursor-pointer"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
+                      Amount Paid
+                    </p>
+                    <p className="text-2xl font-medium text-neutral-900 dark:text-neutral-100">
+                      {chat.amount === 0
+                        ? "Free"
+                        : `$${bookingInfo?.price || chat.amount}`}
+                    </p>
+                  </div>
+                  <ChevronIcon className="w-5 h-5 text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-300 transition-colors" />
+                </div>
+                <p className="text-xs text-neutral-400 mt-2 group-hover:text-neutral-500 transition-colors">
+                  Tap to view all escrow details
                 </p>
-                <p className="text-2xl font-medium text-neutral-900 dark:text-neutral-100">
-                  {chat.amount === 0
-                    ? "Free"
-                    : `$${bookingInfo?.price || chat.amount}`}
-                </p>
-              </div>
+              </button>
 
               {chat.amount > 0 && chat.status === "pending" && (
                 <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 mb-4 border border-neutral-200 dark:border-neutral-700">
@@ -622,35 +635,6 @@ export default function ChatPage() {
                 </div>
               </div>
 
-              {/* Connection Status */}
-              <div
-                className={cn(
-                  "rounded-xl p-4 mb-4 border",
-                  isConnected
-                    ? "bg-koru-lime/10 border-koru-lime/30"
-                    : "bg-orange-500/10 border-orange-500/30",
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <span
-                    className={cn(
-                      "w-2 h-2 rounded-full",
-                      isConnected
-                        ? "bg-koru-lime animate-pulse"
-                        : "bg-orange-500",
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      "text-xs font-medium",
-                      isConnected ? "text-koru-lime" : "text-orange-500",
-                    )}
-                  >
-                    {isConnected ? "Real-time connected" : "Connecting..."}
-                  </span>
-                </div>
-              </div>
-
               {chat.amount > 0 && chat.status === "pending" ? (
                 <div className="bg-koru-golden/10 rounded-xl p-4 border border-koru-golden/30">
                   <div className="flex items-start gap-3">
@@ -670,12 +654,12 @@ export default function ChatPage() {
                   <div className="flex items-start gap-3">
                     <InfoIcon className="w-5 h-5 text-koru-lime flex-shrink-0 mt-0.5" />
                     <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                      {otherParty.name.split(" ")[0]} has accepted! Your payment
-                      is held in escrow until you mark this chat as{" "}
+                      Your payment is held in escrow since you accepted the
+                      chat. Mark as{" "}
                       <span className="text-koru-lime font-medium">
                         complete
-                      </span>
-                      .
+                      </span>{" "}
+                      when done.
                     </p>
                   </div>
                 </div>
@@ -710,6 +694,20 @@ function BackIcon({ className }: { className?: string }) {
       strokeWidth="2"
     >
       <path d="m15 18-6-6 6-6" />
+    </svg>
+  );
+}
+
+function ChevronIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="m9 18 6-6-6-6" />
     </svg>
   );
 }
