@@ -184,24 +184,6 @@ function CalendarIcon({ className }: { className?: string }) {
   );
 }
 
-// Clock Icon
-function ClockIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  );
-}
-
 // X Icon (for showing linked X account)
 function XIcon({ className }: { className?: string }) {
   return (

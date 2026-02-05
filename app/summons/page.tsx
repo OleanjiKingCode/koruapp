@@ -102,6 +102,7 @@ export default function SummonsPage() {
   const [backModalOpen, setBackModalOpen] = useState(false);
   const [summonToBack, setSummonToBack] = useState<Summon | null>(null);
   const [backAmount, setBackAmount] = useState("5");
+  const [backReason, setBackReason] = useState("");
   const [isBackingSubmitting, setIsBackingSubmitting] = useState(false);
   const [backError, setBackError] = useState<string | null>(null);
 
