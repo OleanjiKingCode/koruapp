@@ -88,6 +88,8 @@ export async function GET(request: NextRequest) {
             username: creator.username,
             profileImageUrl: creator.profile_image_url,
             amount: Number(summon.pledged_amount || summon.amount || 0),
+            backedAt: summon.created_at,
+            reason: undefined,
           },
         ];
       }
