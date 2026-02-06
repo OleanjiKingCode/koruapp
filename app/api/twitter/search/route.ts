@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { captureApiError } from "@/lib/sentry";
 import {
   parseTwitterSearchResponse,
   profileToSupabaseFormat,
@@ -125,7 +126,7 @@ export async function GET(request: NextRequest) {
       try {
         await upsertManyTwitterProfiles(profilesToCache);
       } catch (err) {
-        console.error("Cache write error:", err);
+        captureApiError(err, "GET /api/twitter/search:cache");
         // Don't fail the request if cache write fails
       }
     }
@@ -136,7 +137,7 @@ export async function GET(request: NextRequest) {
       count: profiles.length,
     });
   } catch (error) {
-    console.error("Twitter search error:", error);
+    captureApiError(error, "GET /api/twitter/search");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

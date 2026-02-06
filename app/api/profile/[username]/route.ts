@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { captureApiError } from "@/lib/sentry";
 import {
   getUserByUsername,
   getProfileByUsername,
@@ -381,7 +382,7 @@ export async function GET(
     // Not found anywhere
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   } catch (error) {
-    console.error("Error fetching profile:", error);
+    captureApiError(error, "GET /api/profile/[username]");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

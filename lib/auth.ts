@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import NextAuth from "next-auth";
 import Twitter from "next-auth/providers/twitter";
 import { upsertUser } from "./supabase";
@@ -30,7 +31,7 @@ async function fetchTwitterProfileData(username: string) {
           "x-rapidapi-key": RAPIDAPI_KEY,
           "x-rapidapi-host": RAPIDAPI_HOST,
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -43,11 +44,17 @@ async function fetchTwitterProfileData(username: string) {
 
     // Find the exact user by username (case-insensitive)
     const userProfile = profiles.find(
-      (p) => p.username.toLowerCase() === username.toLowerCase()
+      (p) => p.username.toLowerCase() === username.toLowerCase(),
     );
 
     return userProfile || null;
   } catch (error) {
+    if (process.env.NODE_ENV === "production") {
+      Sentry.captureException(error, {
+        tags: { operation: "auth:fetchTwitterProfile" },
+        extra: { username },
+      });
+    }
     console.error("Error fetching Twitter profile data:", error);
     return null;
   }
@@ -174,10 +181,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               }
             } else {
               console.warn(
-                "Failed to save user to database, but continuing with login"
+                "Failed to save user to database, but continuing with login",
               );
             }
           } catch (dbError) {
+            if (process.env.NODE_ENV === "production") {
+              Sentry.captureException(dbError, {
+                tags: { operation: "auth:jwt:upsertUser" },
+                extra: { twitterId: token.twitterId },
+              });
+            }
             // Log detailed error but don't fail the login
             console.error("Error saving user to database:", dbError);
             if (dbError instanceof Error) {
@@ -187,6 +200,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
         }
       } catch (error) {
+        if (process.env.NODE_ENV === "production") {
+          Sentry.captureException(error, { tags: { operation: "auth:jwt" } });
+        }
         console.error("JWT callback error:", error);
         if (error instanceof Error) {
           console.error("Error message:", error.message);
@@ -210,6 +226,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           session.user.following = token.twitterFollowing as number | undefined;
         }
       } catch (error) {
+        if (process.env.NODE_ENV === "production") {
+          Sentry.captureException(error, {
+            tags: { operation: "auth:session" },
+          });
+        }
         console.error("Session callback error:", error);
       }
       return session;

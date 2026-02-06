@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { captureApiError } from "@/lib/sentry";
 import { supabase } from "@/lib/supabase";
 
 interface ConnectedWallet {
@@ -132,7 +133,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ user: data });
   } catch (error) {
-    console.error("Error updating user:", error);
+    captureApiError(error, "PATCH /api/user/update");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

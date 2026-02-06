@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { captureApiError } from "@/lib/sentry";
 import { getFeaturedCategories } from "@/lib/supabase";
 
 export async function GET() {
@@ -6,14 +7,10 @@ export async function GET() {
     const categories = await getFeaturedCategories();
     return NextResponse.json({ categories });
   } catch (error) {
-    console.error("Error fetching categories:", error);
+    captureApiError(error, "GET /api/discover/categories");
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
-
-
-

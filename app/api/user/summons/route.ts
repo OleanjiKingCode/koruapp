@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { captureApiError } from "@/lib/sentry";
 import { getUserSummons, getUserBackedSummons } from "@/lib/supabase";
 
 export async function GET() {
@@ -7,10 +8,7 @@ export async function GET() {
     const session = await auth();
 
     if (!session?.user?.dbId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const [createdSummons, backedSummons] = await Promise.all([
@@ -20,17 +18,13 @@ export async function GET() {
 
     return NextResponse.json({
       createdSummons,
-      backedSummons
+      backedSummons,
     });
   } catch (error) {
-    console.error("Error fetching user summons:", error);
+    captureApiError(error, "GET /api/user/summons");
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
-
-
-

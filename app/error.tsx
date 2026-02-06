@@ -1,6 +1,8 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import { motion } from "motion/react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
 interface ErrorProps {
@@ -9,6 +11,10 @@ interface ErrorProps {
 }
 
 export default function Error({ error, reset }: ErrorProps) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   return (
     <main className="min-h-screen flex items-center justify-center bg-[#f8f7f4] dark:bg-[#0d0d10] px-4">
       {/* Background orbs */}

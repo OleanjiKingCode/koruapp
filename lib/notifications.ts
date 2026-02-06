@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import * as Sentry from "@sentry/nextjs";
 
 // Server-side notification creation helper
 // Use this in API routes to create notifications
@@ -74,12 +75,24 @@ export async function createNotification({
       .single();
 
     if (error) {
+      if (process.env.NODE_ENV === "production") {
+        Sentry.captureException(error, {
+          tags: { operation: "notifications:create" },
+          extra: { userId, type, title },
+        });
+      }
       console.error("Error creating notification:", error);
       return null;
     }
 
     return data?.id || null;
   } catch (error) {
+    if (process.env.NODE_ENV === "production") {
+      Sentry.captureException(error, {
+        tags: { operation: "notifications:create" },
+        extra: { userId, type, title },
+      });
+    }
     console.error("Error in createNotification:", error);
     return null;
   }

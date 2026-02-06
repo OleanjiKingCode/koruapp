@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { captureApiError } from "@/lib/sentry";
 import { supabase } from "@/lib/supabase";
 
 interface BackerInfo {
@@ -12,7 +13,7 @@ interface BackerInfo {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -20,7 +21,7 @@ export async function GET(
     if (!id) {
       return NextResponse.json(
         { error: "Summon ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -32,10 +33,7 @@ export async function GET(
       .single();
 
     if (summonError || !summon) {
-      return NextResponse.json(
-        { error: "Summon not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Summon not found" }, { status: 404 });
     }
 
     // Fetch creator info
@@ -88,7 +86,7 @@ export async function GET(
       targetProfileImage:
         summon.target_profile_image || summon.target_image || null,
       totalPledged: Number(
-        summon.total_backed || summon.pledged_amount || summon.amount || 0
+        summon.total_backed || summon.pledged_amount || summon.amount || 0,
       ),
       backers: summon.backers_count || backersData.length || 0,
       backersData,
@@ -108,10 +106,10 @@ export async function GET(
 
     return NextResponse.json({ summon: transformedSummon });
   } catch (error) {
-    console.error("Error fetching summon:", error);
+    captureApiError(error, "GET /api/summons/[id]");
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

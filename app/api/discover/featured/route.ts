@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { captureApiError } from "@/lib/sentry";
 import { getFeaturedProfiles, supabase, FeaturedProfile } from "@/lib/supabase";
 import {
   parseTwitterSearchResponse,
@@ -38,7 +39,7 @@ async function fetchProfileFromTwitter(username: string): Promise<{
           "x-rapidapi-host": RAPIDAPI_HOST,
         },
         signal: controller.signal,
-      }
+      },
     );
 
     clearTimeout(timeoutId);
@@ -50,7 +51,7 @@ async function fetchProfileFromTwitter(username: string): Promise<{
 
     // Find exact username match (case-insensitive)
     const matchedProfile = profiles.find(
-      (p) => p.username.toLowerCase() === username.toLowerCase()
+      (p) => p.username.toLowerCase() === username.toLowerCase(),
     );
 
     if (!matchedProfile) return null;
@@ -67,7 +68,7 @@ async function fetchProfileFromTwitter(username: string): Promise<{
   } catch (error) {
     clearTimeout(timeoutId);
     // Log timeout or network errors
-    if (error instanceof Error && error.name === 'AbortError') {
+    if (error instanceof Error && error.name === "AbortError") {
       console.log(`Twitter API timeout for ${username}`);
     } else {
       console.error(`Error fetching profile ${username}:`, error);
@@ -76,7 +77,9 @@ async function fetchProfileFromTwitter(username: string): Promise<{
   }
 }
 
-async function refreshProfileWithFallback(profile: FeaturedProfile): Promise<FeaturedProfile> {
+async function refreshProfileWithFallback(
+  profile: FeaturedProfile,
+): Promise<FeaturedProfile> {
   // Try to fetch fresh data from Twitter API
   const freshData = await fetchProfileFromTwitter(profile.username);
 
@@ -87,10 +90,12 @@ async function refreshProfileWithFallback(profile: FeaturedProfile): Promise<Fea
 
   // Check if there are actual changes
   const hasChanges =
-    (freshData.profile_image_url && freshData.profile_image_url !== profile.profile_image_url) ||
+    (freshData.profile_image_url &&
+      freshData.profile_image_url !== profile.profile_image_url) ||
     (freshData.banner_url && freshData.banner_url !== profile.banner_url) ||
     (freshData.bio && freshData.bio !== profile.bio) ||
-    (freshData.followers_count !== undefined && freshData.followers_count !== profile.followers_count) ||
+    (freshData.followers_count !== undefined &&
+      freshData.followers_count !== profile.followers_count) ||
     (freshData.name && freshData.name !== profile.name);
 
   if (hasChanges) {
@@ -99,12 +104,16 @@ async function refreshProfileWithFallback(profile: FeaturedProfile): Promise<Fea
       updated_at: new Date().toISOString(),
     };
 
-    if (freshData.profile_image_url) updateData.profile_image_url = freshData.profile_image_url;
+    if (freshData.profile_image_url)
+      updateData.profile_image_url = freshData.profile_image_url;
     if (freshData.banner_url) updateData.banner_url = freshData.banner_url;
     if (freshData.bio) updateData.bio = freshData.bio;
-    if (freshData.followers_count !== undefined) updateData.followers_count = freshData.followers_count;
-    if (freshData.following_count !== undefined) updateData.following_count = freshData.following_count;
-    if (freshData.verified !== undefined) updateData.verified = freshData.verified;
+    if (freshData.followers_count !== undefined)
+      updateData.followers_count = freshData.followers_count;
+    if (freshData.following_count !== undefined)
+      updateData.following_count = freshData.following_count;
+    if (freshData.verified !== undefined)
+      updateData.verified = freshData.verified;
     if (freshData.name) updateData.name = freshData.name;
 
     // Update database in background (fire and forget)
@@ -114,7 +123,10 @@ async function refreshProfileWithFallback(profile: FeaturedProfile): Promise<Fea
       .eq("id", profile.id)
       .then(({ error }) => {
         if (error) {
-          console.error(`Error updating featured profile ${profile.username}:`, error);
+          console.error(
+            `Error updating featured profile ${profile.username}:`,
+            error,
+          );
         }
       });
 
@@ -144,7 +156,10 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const page = parseInt(searchParams.get("page") || "0");
     const limit = parseInt(searchParams.get("limit") || "50");
-    const categories = searchParams.get("categories")?.split(",").filter(Boolean);
+    const categories = searchParams
+      .get("categories")
+      ?.split(",")
+      .filter(Boolean);
     const refresh = searchParams.get("refresh") === "true";
 
     // Get featured profiles list from DB
@@ -156,13 +171,13 @@ export async function GET(request: NextRequest) {
       // Only refresh first 5 profiles to avoid rate limits
       const profilesToRefresh = result.profiles.slice(0, 5);
       const refreshPromises = profilesToRefresh.map((profile) =>
-        refreshProfileWithFallback(profile)
+        refreshProfileWithFallback(profile),
       );
       const refreshedProfiles = await Promise.all(refreshPromises);
-      
+
       // Merge refreshed profiles back
-      const updatedProfiles = result.profiles.map((profile, index) => 
-        index < 5 ? refreshedProfiles[index] : profile
+      const updatedProfiles = result.profiles.map((profile, index) =>
+        index < 5 ? refreshedProfiles[index] : profile,
       );
 
       return NextResponse.json({
@@ -174,10 +189,10 @@ export async function GET(request: NextRequest) {
     // Return cached data directly (fast path)
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Error fetching featured profiles:", error);
+    captureApiError(error, "GET /api/discover/featured");
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

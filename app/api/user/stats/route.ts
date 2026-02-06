@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { captureApiError } from "@/lib/sentry";
 import { getUserStats } from "@/lib/supabase";
 
 export async function GET() {
@@ -7,23 +8,16 @@ export async function GET() {
     const session = await auth();
 
     if (!session?.user?.dbId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const stats = await getUserStats(session.user.dbId);
     return NextResponse.json({ stats });
   } catch (error) {
-    console.error("Error fetching user stats:", error);
+    captureApiError(error, "GET /api/user/stats");
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
-
-
-

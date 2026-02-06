@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { captureApiError } from "@/lib/sentry";
 import { getRecentTransactions } from "@/lib/supabase";
 
 export async function GET(request: NextRequest) {
@@ -7,10 +8,7 @@ export async function GET(request: NextRequest) {
     const session = await auth();
 
     if (!session?.user?.dbId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const searchParams = request.nextUrl.searchParams;
@@ -19,14 +17,10 @@ export async function GET(request: NextRequest) {
     const transactions = await getRecentTransactions(session.user.dbId, limit);
     return NextResponse.json({ transactions });
   } catch (error) {
-    console.error("Error fetching user transactions:", error);
+    captureApiError(error, "GET /api/user/transactions");
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
-
-
-

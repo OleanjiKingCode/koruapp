@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { captureApiError } from "@/lib/sentry";
 import { supabase } from "@/lib/supabase";
 import { notifySummonBacked } from "@/lib/notifications";
 
@@ -154,7 +155,7 @@ export async function POST(request: NextRequest) {
           summon_id,
         );
       } catch (notifyError) {
-        console.error("Error sending notification:", notifyError);
+        captureApiError(notifyError, "POST /api/summons/back:notification");
         // Don't fail the request if notification fails
       }
     }
@@ -165,7 +166,7 @@ export async function POST(request: NextRequest) {
       backer: newBacker,
     });
   } catch (error) {
-    console.error("Error backing summon:", error);
+    captureApiError(error, "POST /api/summons/back");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

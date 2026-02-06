@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { captureApiError } from "@/lib/sentry";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 // Lazy initialization to avoid build-time errors
@@ -10,9 +11,9 @@ function getSupabase(): SupabaseClient | null {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) {
-      console.error("Missing Supabase environment variables:", { 
-        hasUrl: !!url, 
-        hasKey: !!key 
+      console.error("Missing Supabase environment variables:", {
+        hasUrl: !!url,
+        hasKey: !!key,
       });
       return null;
     }
@@ -23,7 +24,13 @@ function getSupabase(): SupabaseClient | null {
 
 export interface NotificationResponse {
   id: string;
-  type: "message" | "payment" | "request" | "completed" | "summon_backed" | "summon_created";
+  type:
+    | "message"
+    | "payment"
+    | "request"
+    | "completed"
+    | "summon_backed"
+    | "summon_created";
   title: string;
   description: string | null;
   read: boolean;
@@ -71,7 +78,9 @@ export async function GET(request: NextRequest) {
 
     const supabase = getSupabase();
     if (!supabase) {
-      console.error("Supabase client not initialized - missing environment variables");
+      console.error(
+        "Supabase client not initialized - missing environment variables",
+      );
       return NextResponse.json({
         notifications: [],
         unreadCount: 0,
@@ -105,18 +114,20 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform to response format
-    const transformed: NotificationResponse[] = (notifications || []).map((n) => ({
-      id: n.id,
-      type: n.type,
-      title: n.title,
-      description: n.description,
-      read: n.read,
-      link: n.link,
-      relatedUserUsername: n.related_user_username,
-      relatedUserImage: n.related_user_image,
-      createdAt: n.created_at,
-      timeAgo: formatTimeAgo(new Date(n.created_at)),
-    }));
+    const transformed: NotificationResponse[] = (notifications || []).map(
+      (n) => ({
+        id: n.id,
+        type: n.type,
+        title: n.title,
+        description: n.description,
+        read: n.read,
+        link: n.link,
+        relatedUserUsername: n.related_user_username,
+        relatedUserImage: n.related_user_image,
+        createdAt: n.created_at,
+        timeAgo: formatTimeAgo(new Date(n.created_at)),
+      }),
+    );
 
     // Get unread count
     const { count: unreadCount } = await supabase
@@ -130,7 +141,7 @@ export async function GET(request: NextRequest) {
       unreadCount: unreadCount || 0,
     });
   } catch (error) {
-    console.error("Error in notifications GET:", error);
+    captureApiError(error, "GET /api/notifications");
     // Return empty response on error to prevent UI from breaking
     return NextResponse.json({
       notifications: [],
@@ -155,10 +166,12 @@ export async function PATCH(request: NextRequest) {
 
     const supabase = getSupabase();
     if (!supabase) {
-      console.error("Supabase client not initialized - missing environment variables");
+      console.error(
+        "Supabase client not initialized - missing environment variables",
+      );
       return NextResponse.json(
         { error: "Service unavailable" },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
@@ -177,7 +190,7 @@ export async function PATCH(request: NextRequest) {
         console.error("Error marking all as read:", error);
         return NextResponse.json(
           { error: "Failed to mark notifications as read" },
-          { status: 500 }
+          { status: 500 },
         );
       }
 
@@ -196,7 +209,7 @@ export async function PATCH(request: NextRequest) {
         console.error("Error marking notification as read:", error);
         return NextResponse.json(
           { error: "Failed to mark notification as read" },
-          { status: 500 }
+          { status: 500 },
         );
       }
 
@@ -205,16 +218,13 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json(
       { error: "Missing notificationId or markAllRead" },
-      { status: 400 }
+      { status: 400 },
     );
   } catch (error) {
-    console.error("Error in notifications PATCH:", error);
+    captureApiError(error, "PATCH /api/notifications");
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
-
-

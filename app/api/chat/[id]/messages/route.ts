@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { captureApiError } from "@/lib/sentry";
 import {
   getChatById,
   getChatMessages,
@@ -41,7 +42,7 @@ export async function GET(
 
     return NextResponse.json({ messages });
   } catch (error) {
-    console.error("Error fetching messages:", error);
+    captureApiError(error, "GET /api/chat/[id]/messages");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -129,14 +130,17 @@ export async function POST(
           chatId,
         );
       } catch (notifyError) {
-        console.error("Error sending notification:", notifyError);
+        captureApiError(
+          notifyError,
+          "POST /api/chat/[id]/messages:notification",
+        );
         // Don't fail the request if notification fails
       }
     }
 
     return NextResponse.json({ message }, { status: 201 });
   } catch (error) {
-    console.error("Error sending message:", error);
+    captureApiError(error, "POST /api/chat/[id]/messages");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
