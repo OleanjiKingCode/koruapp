@@ -1238,127 +1238,131 @@ export function useEscrowsByIds(escrowIds: bigint[]) {
 }
 
 // =============================================================================
-// PENDING BALANCE FROM CONTRACT (Read directly from blockchain)
+// PENDING BALANCE FROM CONTRACT (via wagmi useReadContract / useReadContracts)
 // =============================================================================
 
 /**
- * Hook to get user's pending balance directly from the smart contract
- * This reads all escrows and calculates pending amounts for the given wallet
- * - Pending: status is Pending (0) or Accepted (1) - funds locked for recipient
- * - Ready: status is Released (2) - recipient can withdraw
+ * Hook to get user's pending balance directly from the smart contract.
+ * Uses wagmi's useReadContract/useReadContracts — no publicClient.
+ *
+ * Step 1: read escrow count
+ * Step 2: batch-read all escrows + their effective statuses via useReadContracts
+ * Step 3: compute pending/ready totals for the wallet
  */
 export function useContractPendingBalance(walletAddress?: Address) {
-  const publicClient = usePublicClient();
-  const [pendingBalance, setPendingBalance] = useState<bigint>(BigInt(0));
-  const [readyBalance, setReadyBalance] = useState<bigint>(BigInt(0));
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const escrowAddress = getContractAddress();
 
-  const fetchBalances = useCallback(async () => {
-    if (!walletAddress || !publicClient) {
-      setPendingBalance(BigInt(0));
-      setReadyBalance(BigInt(0));
-      return;
-    }
+  // Step 1: get the total escrow count
+  const {
+    data: escrowCount,
+    isLoading: isLoadingCount,
+    error: countError,
+    refetch: refetchCount,
+  } = useReadContract({
+    address: escrowAddress,
+    abi: KORU_ESCROW_ABI,
+    functionName: "getEscrowCount",
+    query: {
+      refetchInterval: 30_000,
+    },
+  });
 
-    setIsLoading(true);
-    setError(null);
+  const count = escrowCount !== undefined ? Number(escrowCount) : 0;
 
-    try {
-      const escrowAddress = getContractAddress();
-      const normalizedWallet = walletAddress.toLowerCase();
-
-      // Get total escrow count
-      const escrowCount = await publicClient.readContract({
+  // Step 2: build contract calls for all escrows + their effective statuses
+  const contracts = useMemo(() => {
+    if (count === 0) return [];
+    const calls = [];
+    for (let i = 0; i < count; i++) {
+      // getEscrow
+      calls.push({
         address: escrowAddress,
         abi: KORU_ESCROW_ABI,
-        functionName: "getEscrowCount",
+        functionName: "getEscrow" as const,
+        args: [BigInt(i)] as const,
       });
-
-      const count = Number(escrowCount);
-      if (count === 0) {
-        setPendingBalance(BigInt(0));
-        setReadyBalance(BigInt(0));
-        setIsLoading(false);
-        return;
-      }
-
-      // Fetch all escrows in batches
-      const batchSize = 50;
-      let totalPending = BigInt(0);
-      let totalReady = BigInt(0);
-
-      for (let i = 0; i < count; i += batchSize) {
-        const batch = [];
-        for (let j = i; j < Math.min(i + batchSize, count); j++) {
-          batch.push({
-            address: escrowAddress,
-            abi: KORU_ESCROW_ABI,
-            functionName: "getEscrow" as const,
-            args: [BigInt(j)] as const,
-          });
-        }
-
-        const results = await publicClient.multicall({ contracts: batch });
-
-        for (const result of results) {
-          if (result.status === "success" && result.result) {
-            const escrow = result.result as Escrow;
-            const isRecipient =
-              escrow.recipient.toLowerCase() === normalizedWallet;
-
-            if (isRecipient) {
-              const status = escrow.status;
-              // Pending (0) or Accepted (1) = funds locked, waiting
-              if (
-                status === EscrowStatus.Pending ||
-                status === EscrowStatus.Accepted
-              ) {
-                totalPending += escrow.amount;
-              }
-              // Released (2) = ready to withdraw
-              else if (status === EscrowStatus.Released) {
-                totalReady += escrow.amount;
-              }
-            }
-          }
-        }
-      }
-
-      setPendingBalance(totalPending);
-      setReadyBalance(totalReady);
-    } catch (err) {
-      console.error("Error fetching contract balances:", err);
-      setError(err as Error);
-    } finally {
-      setIsLoading(false);
+      // getEffectiveStatus
+      calls.push({
+        address: escrowAddress,
+        abi: KORU_ESCROW_ABI,
+        functionName: "getEffectiveStatus" as const,
+        args: [BigInt(i)] as const,
+      });
     }
-  }, [walletAddress, publicClient]);
+    return calls;
+  }, [count, escrowAddress]);
 
-  // Fetch on mount and when wallet changes
-  useEffect(() => {
-    fetchBalances();
-  }, [fetchBalances]);
+  const {
+    data: batchData,
+    isLoading: isLoadingBatch,
+    error: batchError,
+    refetch: refetchBatch,
+  } = useReadContracts({
+    contracts,
+    query: {
+      enabled: count > 0 && !!walletAddress,
+      refetchInterval: 30_000,
+    },
+  });
 
-  // Auto-refresh every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(fetchBalances, 30000);
-    return () => clearInterval(interval);
-  }, [fetchBalances]);
+  // Step 3: compute totals
+  const { pendingBalance, readyBalance } = useMemo(() => {
+    if (!batchData || !walletAddress) {
+      return { pendingBalance: BigInt(0), readyBalance: BigInt(0) };
+    }
+    const normalizedWallet = walletAddress.toLowerCase();
+    let totalPending = BigInt(0);
+    let totalReady = BigInt(0);
+
+    for (let i = 0; i < count; i++) {
+      const escrowResult = batchData[i * 2];
+      const statusResult = batchData[i * 2 + 1];
+
+      if (
+        escrowResult?.status !== "success" ||
+        !escrowResult.result ||
+        statusResult?.status !== "success"
+      )
+        continue;
+
+      const escrow = escrowResult.result as Escrow;
+      const effectiveStatus = Number(statusResult.result) as EscrowStatus;
+      const isRecipient = escrow.recipient.toLowerCase() === normalizedWallet;
+
+      if (!isRecipient) continue;
+
+      // Use effective status (accounts for expired windows)
+      if (
+        effectiveStatus === EscrowStatus.Pending ||
+        effectiveStatus === EscrowStatus.Accepted
+      ) {
+        totalPending += escrow.amount;
+      } else if (effectiveStatus === EscrowStatus.Released) {
+        totalReady += escrow.amount;
+      }
+    }
+
+    return { pendingBalance: totalPending, readyBalance: totalReady };
+  }, [batchData, walletAddress, count]);
+
+  const refetch = useCallback(() => {
+    refetchCount();
+    refetchBatch();
+  }, [refetchCount, refetchBatch]);
 
   return {
     pendingBalance,
     readyBalance,
     pendingFormatted: formatUsdcAmount(pendingBalance),
     readyFormatted: formatUsdcAmount(readyBalance),
-    isLoading,
-    error,
-    refetch: fetchBalances,
+    isLoading: isLoadingCount || isLoadingBatch,
+    error: countError || batchError,
+    refetch,
   };
 }
 
 // =============================================================================
-// CONTRACT ESCROW LIST (for modal — reads all escrows from chain)
+// CONTRACT ESCROW LIST (for modal — via wagmi hooks, no publicClient)
 // =============================================================================
 
 export interface ContractEscrowItem {
@@ -1366,14 +1370,21 @@ export interface ContractEscrowItem {
   depositor: Address;
   recipient: Address;
   amount: bigint;
+  /** The raw stored status */
   status: EscrowStatus;
+  /** The effective status (accounts for expired windows) */
+  effectiveStatus: EscrowStatus;
   createdAt: number;
   acceptedAt: number;
   disputedAt: number;
   feeBps: number;
   feeRecipient: Address;
-  /** Computed: is the current wallet the recipient? */
+  /** Is the current wallet the recipient? */
   isRecipient: boolean;
+  /** Can recipient withdraw right now? (from contract) */
+  canRecipientWithdraw: boolean;
+  /** Can depositor withdraw/reclaim right now? (from contract) */
+  canDepositorWithdraw: boolean;
   /** accept deadline timestamp (seconds) */
   acceptDeadline: number;
   /** dispute deadline timestamp (seconds), 0 if not accepted */
@@ -1382,132 +1393,197 @@ export interface ContractEscrowItem {
 
 /**
  * Hook that reads every escrow from the contract where the connected wallet
- * is either depositor or recipient, returning full escrow details.
+ * is either depositor or recipient.
  *
- * This is the on-chain source of truth — no API/database involved.
+ * Uses wagmi useReadContract + useReadContracts — NO publicClient.
+ *
+ * Step 1: read escrow count
+ * Step 2: batch-read all escrows via useReadContracts
+ * Step 3: for relevant escrows, batch-read effectiveStatus + canRecipientWithdraw + canDepositorWithdraw
  */
 export function useContractEscrows(walletAddress?: Address) {
-  const publicClient = usePublicClient();
-  const [escrows, setEscrows] = useState<ContractEscrowItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const escrowAddress = getContractAddress();
+  const ACCEPT_WINDOW = 24 * 60 * 60;
+  const DISPUTE_WINDOW = 48 * 60 * 60;
 
-  const ACCEPT_WINDOW = 24 * 60 * 60; // 24 hours in seconds
-  const DISPUTE_WINDOW = 48 * 60 * 60; // 48 hours in seconds
+  // Step 1: get escrow count
+  const {
+    data: escrowCount,
+    isLoading: isLoadingCount,
+    error: countError,
+    refetch: refetchCount,
+  } = useReadContract({
+    address: escrowAddress,
+    abi: KORU_ESCROW_ABI,
+    functionName: "getEscrowCount",
+    query: {
+      refetchInterval: 30_000,
+    },
+  });
 
-  const fetchEscrows = useCallback(async () => {
-    if (!walletAddress || !publicClient) {
-      setEscrows([]);
-      return;
+  const count = escrowCount !== undefined ? Number(escrowCount) : 0;
+
+  // Step 2: batch-read ALL escrows
+  const escrowContracts = useMemo(() => {
+    if (count === 0) return [];
+    return Array.from({ length: count }, (_, i) => ({
+      address: escrowAddress,
+      abi: KORU_ESCROW_ABI,
+      functionName: "getEscrow" as const,
+      args: [BigInt(i)] as const,
+    }));
+  }, [count, escrowAddress]);
+
+  const {
+    data: allEscrowsData,
+    isLoading: isLoadingEscrows,
+    error: escrowsError,
+    refetch: refetchEscrows,
+  } = useReadContracts({
+    contracts: escrowContracts,
+    query: {
+      enabled: count > 0 && !!walletAddress,
+      refetchInterval: 30_000,
+    },
+  });
+
+  // Filter to only escrows relevant to this wallet (active statuses)
+  const relevantIds = useMemo(() => {
+    if (!allEscrowsData || !walletAddress) return [];
+    const normalizedWallet = walletAddress.toLowerCase();
+    const ids: number[] = [];
+    const activeStatuses = [
+      EscrowStatus.Pending,
+      EscrowStatus.Accepted,
+      EscrowStatus.Released,
+      EscrowStatus.Disputed,
+    ];
+    for (let i = 0; i < allEscrowsData.length; i++) {
+      const result = allEscrowsData[i];
+      if (result?.status !== "success" || !result.result) continue;
+      const escrow = result.result as Escrow;
+      if (!activeStatuses.includes(escrow.status)) continue;
+      const isDepositor = escrow.depositor.toLowerCase() === normalizedWallet;
+      const isRecipient = escrow.recipient.toLowerCase() === normalizedWallet;
+      if (isDepositor || isRecipient) ids.push(i);
     }
+    return ids;
+  }, [allEscrowsData, walletAddress]);
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const escrowAddress = getContractAddress();
-      const normalizedWallet = walletAddress.toLowerCase();
-
-      // Get total escrow count
-      const escrowCount = await publicClient.readContract({
+  // Step 3: for each relevant escrow, batch-read effectiveStatus + canRecipientWithdraw + canDepositorWithdraw
+  const detailContracts = useMemo(() => {
+    if (relevantIds.length === 0) return [];
+    const calls = [];
+    for (const id of relevantIds) {
+      calls.push({
         address: escrowAddress,
         abi: KORU_ESCROW_ABI,
-        functionName: "getEscrowCount",
+        functionName: "getEffectiveStatus" as const,
+        args: [BigInt(id)] as const,
       });
-
-      const count = Number(escrowCount);
-      if (count === 0) {
-        setEscrows([]);
-        setIsLoading(false);
-        return;
-      }
-
-      // Fetch all escrows in batches via multicall
-      const batchSize = 50;
-      const items: ContractEscrowItem[] = [];
-
-      for (let i = 0; i < count; i += batchSize) {
-        const batch = [];
-        for (let j = i; j < Math.min(i + batchSize, count); j++) {
-          batch.push({
-            address: escrowAddress,
-            abi: KORU_ESCROW_ABI,
-            functionName: "getEscrow" as const,
-            args: [BigInt(j)] as const,
-          });
-        }
-
-        const results = await publicClient.multicall({ contracts: batch });
-
-        for (let k = 0; k < results.length; k++) {
-          const result = results[k];
-          if (result.status === "success" && result.result) {
-            const escrow = result.result as Escrow;
-            const escrowId = i + k;
-            const isDepositor =
-              escrow.depositor.toLowerCase() === normalizedWallet;
-            const isRecipient =
-              escrow.recipient.toLowerCase() === normalizedWallet;
-
-            if (!isDepositor && !isRecipient) continue;
-
-            // Only include active statuses
-            const activeStatuses = [
-              EscrowStatus.Pending,
-              EscrowStatus.Accepted,
-              EscrowStatus.Released,
-              EscrowStatus.Disputed,
-            ];
-            if (!activeStatuses.includes(escrow.status)) continue;
-
-            const acceptDeadline = escrow.createdAt + ACCEPT_WINDOW;
-            const disputeDeadline =
-              escrow.acceptedAt > 0 ? escrow.acceptedAt + DISPUTE_WINDOW : 0;
-
-            items.push({
-              escrowId,
-              depositor: escrow.depositor,
-              recipient: escrow.recipient,
-              amount: escrow.amount,
-              status: escrow.status,
-              createdAt: escrow.createdAt,
-              acceptedAt: escrow.acceptedAt,
-              disputedAt: escrow.disputedAt,
-              feeBps: escrow.feeBps,
-              feeRecipient: escrow.feeRecipient,
-              isRecipient,
-              acceptDeadline,
-              disputeDeadline,
-            });
-          }
-        }
-      }
-
-      // Sort newest first
-      items.sort((a, b) => b.createdAt - a.createdAt);
-      setEscrows(items);
-    } catch (err) {
-      console.error("Error fetching contract escrows:", err);
-      setError(err as Error);
-    } finally {
-      setIsLoading(false);
+      calls.push({
+        address: escrowAddress,
+        abi: KORU_ESCROW_ABI,
+        functionName: "canRecipientWithdraw" as const,
+        args: [BigInt(id)] as const,
+      });
+      calls.push({
+        address: escrowAddress,
+        abi: KORU_ESCROW_ABI,
+        functionName: "canDepositorWithdraw" as const,
+        args: [BigInt(id)] as const,
+      });
     }
-  }, [walletAddress, publicClient]);
+    return calls;
+  }, [relevantIds, escrowAddress]);
 
-  useEffect(() => {
-    fetchEscrows();
-  }, [fetchEscrows]);
+  const {
+    data: detailData,
+    isLoading: isLoadingDetails,
+    error: detailsError,
+    refetch: refetchDetails,
+  } = useReadContracts({
+    contracts: detailContracts,
+    query: {
+      enabled: relevantIds.length > 0,
+      refetchInterval: 30_000,
+    },
+  });
 
-  // Auto-refresh every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(fetchEscrows, 30000);
-    return () => clearInterval(interval);
-  }, [fetchEscrows]);
+  // Step 4: assemble final items
+  const escrows = useMemo(() => {
+    if (!allEscrowsData || !detailData || !walletAddress) return [];
+    const normalizedWallet = walletAddress.toLowerCase();
+    const items: ContractEscrowItem[] = [];
+
+    for (let idx = 0; idx < relevantIds.length; idx++) {
+      const escrowId = relevantIds[idx];
+      const escrowResult = allEscrowsData[escrowId];
+      if (escrowResult?.status !== "success" || !escrowResult.result) continue;
+
+      const escrow = escrowResult.result as Escrow;
+
+      const effectiveStatusResult = detailData[idx * 3];
+      const canRecipientResult = detailData[idx * 3 + 1];
+      const canDepositorResult = detailData[idx * 3 + 2];
+
+      const effectiveStatus =
+        effectiveStatusResult?.status === "success"
+          ? (Number(effectiveStatusResult.result) as EscrowStatus)
+          : escrow.status;
+      const canRecipient =
+        canRecipientResult?.status === "success"
+          ? (canRecipientResult.result as boolean)
+          : false;
+      const canDepositor =
+        canDepositorResult?.status === "success"
+          ? (canDepositorResult.result as boolean)
+          : false;
+
+      const isRecipient = escrow.recipient.toLowerCase() === normalizedWallet;
+
+      const acceptDeadline = escrow.createdAt + ACCEPT_WINDOW;
+      const disputeDeadline =
+        escrow.acceptedAt > 0 ? escrow.acceptedAt + DISPUTE_WINDOW : 0;
+
+      items.push({
+        escrowId,
+        depositor: escrow.depositor,
+        recipient: escrow.recipient,
+        amount: escrow.amount,
+        status: escrow.status,
+        effectiveStatus,
+        createdAt: escrow.createdAt,
+        acceptedAt: escrow.acceptedAt,
+        disputedAt: escrow.disputedAt,
+        feeBps: escrow.feeBps,
+        feeRecipient: escrow.feeRecipient,
+        isRecipient,
+        canRecipientWithdraw: canRecipient,
+        canDepositorWithdraw: canDepositor,
+        acceptDeadline,
+        disputeDeadline,
+      });
+    }
+
+    // Sort newest first
+    items.sort((a, b) => b.createdAt - a.createdAt);
+    return items;
+  }, [allEscrowsData, detailData, walletAddress, relevantIds]);
+
+  const isLoading = isLoadingCount || isLoadingEscrows || isLoadingDetails;
+  const error = countError || escrowsError || detailsError;
+
+  const refetch = useCallback(() => {
+    refetchCount();
+    refetchEscrows();
+    refetchDetails();
+  }, [refetchCount, refetchEscrows, refetchDetails]);
 
   return {
     escrows,
     isLoading,
     error,
-    refetch: fetchEscrows,
+    refetch,
   };
 }

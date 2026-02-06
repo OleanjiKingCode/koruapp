@@ -179,28 +179,21 @@ function EscrowRow({
   escrow: ContractEscrowItem;
   onWithdrawComplete: () => void;
 }) {
-  // Can recipient withdraw?
-  const canRecipientWithdraw =
-    escrow.isRecipient &&
-    (escrow.status === EscrowStatus.Released ||
-      (escrow.status === EscrowStatus.Accepted &&
-        escrow.disputeDeadline > 0 &&
-        getCountdown(escrow.disputeDeadline).expired));
+  // Use the contract's own canRecipientWithdraw / canDepositorWithdraw
+  const showWithdraw = escrow.isRecipient && escrow.canRecipientWithdraw;
+  const showReclaim = !escrow.isRecipient && escrow.canDepositorWithdraw;
 
-  // Can depositor reclaim?
-  const canDepositorReclaim =
-    !escrow.isRecipient &&
-    escrow.status === EscrowStatus.Pending &&
-    getCountdown(escrow.acceptDeadline).expired;
+  // Use effectiveStatus for display (accounts for expired windows)
+  const effective = escrow.effectiveStatus;
 
   // Determine which deadline to show
   let deadlineUnix = 0;
   let deadlineLabel = "";
-  if (escrow.status === EscrowStatus.Pending) {
+  if (effective === EscrowStatus.Pending) {
     deadlineUnix = escrow.acceptDeadline;
     deadlineLabel = "Accept in";
   } else if (
-    escrow.status === EscrowStatus.Accepted &&
+    effective === EscrowStatus.Accepted &&
     escrow.disputeDeadline > 0
   ) {
     deadlineUnix = escrow.disputeDeadline;
@@ -208,9 +201,11 @@ function EscrowRow({
   }
 
   const borderColor =
-    escrow.status === EscrowStatus.Disputed
+    effective === EscrowStatus.Disputed
       ? "border-red-200 dark:border-red-800/50"
-      : escrow.status === EscrowStatus.Released
+      : effective === EscrowStatus.Released ||
+          escrow.canRecipientWithdraw ||
+          escrow.canDepositorWithdraw
         ? "border-koru-lime/30"
         : "border-neutral-200 dark:border-neutral-700";
 
@@ -226,7 +221,6 @@ function EscrowRow({
       {/* Top row: address | amount + badge */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
-          {/* Colored avatar placeholder */}
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-koru-purple/60 to-koru-lime/60 flex items-center justify-center shrink-0">
             <span className="text-[11px] font-bold text-white">
               {escrow.isRecipient ? "IN" : "OUT"}
@@ -245,7 +239,7 @@ function EscrowRow({
           <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
             ${fmtUsdc(escrow.amount)}
           </p>
-          <StatusBadge status={escrow.status} />
+          <StatusBadge status={effective} />
         </div>
       </div>
 
@@ -256,8 +250,8 @@ function EscrowRow({
         </div>
       )}
 
-      {/* Withdraw button */}
-      {canRecipientWithdraw && (
+      {/* Withdraw button — only when contract says it's allowed */}
+      {showWithdraw && (
         <div className="mt-2.5">
           <WithdrawButton
             escrowId={escrow.escrowId}
@@ -266,8 +260,8 @@ function EscrowRow({
         </div>
       )}
 
-      {/* Depositor reclaim for expired pending */}
-      {canDepositorReclaim && (
+      {/* Depositor reclaim — only when contract says it's allowed */}
+      {showReclaim && (
         <div className="mt-2.5">
           <WithdrawButton
             escrowId={escrow.escrowId}
@@ -335,18 +329,21 @@ function ModalBody() {
     address as Address | undefined,
   );
 
-  // Compute totals from contract data
+  // Compute totals using effectiveStatus + contract withdraw flags
   const totals = useMemo(() => {
     let pending = BigInt(0);
     let ready = BigInt(0);
     for (const e of escrows) {
       if (e.isRecipient) {
-        if (
-          e.status === EscrowStatus.Pending ||
-          e.status === EscrowStatus.Accepted
+        // If contract says recipient can withdraw => ready
+        if (e.canRecipientWithdraw) {
+          ready += e.amount;
+        } else if (
+          e.effectiveStatus === EscrowStatus.Pending ||
+          e.effectiveStatus === EscrowStatus.Accepted
         ) {
           pending += e.amount;
-        } else if (e.status === EscrowStatus.Released) {
+        } else if (e.effectiveStatus === EscrowStatus.Released) {
           ready += e.amount;
         }
       }
@@ -354,14 +351,25 @@ function ModalBody() {
     return { pending, ready };
   }, [escrows]);
 
-  // Group escrows by category
+  // Group escrows by category using effectiveStatus + contract withdraw flags
   const grouped = useMemo(() => {
-    const disputed = escrows.filter((e) => e.status === EscrowStatus.Disputed);
-    const inEscrow = escrows.filter(
-      (e) =>
-        e.status === EscrowStatus.Pending || e.status === EscrowStatus.Accepted,
+    const disputed = escrows.filter(
+      (e) => e.effectiveStatus === EscrowStatus.Disputed,
     );
-    const ready = escrows.filter((e) => e.status === EscrowStatus.Released);
+    // "Ready" = Released OR contract says canRecipientWithdraw / canDepositorWithdraw
+    const ready = escrows.filter(
+      (e) =>
+        e.effectiveStatus !== EscrowStatus.Disputed &&
+        (e.effectiveStatus === EscrowStatus.Released ||
+          e.canRecipientWithdraw ||
+          e.canDepositorWithdraw),
+    );
+    const readyIds = new Set(ready.map((e) => e.escrowId));
+    const disputedIds = new Set(disputed.map((e) => e.escrowId));
+    // "In Escrow" = everything else that's not disputed or ready
+    const inEscrow = escrows.filter(
+      (e) => !readyIds.has(e.escrowId) && !disputedIds.has(e.escrowId),
+    );
     return { disputed, inEscrow, ready };
   }, [escrows]);
 
