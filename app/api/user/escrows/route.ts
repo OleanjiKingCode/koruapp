@@ -57,8 +57,13 @@ export async function GET(request: NextRequest) {
     if (status) {
       query = query.eq("status", status);
     } else {
-      // By default, get active escrows (pending, accepted, released)
-      query = query.in("status", ["pending", "accepted", "released"]);
+      // By default, get active escrows (pending, accepted, released, disputed)
+      query = query.in("status", [
+        "pending",
+        "accepted",
+        "released",
+        "disputed",
+      ]);
     }
 
     // Order by created_at desc

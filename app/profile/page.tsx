@@ -9,15 +9,14 @@ import { SiFarcaster } from "react-icons/si";
 import { usePrivy } from "@privy-io/react-auth";
 import {
   PageHeader,
-  StatCard,
   StatusPill,
   EmptyState,
   ProfileHeaderSkeleton,
   BalanceCardSkeleton,
-  StatCardSkeleton,
   ChatCardSkeleton,
 } from "@/components/shared";
 import { ShareModal } from "@/components/share";
+import { EscrowDetailsModal } from "@/components/escrow-details-modal";
 import {
   AvailabilityModal,
   TIMEZONES,
@@ -208,6 +207,7 @@ export default function ProfilePage() {
   } | null>(null);
   const [isFarcasterConnected, setIsFarcasterConnected] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [escrowModalOpen, setEscrowModalOpen] = useState(false);
 
   const {
     ready: privyReady,
@@ -868,8 +868,9 @@ export default function ProfilePage() {
                       variant="ghost"
                       size="sm"
                       className="text-xs h-6 px-2 text-koru-purple hover:text-koru-purple/80"
+                      onClick={() => setEscrowModalOpen(true)}
                     >
-                      Withdraw
+                      View All
                     </Button>
                   </div>
                   <div className="flex items-center gap-4">
@@ -905,48 +906,6 @@ export default function ProfilePage() {
               </div>
             </motion.div>
           )}
-
-          {/* Stats Grid */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.15 }}
-            className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-3"
-          >
-            {isLoading ? (
-              <>
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <StatCardSkeleton key={i} />
-                ))}
-              </>
-            ) : (
-              <>
-                <StatCard
-                  title="Followers"
-                  value={user?.followersCount?.toLocaleString() || "0"}
-                  icon={<DollarIcon className="w-5 h-5" />}
-                  variant="purple"
-                />
-                <StatCard
-                  title="Following"
-                  value={user?.followingCount?.toLocaleString() || "0"}
-                  icon={<RefundIcon className="w-5 h-5" />}
-                />
-                <StatCard
-                  title="Active Chats"
-                  value={stats.activeChats.toString()}
-                  icon={<ChatIcon className="w-5 h-5" />}
-                  variant="golden"
-                />
-                <StatCard
-                  title="Response Time"
-                  value={`${user?.responseTimeHours || 24}h`}
-                  icon={<BeaconIcon className="w-5 h-5" />}
-                  variant="lime"
-                />
-              </>
-            )}
-          </motion.div>
 
           {/* Availability Card */}
           <motion.div
@@ -1454,6 +1413,12 @@ export default function ProfilePage() {
                 }
               : undefined
           }
+        />
+
+        {/* Escrow Details Modal */}
+        <EscrowDetailsModal
+          isOpen={escrowModalOpen}
+          onClose={() => setEscrowModalOpen(false)}
         />
       </div>
     </AuthGuard>

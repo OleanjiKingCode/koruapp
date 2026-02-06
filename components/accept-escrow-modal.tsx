@@ -144,7 +144,7 @@ export function AcceptEscrowModal({
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-md bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl overflow-hidden"
+            className="relative w-full max-w-md max-h-[85vh] overflow-y-auto bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl"
           >
             {/* Header gradient */}
             <div className="h-2 bg-gradient-to-r from-koru-purple via-koru-golden to-koru-lime" />

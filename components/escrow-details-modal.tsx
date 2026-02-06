@@ -1,11 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import useSWR from "swr";
 import { Button } from "@/components/ui/button";
 import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import { cn } from "@/lib/utils";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
 import {
   useWithdrawEscrow,
   formatUsdcAmount,
@@ -13,22 +27,27 @@ import {
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
+// ── Types ──────────────────────────────────────────────────────────────
+
 interface EscrowItem {
   id: string;
   escrowId: number;
   amount: number;
   status: string;
   acceptDeadline: string | null;
+  disputeDeadline: string | null;
+  acceptedAt: string | null;
   hoursLeft: number | null;
   chatId: string | null;
   isRecipient: boolean;
+  description: string | null;
+  createdAt: string;
   otherParty: {
     id: string;
     name: string;
     username: string;
     profileImageUrl: string | null;
   } | null;
-  createdAt: string;
 }
 
 interface EscrowDetailsModalProps {
@@ -36,216 +55,180 @@ interface EscrowDetailsModalProps {
   onClose: () => void;
 }
 
-export function EscrowDetailsModal({
-  isOpen,
-  onClose,
-}: EscrowDetailsModalProps) {
-  const [withdrawingId, setWithdrawingId] = useState<number | null>(null);
+// ── Countdown helper ───────────────────────────────────────────────────
 
-  const { data, error, mutate } = useSWR<{
-    escrows: EscrowItem[];
-    totals: { pending: number; ready: number; total: number };
-  }>(isOpen ? "/api/user/escrows?role=recipient" : null, fetcher, {
-    refreshInterval: 30000,
-  });
+interface Countdown {
+  days: number;
+  hours: number;
+  minutes: number;
+  total: number; // ms remaining
+  expired: boolean;
+}
 
-  const escrows = data?.escrows || [];
-  const totals = data?.totals || { pending: 0, ready: 0, total: 0 };
+function getCountdown(deadline: string | null): Countdown {
+  if (!deadline)
+    return { days: 0, hours: 0, minutes: 0, total: 0, expired: true };
+  const diff = new Date(deadline).getTime() - Date.now();
+  if (diff <= 0)
+    return { days: 0, hours: 0, minutes: 0, total: 0, expired: true };
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  return { days, hours, minutes, total: diff, expired: false };
+}
 
-  const pendingEscrows = escrows.filter(
-    (e) => e.status === "pending" || e.status === "accepted",
-  );
-  const readyEscrows = escrows.filter((e) => e.status === "released");
+function formatCountdown(c: Countdown): string {
+  if (c.expired) return "Expired";
+  const parts: string[] = [];
+  if (c.days > 0) parts.push(`${c.days}d`);
+  if (c.hours > 0) parts.push(`${c.hours}h`);
+  parts.push(`${c.minutes}m`);
+  return parts.join(" ");
+}
 
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isOpen]);
+// ── Status badge ───────────────────────────────────────────────────────
 
-  const handleWithdraw = async (escrowId: number) => {
-    setWithdrawingId(escrowId);
-    // The actual withdraw is handled by the blockchain hook in the component
-    // This is just for UI state
+function StatusBadge({ status }: { status: string }) {
+  const config: Record<string, { bg: string; text: string; label: string }> = {
+    pending: {
+      bg: "bg-amber-100 dark:bg-amber-900/30",
+      text: "text-amber-700 dark:text-amber-400",
+      label: "Awaiting Accept",
+    },
+    accepted: {
+      bg: "bg-blue-100 dark:bg-blue-900/30",
+      text: "text-blue-700 dark:text-blue-400",
+      label: "Accepted",
+    },
+    released: {
+      bg: "bg-koru-lime/20",
+      text: "text-koru-lime",
+      label: "Ready",
+    },
+    disputed: {
+      bg: "bg-red-100 dark:bg-red-900/30",
+      text: "text-red-600 dark:text-red-400",
+      label: "Disputed",
+    },
+    completed: {
+      bg: "bg-neutral-100 dark:bg-neutral-800",
+      text: "text-neutral-600 dark:text-neutral-400",
+      label: "Completed",
+    },
+    cancelled: {
+      bg: "bg-neutral-100 dark:bg-neutral-800",
+      text: "text-neutral-500 dark:text-neutral-500",
+      label: "Cancelled",
+    },
+    expired: {
+      bg: "bg-neutral-100 dark:bg-neutral-800",
+      text: "text-neutral-500 dark:text-neutral-500",
+      label: "Expired",
+    },
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "pending":
-        return (
-          <span className="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-            Pending
-          </span>
-        );
-      case "accepted":
-        return (
-          <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-            Accepted
-          </span>
-        );
-      case "released":
-        return (
-          <span className="px-2 py-0.5 text-xs rounded-full bg-koru-lime/20 text-koru-lime dark:text-koru-lime">
-            Ready
-          </span>
-        );
-      default:
-        return null;
-    }
-  };
+  const c = config[status] || config.pending;
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
-          />
-
-          {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md max-h-[85vh] bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-xl z-50 overflow-hidden"
-          >
-            {/* Header */}
-            <div className="p-5 border-b border-neutral-200 dark:border-neutral-800">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                  Escrow Balance
-                </h2>
-                <button
-                  onClick={onClose}
-                  className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-                >
-                  <CloseIcon className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Totals */}
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <div className="bg-koru-golden/10 rounded-xl p-3 border border-koru-golden/20">
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
-                    In Escrow
-                  </p>
-                  <p className="text-xl font-semibold text-koru-golden">
-                    ${totals.pending.toFixed(2)}
-                  </p>
-                </div>
-                <div className="bg-koru-lime/10 rounded-xl p-3 border border-koru-lime/20">
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
-                    Ready to Withdraw
-                  </p>
-                  <p className="text-xl font-semibold text-koru-lime">
-                    ${totals.ready.toFixed(2)}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-5 overflow-y-auto max-h-[50vh]">
-              {error ? (
-                <div className="text-center py-8">
-                  <p className="text-neutral-500 dark:text-neutral-400">
-                    Failed to load escrows
-                  </p>
-                </div>
-              ) : !data ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="bg-neutral-100 dark:bg-neutral-800 rounded-xl p-4 animate-pulse"
-                    >
-                      <div className="h-4 w-24 bg-neutral-200 dark:bg-neutral-700 rounded mb-2" />
-                      <div className="h-6 w-16 bg-neutral-200 dark:bg-neutral-700 rounded" />
-                    </div>
-                  ))}
-                </div>
-              ) : escrows.length === 0 ? (
-                <div className="text-center py-8">
-                  <WalletIcon className="w-12 h-12 mx-auto text-neutral-300 dark:text-neutral-600 mb-3" />
-                  <p className="text-neutral-500 dark:text-neutral-400">
-                    No active escrows
-                  </p>
-                  <p className="text-sm text-neutral-400 dark:text-neutral-500 mt-1">
-                    Payments you receive will appear here
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* Pending Escrows */}
-                  {pendingEscrows.length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
-                        <ClockIcon className="w-4 h-4 text-koru-golden" />
-                        In Escrow ({pendingEscrows.length})
-                      </h3>
-                      <div className="space-y-2">
-                        {pendingEscrows.map((escrow) => (
-                          <EscrowCard
-                            key={escrow.id}
-                            escrow={escrow}
-                            getStatusBadge={getStatusBadge}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Ready Escrows */}
-                  {readyEscrows.length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
-                        <CheckIcon className="w-4 h-4 text-koru-lime" />
-                        Ready to Withdraw ({readyEscrows.length})
-                      </h3>
-                      <div className="space-y-2">
-                        {readyEscrows.map((escrow) => (
-                          <EscrowCardWithWithdraw
-                            key={escrow.id}
-                            escrow={escrow}
-                            getStatusBadge={getStatusBadge}
-                            onWithdrawComplete={() => mutate()}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </motion.div>
-        </>
+    <span
+      className={cn(
+        "px-2 py-0.5 text-[11px] font-medium rounded-full whitespace-nowrap",
+        c.bg,
+        c.text,
       )}
-    </AnimatePresence>
+    >
+      {c.label}
+    </span>
   );
 }
 
-function EscrowCard({
+// ── Countdown display (live-updating) ──────────────────────────────────
+
+function LiveCountdown({
+  deadline,
+  label,
+}: {
+  deadline: string | null;
+  label: string;
+}) {
+  const [countdown, setCountdown] = useState(() => getCountdown(deadline));
+
+  useEffect(() => {
+    if (!deadline) return;
+    setCountdown(getCountdown(deadline));
+    const interval = setInterval(() => {
+      setCountdown(getCountdown(deadline));
+    }, 30_000); // update every 30s
+    return () => clearInterval(interval);
+  }, [deadline]);
+
+  if (countdown.expired) return null;
+
+  return (
+    <div className="flex items-center gap-1.5 text-xs">
+      <ClockIcon className="w-3.5 h-3.5 text-neutral-400" />
+      <span className="text-neutral-500 dark:text-neutral-400">{label}</span>
+      <span
+        className={cn(
+          "font-medium tabular-nums",
+          countdown.total < 1000 * 60 * 60 * 2
+            ? "text-red-500"
+            : "text-neutral-700 dark:text-neutral-300",
+        )}
+      >
+        {formatCountdown(countdown)}
+      </span>
+    </div>
+  );
+}
+
+// ── Single escrow card ─────────────────────────────────────────────────
+
+function EscrowRow({
   escrow,
-  getStatusBadge,
+  onWithdrawComplete,
 }: {
   escrow: EscrowItem;
-  getStatusBadge: (status: string) => React.ReactNode;
+  onWithdrawComplete: () => void;
 }) {
+  const canWithdrawStatus =
+    escrow.status === "released" ||
+    (escrow.status === "accepted" &&
+      escrow.disputeDeadline &&
+      getCountdown(escrow.disputeDeadline).expired) ||
+    (escrow.status === "pending" &&
+      escrow.acceptDeadline &&
+      getCountdown(escrow.acceptDeadline).expired);
+
+  // Determine which deadline to show
+  let deadlineStr: string | null = null;
+  let deadlineLabel = "";
+  if (escrow.status === "pending" && escrow.acceptDeadline) {
+    deadlineStr = escrow.acceptDeadline;
+    deadlineLabel = "Accept in";
+  } else if (escrow.status === "accepted" && escrow.disputeDeadline) {
+    deadlineStr = escrow.disputeDeadline;
+    deadlineLabel = "Dispute window";
+  }
+
+  // border color per status
+  const borderColor =
+    escrow.status === "disputed"
+      ? "border-red-200 dark:border-red-800/50"
+      : escrow.status === "released"
+        ? "border-koru-lime/30"
+        : "border-neutral-200 dark:border-neutral-700";
+
   return (
-    <div className="bg-neutral-50 dark:bg-neutral-800/50 rounded-xl p-3 border border-neutral-200 dark:border-neutral-700">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <div
+      className={cn(
+        "rounded-xl p-3 border bg-neutral-50 dark:bg-neutral-800/50 transition-colors",
+        borderColor,
+      )}
+    >
+      {/* Top row: avatar + name | amount + badge */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5 min-w-0">
           {escrow.otherParty && (
             <OptimizedAvatar
               src={escrow.otherParty.profileImageUrl?.replace(
@@ -257,41 +240,67 @@ function EscrowCard({
               fallbackSeed={escrow.otherParty.username}
             />
           )}
-          <div>
-            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
               {escrow.otherParty?.name || "Unknown"}
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
               @{escrow.otherParty?.username || "user"}
             </p>
           </div>
         </div>
-        <div className="text-right">
+        <div className="text-right shrink-0">
           <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
             ${escrow.amount.toFixed(2)}
           </p>
-          <div className="flex items-center justify-end gap-2 mt-0.5">
-            {getStatusBadge(escrow.status)}
-            {escrow.hoursLeft !== null && escrow.hoursLeft > 0 && (
-              <span className="text-xs text-neutral-400">
-                {escrow.hoursLeft}h left
-              </span>
-            )}
-          </div>
+          <StatusBadge status={escrow.status} />
         </div>
       </div>
+
+      {/* Countdown row */}
+      {deadlineStr && (
+        <div className="mt-2">
+          <LiveCountdown deadline={deadlineStr} label={deadlineLabel} />
+        </div>
+      )}
+
+      {/* Withdraw button (only when withdrawable) */}
+      {canWithdrawStatus && escrow.isRecipient && (
+        <div className="mt-2.5">
+          <WithdrawButton
+            escrowId={escrow.escrowId}
+            onComplete={onWithdrawComplete}
+          />
+        </div>
+      )}
+
+      {/* Depositor reclaim for expired pending */}
+      {escrow.status === "pending" &&
+        !escrow.isRecipient &&
+        escrow.acceptDeadline &&
+        getCountdown(escrow.acceptDeadline).expired && (
+          <div className="mt-2.5">
+            <WithdrawButton
+              escrowId={escrow.escrowId}
+              onComplete={onWithdrawComplete}
+              label="Reclaim"
+            />
+          </div>
+        )}
     </div>
   );
 }
 
-function EscrowCardWithWithdraw({
-  escrow,
-  getStatusBadge,
-  onWithdrawComplete,
+// ── Withdraw button sub-component ──────────────────────────────────────
+
+function WithdrawButton({
+  escrowId,
+  onComplete,
+  label = "Withdraw",
 }: {
-  escrow: EscrowItem;
-  getStatusBadge: (status: string) => React.ReactNode;
-  onWithdrawComplete: () => void;
+  escrowId: number;
+  onComplete: () => void;
+  label?: string;
 }) {
   const {
     withdraw,
@@ -300,77 +309,244 @@ function EscrowCardWithWithdraw({
     isConfirming,
     isConfirmed,
     reset,
-  } = useWithdrawEscrow(BigInt(escrow.escrowId));
+  } = useWithdrawEscrow(BigInt(escrowId));
 
   useEffect(() => {
     if (isConfirmed) {
-      onWithdrawComplete();
+      onComplete();
       reset();
     }
-  }, [isConfirmed, onWithdrawComplete, reset]);
+  }, [isConfirmed, onComplete, reset]);
 
   const isProcessing = isSimulating || isPending || isConfirming;
 
   return (
-    <div className="bg-koru-lime/5 dark:bg-koru-lime/10 rounded-xl p-3 border border-koru-lime/30">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-3">
-          {escrow.otherParty && (
-            <OptimizedAvatar
-              src={escrow.otherParty.profileImageUrl?.replace(
-                "_normal",
-                "_400x400",
-              )}
-              alt={escrow.otherParty.name}
-              size={36}
-              fallbackSeed={escrow.otherParty.username}
-            />
-          )}
-          <div>
-            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-              {escrow.otherParty?.name || "Unknown"}
+    <Button
+      onClick={() => withdraw()}
+      disabled={isProcessing}
+      size="sm"
+      className="w-full bg-koru-lime text-neutral-900 hover:bg-koru-lime/90 h-8 text-xs font-medium"
+    >
+      {isSimulating
+        ? "Preparing..."
+        : isPending
+          ? "Confirm in wallet..."
+          : isConfirming
+            ? "Processing..."
+            : label}
+    </Button>
+  );
+}
+
+// ── Modal content (shared between dialog & drawer) ─────────────────────
+
+function ModalBody({ onClose }: { onClose: () => void }) {
+  const { data, error, mutate } = useSWR<{
+    escrows: EscrowItem[];
+    totals: { pending: number; ready: number; total: number };
+  }>("/api/user/escrows?role=all", fetcher, {
+    refreshInterval: 15_000,
+  });
+
+  const escrows = data?.escrows || [];
+  const totals = data?.totals || { pending: 0, ready: 0, total: 0 };
+
+  // Group escrows
+  const grouped = useMemo(() => {
+    const disputed = escrows.filter((e) => e.status === "disputed");
+    const pending = escrows.filter(
+      (e) => e.status === "pending" || e.status === "accepted",
+    );
+    const ready = escrows.filter((e) => e.status === "released");
+    return { disputed, pending, ready };
+  }, [escrows]);
+
+  const handleRefresh = useCallback(() => mutate(), [mutate]);
+
+  return (
+    <div className="flex flex-col">
+      {/* Totals */}
+      <div className="grid grid-cols-2 gap-3 px-5 pb-4">
+        <div className="bg-koru-golden/10 rounded-xl p-3 border border-koru-golden/20">
+          <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mb-0.5 uppercase tracking-wide font-medium">
+            In Escrow
+          </p>
+          <p className="text-xl font-semibold text-koru-golden tabular-nums">
+            ${totals.pending.toFixed(2)}
+          </p>
+        </div>
+        <div className="bg-koru-lime/10 rounded-xl p-3 border border-koru-lime/20">
+          <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mb-0.5 uppercase tracking-wide font-medium">
+            Ready
+          </p>
+          <p className="text-xl font-semibold text-koru-lime tabular-nums">
+            ${totals.ready.toFixed(2)}
+          </p>
+        </div>
+      </div>
+
+      {/* Scrollable list */}
+      <div className="overflow-y-auto px-5 pb-5" style={{ maxHeight: "50vh" }}>
+        {error ? (
+          <div className="text-center py-8">
+            <p className="text-neutral-500 dark:text-neutral-400">
+              Failed to load escrows
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              @{escrow.otherParty?.username || "user"}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-2"
+              onClick={handleRefresh}
+            >
+              Retry
+            </Button>
+          </div>
+        ) : !data ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-neutral-100 dark:bg-neutral-800 rounded-xl p-4 animate-pulse"
+              >
+                <div className="h-4 w-24 bg-neutral-200 dark:bg-neutral-700 rounded mb-2" />
+                <div className="h-6 w-16 bg-neutral-200 dark:bg-neutral-700 rounded" />
+              </div>
+            ))}
+          </div>
+        ) : escrows.length === 0 ? (
+          <div className="text-center py-10">
+            <WalletIcon className="w-12 h-12 mx-auto text-neutral-300 dark:text-neutral-600 mb-3" />
+            <p className="text-neutral-500 dark:text-neutral-400 font-medium">
+              No active escrows
+            </p>
+            <p className="text-sm text-neutral-400 dark:text-neutral-500 mt-1">
+              Payments you send or receive will appear here
             </p>
           </div>
-        </div>
-        <p className="text-lg font-semibold text-koru-lime">
-          ${escrow.amount.toFixed(2)}
-        </p>
+        ) : (
+          <div className="space-y-5">
+            {/* Disputed */}
+            {grouped.disputed.length > 0 && (
+              <Section
+                icon={<AlertIcon className="w-4 h-4 text-red-500" />}
+                title={`Disputed (${grouped.disputed.length})`}
+                titleColor="text-red-600 dark:text-red-400"
+              >
+                {grouped.disputed.map((e) => (
+                  <EscrowRow
+                    key={e.id}
+                    escrow={e}
+                    onWithdrawComplete={handleRefresh}
+                  />
+                ))}
+              </Section>
+            )}
+
+            {/* In Escrow */}
+            {grouped.pending.length > 0 && (
+              <Section
+                icon={<ClockIcon className="w-4 h-4 text-koru-golden" />}
+                title={`In Escrow (${grouped.pending.length})`}
+              >
+                {grouped.pending.map((e) => (
+                  <EscrowRow
+                    key={e.id}
+                    escrow={e}
+                    onWithdrawComplete={handleRefresh}
+                  />
+                ))}
+              </Section>
+            )}
+
+            {/* Ready to Withdraw */}
+            {grouped.ready.length > 0 && (
+              <Section
+                icon={<CheckIcon className="w-4 h-4 text-koru-lime" />}
+                title={`Ready to Withdraw (${grouped.ready.length})`}
+              >
+                {grouped.ready.map((e) => (
+                  <EscrowRow
+                    key={e.id}
+                    escrow={e}
+                    onWithdrawComplete={handleRefresh}
+                  />
+                ))}
+              </Section>
+            )}
+          </div>
+        )}
       </div>
-      <Button
-        onClick={() => withdraw()}
-        disabled={isProcessing}
-        size="sm"
-        className="w-full bg-koru-lime text-neutral-900 hover:bg-koru-lime/90"
-      >
-        {isSimulating
-          ? "Preparing..."
-          : isPending
-            ? "Confirm in wallet..."
-            : isConfirming
-              ? "Withdrawing..."
-              : "Withdraw"}
-      </Button>
     </div>
   );
 }
 
-// Icons
-function CloseIcon({ className }: { className?: string }) {
+function Section({
+  icon,
+  title,
+  titleColor,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  titleColor?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <path d="M18 6 6 18M6 6l12 12" />
-    </svg>
+    <div>
+      <h3
+        className={cn(
+          "text-sm font-medium mb-2 flex items-center gap-2",
+          titleColor || "text-neutral-700 dark:text-neutral-300",
+        )}
+      >
+        {icon}
+        {title}
+      </h3>
+      <div className="space-y-2">{children}</div>
+    </div>
   );
 }
+
+// ── Main export ────────────────────────────────────────────────────────
+
+export function EscrowDetailsModal({
+  isOpen,
+  onClose,
+}: EscrowDetailsModalProps) {
+  const isDesktop = useMediaQuery("(min-width: 640px)");
+
+  if (isDesktop) {
+    return (
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
+          <DialogHeader className="p-5 pb-3">
+            <DialogTitle>Escrow Details</DialogTitle>
+            <DialogDescription>
+              Your active escrow payments and withdrawals
+            </DialogDescription>
+          </DialogHeader>
+          <ModalBody onClose={onClose} />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DrawerContent>
+        <DrawerHeader className="text-left px-5">
+          <DrawerTitle>Escrow Details</DrawerTitle>
+          <DrawerDescription>
+            Your active escrow payments and withdrawals
+          </DrawerDescription>
+        </DrawerHeader>
+        <ModalBody onClose={onClose} />
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
+// ── Icons ──────────────────────────────────────────────────────────────
 
 function ClockIcon({ className }: { className?: string }) {
   return (
@@ -397,6 +573,22 @@ function CheckIcon({ className }: { className?: string }) {
       strokeWidth="2"
     >
       <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function AlertIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
     </svg>
   );
 }

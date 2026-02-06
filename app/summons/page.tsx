@@ -446,7 +446,7 @@ export default function SummonsPage() {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 20 }}
                     transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                    className="w-full max-w-lg pointer-events-auto my-8"
+                    className="w-full max-w-lg pointer-events-auto my-8 max-h-[85vh] overflow-y-auto"
                   >
                     <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden">
                       <div className="relative bg-gradient-to-r from-koru-purple/20 via-koru-golden/10 to-koru-purple/20 p-6 pb-8">
@@ -1023,7 +1023,7 @@ export default function SummonsPage() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                className="w-full max-w-sm pointer-events-auto"
+                className="w-full max-w-sm pointer-events-auto max-h-[85vh] overflow-y-auto"
               >
                 <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden">
                   <div className="p-5">

@@ -587,7 +587,7 @@ export function BookingModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="p-0 gap-0 transition-all duration-300 w-fit min-w-[320px]">
+      <DialogContent className="p-0 gap-0 transition-all duration-300 w-fit min-w-[320px] max-h-[85vh] overflow-y-auto">
         <DialogTitle className="sr-only">Book a Session</DialogTitle>
         <AnimatePresence mode="wait" initial={false}>
           {/* Step 1: Select Slot */}
