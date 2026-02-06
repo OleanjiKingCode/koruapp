@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAccount } from "wagmi";
 import { Address, formatUnits } from "viem";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
@@ -25,6 +26,7 @@ import {
   useContractEscrows,
   type ContractEscrowItem,
 } from "@/lib/hooks/use-koru-escrow";
+import { useTransactions } from "@/lib/hooks/use-transactions";
 import { EscrowStatus } from "@/lib/contracts/koru-escrow";
 
 // ── Helpers ─────────────────────────────────────────────────────────────
@@ -35,6 +37,12 @@ function fmtUsdc(amount: bigint): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+}
+
+/** Calculate net amount after fee (what recipient actually receives) */
+function calcNetAmount(amount: bigint, feeBps: number): bigint {
+  const fee = (amount * BigInt(feeBps)) / BigInt(10000);
+  return amount - fee;
 }
 
 function shortenAddress(addr: string): string {
@@ -236,9 +244,22 @@ function EscrowRow({
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-            ${fmtUsdc(escrow.amount)}
-          </p>
+          {escrow.isRecipient ? (
+            <>
+              <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                ${fmtUsdc(calcNetAmount(escrow.amount, escrow.feeBps))}
+              </p>
+              {escrow.feeBps > 0 && (
+                <p className="text-[10px] text-neutral-400 dark:text-neutral-500 line-through">
+                  ${fmtUsdc(escrow.amount)}
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+              ${fmtUsdc(escrow.amount)}
+            </p>
+          )}
           <StatusBadge status={effective} />
         </div>
       </div>
@@ -256,6 +277,12 @@ function EscrowRow({
           <WithdrawButton
             escrowId={escrow.escrowId}
             onComplete={onWithdrawComplete}
+            amountUsdc={Number(formatUnits(escrow.amount, 6))}
+            netAmountUsdc={Number(
+              formatUnits(calcNetAmount(escrow.amount, escrow.feeBps), 6),
+            )}
+            counterpartyAddress={otherAddress}
+            isRecipient={true}
           />
         </div>
       )}
@@ -267,6 +294,10 @@ function EscrowRow({
             escrowId={escrow.escrowId}
             onComplete={onWithdrawComplete}
             label="Reclaim"
+            amountUsdc={Number(formatUnits(escrow.amount, 6))}
+            netAmountUsdc={Number(formatUnits(escrow.amount, 6))}
+            counterpartyAddress={otherAddress}
+            isRecipient={false}
           />
         </div>
       )}
@@ -280,10 +311,18 @@ function WithdrawButton({
   escrowId,
   onComplete,
   label = "Withdraw",
+  amountUsdc,
+  netAmountUsdc,
+  counterpartyAddress,
+  isRecipient,
 }: {
   escrowId: number;
   onComplete: () => void;
   label?: string;
+  amountUsdc: number;
+  netAmountUsdc: number;
+  counterpartyAddress: string;
+  isRecipient: boolean;
 }) {
   const {
     withdraw,
@@ -291,15 +330,69 @@ function WithdrawButton({
     isPending,
     isConfirming,
     isConfirmed,
+    simError,
+    writeError,
+    txHash,
     reset,
   } = useWithdrawEscrow(BigInt(escrowId));
+  const { addTransaction } = useTransactions();
 
   useEffect(() => {
     if (isConfirmed) {
-      onComplete();
+      toast.success(
+        label === "Reclaim"
+          ? "Funds reclaimed successfully!"
+          : "Withdrawal successful!",
+      );
+
+      // Record the transaction
+      addTransaction({
+        type: label === "Reclaim" ? "refund" : "withdrawal",
+        amount: label === "Reclaim" ? amountUsdc : netAmountUsdc,
+        personId: counterpartyAddress,
+        personName: shortenAddress(counterpartyAddress),
+        personHandle: counterpartyAddress,
+        slotName: `Escrow #${escrowId}`,
+        date: new Date().toLocaleDateString(),
+        time: new Date().toLocaleTimeString(),
+        status: "completed",
+      });
+
+      // Small delay so wagmi caches can invalidate before we refetch
+      setTimeout(() => {
+        onComplete();
+        reset();
+      }, 2000);
+    }
+  }, [
+    isConfirmed,
+    onComplete,
+    reset,
+    label,
+    addTransaction,
+    escrowId,
+    amountUsdc,
+    netAmountUsdc,
+    counterpartyAddress,
+  ]);
+
+  // Show error toasts
+  useEffect(() => {
+    if (simError) {
+      toast.error("Transaction failed to prepare. Please try again.");
       reset();
     }
-  }, [isConfirmed, onComplete, reset]);
+  }, [simError, reset]);
+
+  useEffect(() => {
+    if (writeError) {
+      const msg = writeError.message?.includes("User rejected")
+        ? "Transaction was rejected."
+        : "Transaction failed. Please try again.";
+      toast.error(msg);
+      reset();
+    }
+  }, [writeError, reset]);
 
   const isProcessing = isSimulating || isPending || isConfirming;
 
@@ -316,7 +409,9 @@ function WithdrawButton({
           ? "Confirm in wallet..."
           : isConfirming
             ? "Processing..."
-            : label}
+            : isConfirmed
+              ? "Done!"
+              : label}
     </Button>
   );
 }
@@ -330,21 +425,22 @@ function ModalBody() {
   );
 
   // Compute totals using effectiveStatus + contract withdraw flags
+  // Show NET amounts (after fee) for the recipient — what they'll actually receive
   const totals = useMemo(() => {
     let pending = BigInt(0);
     let ready = BigInt(0);
     for (const e of escrows) {
       if (e.isRecipient) {
-        // If contract says recipient can withdraw => ready
+        const net = calcNetAmount(e.amount, e.feeBps);
         if (e.canRecipientWithdraw) {
-          ready += e.amount;
+          ready += net;
         } else if (
           e.effectiveStatus === EscrowStatus.Pending ||
           e.effectiveStatus === EscrowStatus.Accepted
         ) {
-          pending += e.amount;
+          pending += net;
         } else if (e.effectiveStatus === EscrowStatus.Released) {
-          ready += e.amount;
+          ready += net;
         }
       }
     }
@@ -378,7 +474,7 @@ function ModalBody() {
   return (
     <div className="flex flex-col">
       {/* Totals */}
-      <div className="grid grid-cols-2 gap-3 px-5 pb-4">
+      <div className="grid grid-cols-2 gap-2 px-3 pb-3">
         <div className="bg-koru-golden/10 rounded-xl p-3 border border-koru-golden/20">
           <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mb-0.5 uppercase tracking-wide font-medium">
             In Escrow
@@ -398,7 +494,7 @@ function ModalBody() {
       </div>
 
       {/* Scrollable list */}
-      <div className="overflow-y-auto px-5 pb-5" style={{ maxHeight: "50vh" }}>
+      <div className="overflow-y-auto px-3 pb-3" style={{ maxHeight: "50vh" }}>
         {error ? (
           <div className="text-center py-8">
             <p className="text-neutral-500 dark:text-neutral-400">
@@ -536,7 +632,7 @@ export function EscrowDetailsModal({
     return (
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
-          <DialogHeader className="p-5 pb-3">
+          <DialogHeader className="px-3 pt-3 pb-2">
             <DialogTitle>Escrow Details</DialogTitle>
             <DialogDescription>
               Your active escrow payments and withdrawals
@@ -551,7 +647,7 @@ export function EscrowDetailsModal({
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DrawerContent>
-        <DrawerHeader className="text-left px-5">
+        <DrawerHeader className="text-left px-3">
           <DrawerTitle>Escrow Details</DrawerTitle>
           <DrawerDescription>
             Your active escrow payments and withdrawals

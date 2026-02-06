@@ -1269,23 +1269,29 @@ export function useContractPendingBalance(walletAddress?: Address) {
 
   const count = escrowCount !== undefined ? Number(escrowCount) : 0;
 
-  // Step 2: build contract calls for all escrows + their effective statuses
+  // Step 2: build contract calls for all escrows
+  // 3 calls per escrow: getEscrow, getEffectiveStatus, canRecipientWithdraw
+  const CALLS_PER_ESCROW = 3;
   const contracts = useMemo(() => {
     if (count === 0) return [];
     const calls = [];
     for (let i = 0; i < count; i++) {
-      // getEscrow
       calls.push({
         address: escrowAddress,
         abi: KORU_ESCROW_ABI,
         functionName: "getEscrow" as const,
         args: [BigInt(i)] as const,
       });
-      // getEffectiveStatus
       calls.push({
         address: escrowAddress,
         abi: KORU_ESCROW_ABI,
         functionName: "getEffectiveStatus" as const,
+        args: [BigInt(i)] as const,
+      });
+      calls.push({
+        address: escrowAddress,
+        abi: KORU_ESCROW_ABI,
+        functionName: "canRecipientWithdraw" as const,
         args: [BigInt(i)] as const,
       });
     }
@@ -1315,8 +1321,9 @@ export function useContractPendingBalance(walletAddress?: Address) {
     let totalReady = BigInt(0);
 
     for (let i = 0; i < count; i++) {
-      const escrowResult = batchData[i * 2];
-      const statusResult = batchData[i * 2 + 1];
+      const escrowResult = batchData[i * CALLS_PER_ESCROW];
+      const statusResult = batchData[i * CALLS_PER_ESCROW + 1];
+      const canWithdrawResult = batchData[i * CALLS_PER_ESCROW + 2];
 
       if (
         escrowResult?.status !== "success" ||
@@ -1327,18 +1334,28 @@ export function useContractPendingBalance(walletAddress?: Address) {
 
       const escrow = escrowResult.result as Escrow;
       const effectiveStatus = Number(statusResult.result) as EscrowStatus;
+      const canWithdraw =
+        canWithdrawResult?.status === "success"
+          ? (canWithdrawResult.result as boolean)
+          : false;
       const isRecipient = escrow.recipient.toLowerCase() === normalizedWallet;
 
       if (!isRecipient) continue;
 
-      // Use effective status (accounts for expired windows)
-      if (
+      // Show net amount (after fee) — what the recipient will actually receive
+      const fee = (escrow.amount * BigInt(escrow.feeBps)) / BigInt(10000);
+      const netAmount = escrow.amount - fee;
+
+      // If contract says recipient can withdraw, it's ready regardless of status label
+      if (canWithdraw) {
+        totalReady += netAmount;
+      } else if (
         effectiveStatus === EscrowStatus.Pending ||
         effectiveStatus === EscrowStatus.Accepted
       ) {
-        totalPending += escrow.amount;
+        totalPending += netAmount;
       } else if (effectiveStatus === EscrowStatus.Released) {
-        totalReady += escrow.amount;
+        totalReady += netAmount;
       }
     }
 

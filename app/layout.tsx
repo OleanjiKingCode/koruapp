@@ -8,6 +8,7 @@ import { PrivyProvider } from "@/components/providers/privy-provider";
 import { ModalProvider } from "@/lib/contexts/modal-context";
 import { AppShell } from "@/components/shared";
 import { CookieConsentModal } from "@/components/cookie-consent-modal";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const quicksand = Quicksand({
@@ -121,6 +122,16 @@ export default function RootLayout({
               <ModalProvider>
                 <AppShell>{children}</AppShell>
                 <CookieConsentModal />
+                <Toaster
+                  position="top-center"
+                  toastOptions={{
+                    style: {
+                      fontFamily: "var(--font-quicksand)",
+                    },
+                  }}
+                  richColors
+                  closeButton
+                />
               </ModalProvider>
             </PrivyProvider>
           </ThemeProvider>

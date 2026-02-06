@@ -12,7 +12,6 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@solana/kit": "^5.0.0",
     "@hugeicons/core-free-icons": "^3.1.1",
     "@hugeicons/react": "^1.1.4",
     "@privy-io/popup": "^0.0.2",
@@ -25,6 +24,7 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tabs": "^1.1.13",
     "@sentry/nextjs": "^10",
+    "@solana/kit": "^5.0.0",
     "@supabase/supabase-js": "^2.89.0",
     "@tanstack/query-core": "^5.90.0",
     "@tanstack/react-query": "^5.90.20",
@@ -44,6 +44,7 @@
     "react-icons": "^5.5.0",
     "resend": "^6.8.0",
     "rough-notation": "^0.5.1",
+    "sonner": "^2.0.7",
     "swr": "^2.3.8",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
