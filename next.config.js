@@ -1,5 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  webpack: (config) => {
+    // Privy bundles Solana modules we don't use (Koru only uses Base chain).
+    // Stub them out to avoid missing-module build errors.
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      "@solana-program/system": false,
+      "@solana-program/token": false,
+      "@solana/kit": false,
+    };
+    return config;
+  },
   images: {
     remotePatterns: [
       {
