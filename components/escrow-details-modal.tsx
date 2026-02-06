@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import useSWR from "swr";
+import { useAccount } from "wagmi";
+import { Address, formatUnits } from "viem";
 import { Button } from "@/components/ui/button";
-import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import {
@@ -22,40 +22,26 @@ import {
 } from "@/components/ui/drawer";
 import {
   useWithdrawEscrow,
-  formatUsdcAmount,
+  useContractEscrows,
+  type ContractEscrowItem,
 } from "@/lib/hooks/use-koru-escrow";
+import { EscrowStatus } from "@/lib/contracts/koru-escrow";
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+// ── Helpers ─────────────────────────────────────────────────────────────
 
-// ── Types ──────────────────────────────────────────────────────────────
-
-interface EscrowItem {
-  id: string;
-  escrowId: number;
-  amount: number;
-  status: string;
-  acceptDeadline: string | null;
-  disputeDeadline: string | null;
-  acceptedAt: string | null;
-  hoursLeft: number | null;
-  chatId: string | null;
-  isRecipient: boolean;
-  description: string | null;
-  createdAt: string;
-  otherParty: {
-    id: string;
-    name: string;
-    username: string;
-    profileImageUrl: string | null;
-  } | null;
+function fmtUsdc(amount: bigint): string {
+  const num = Number(formatUnits(amount, 6));
+  return num.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
-interface EscrowDetailsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+function shortenAddress(addr: string): string {
+  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 }
 
-// ── Countdown helper ───────────────────────────────────────────────────
+// ── Countdown helpers ───────────────────────────────────────────────────
 
 interface Countdown {
   days: number;
@@ -65,10 +51,10 @@ interface Countdown {
   expired: boolean;
 }
 
-function getCountdown(deadline: string | null): Countdown {
-  if (!deadline)
+function getCountdown(deadlineUnixSeconds: number): Countdown {
+  if (deadlineUnixSeconds === 0)
     return { days: 0, hours: 0, minutes: 0, total: 0, expired: true };
-  const diff = new Date(deadline).getTime() - Date.now();
+  const diff = deadlineUnixSeconds * 1000 - Date.now();
   if (diff <= 0)
     return { days: 0, hours: 0, minutes: 0, total: 0, expired: true };
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -86,49 +72,51 @@ function formatCountdown(c: Countdown): string {
   return parts.join(" ");
 }
 
-// ── Status badge ───────────────────────────────────────────────────────
+// ── Status badge ────────────────────────────────────────────────────────
 
-function StatusBadge({ status }: { status: string }) {
-  const config: Record<string, { bg: string; text: string; label: string }> = {
-    pending: {
-      bg: "bg-amber-100 dark:bg-amber-900/30",
-      text: "text-amber-700 dark:text-amber-400",
-      label: "Awaiting Accept",
-    },
-    accepted: {
-      bg: "bg-blue-100 dark:bg-blue-900/30",
-      text: "text-blue-700 dark:text-blue-400",
-      label: "Accepted",
-    },
-    released: {
-      bg: "bg-koru-lime/20",
-      text: "text-koru-lime",
-      label: "Ready",
-    },
-    disputed: {
-      bg: "bg-red-100 dark:bg-red-900/30",
-      text: "text-red-600 dark:text-red-400",
-      label: "Disputed",
-    },
-    completed: {
-      bg: "bg-neutral-100 dark:bg-neutral-800",
-      text: "text-neutral-600 dark:text-neutral-400",
-      label: "Completed",
-    },
-    cancelled: {
-      bg: "bg-neutral-100 dark:bg-neutral-800",
-      text: "text-neutral-500 dark:text-neutral-500",
-      label: "Cancelled",
-    },
-    expired: {
-      bg: "bg-neutral-100 dark:bg-neutral-800",
-      text: "text-neutral-500 dark:text-neutral-500",
-      label: "Expired",
-    },
-  };
+const STATUS_MAP: Record<
+  EscrowStatus,
+  { bg: string; text: string; label: string }
+> = {
+  [EscrowStatus.Pending]: {
+    bg: "bg-amber-100 dark:bg-amber-900/30",
+    text: "text-amber-700 dark:text-amber-400",
+    label: "Awaiting Accept",
+  },
+  [EscrowStatus.Accepted]: {
+    bg: "bg-blue-100 dark:bg-blue-900/30",
+    text: "text-blue-700 dark:text-blue-400",
+    label: "Accepted",
+  },
+  [EscrowStatus.Released]: {
+    bg: "bg-koru-lime/20",
+    text: "text-koru-lime",
+    label: "Ready",
+  },
+  [EscrowStatus.Disputed]: {
+    bg: "bg-red-100 dark:bg-red-900/30",
+    text: "text-red-600 dark:text-red-400",
+    label: "Disputed",
+  },
+  [EscrowStatus.Completed]: {
+    bg: "bg-neutral-100 dark:bg-neutral-800",
+    text: "text-neutral-600 dark:text-neutral-400",
+    label: "Completed",
+  },
+  [EscrowStatus.Cancelled]: {
+    bg: "bg-neutral-100 dark:bg-neutral-800",
+    text: "text-neutral-500 dark:text-neutral-500",
+    label: "Cancelled",
+  },
+  [EscrowStatus.Expired]: {
+    bg: "bg-neutral-100 dark:bg-neutral-800",
+    text: "text-neutral-500 dark:text-neutral-500",
+    label: "Expired",
+  },
+};
 
-  const c = config[status] || config.pending;
-
+function StatusBadge({ status }: { status: EscrowStatus }) {
+  const c = STATUS_MAP[status] || STATUS_MAP[EscrowStatus.Pending];
   return (
     <span
       className={cn(
@@ -142,25 +130,25 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-// ── Countdown display (live-updating) ──────────────────────────────────
+// ── Live countdown display ──────────────────────────────────────────────
 
 function LiveCountdown({
-  deadline,
+  deadlineUnix,
   label,
 }: {
-  deadline: string | null;
+  deadlineUnix: number;
   label: string;
 }) {
-  const [countdown, setCountdown] = useState(() => getCountdown(deadline));
+  const [countdown, setCountdown] = useState(() => getCountdown(deadlineUnix));
 
   useEffect(() => {
-    if (!deadline) return;
-    setCountdown(getCountdown(deadline));
+    if (deadlineUnix === 0) return;
+    setCountdown(getCountdown(deadlineUnix));
     const interval = setInterval(() => {
-      setCountdown(getCountdown(deadline));
-    }, 30_000); // update every 30s
+      setCountdown(getCountdown(deadlineUnix));
+    }, 30_000);
     return () => clearInterval(interval);
-  }, [deadline]);
+  }, [deadlineUnix]);
 
   if (countdown.expired) return null;
 
@@ -182,42 +170,51 @@ function LiveCountdown({
   );
 }
 
-// ── Single escrow card ─────────────────────────────────────────────────
+// ── Single escrow card ──────────────────────────────────────────────────
 
 function EscrowRow({
   escrow,
   onWithdrawComplete,
 }: {
-  escrow: EscrowItem;
+  escrow: ContractEscrowItem;
   onWithdrawComplete: () => void;
 }) {
-  const canWithdrawStatus =
-    escrow.status === "released" ||
-    (escrow.status === "accepted" &&
-      escrow.disputeDeadline &&
-      getCountdown(escrow.disputeDeadline).expired) ||
-    (escrow.status === "pending" &&
-      escrow.acceptDeadline &&
-      getCountdown(escrow.acceptDeadline).expired);
+  // Can recipient withdraw?
+  const canRecipientWithdraw =
+    escrow.isRecipient &&
+    (escrow.status === EscrowStatus.Released ||
+      (escrow.status === EscrowStatus.Accepted &&
+        escrow.disputeDeadline > 0 &&
+        getCountdown(escrow.disputeDeadline).expired));
+
+  // Can depositor reclaim?
+  const canDepositorReclaim =
+    !escrow.isRecipient &&
+    escrow.status === EscrowStatus.Pending &&
+    getCountdown(escrow.acceptDeadline).expired;
 
   // Determine which deadline to show
-  let deadlineStr: string | null = null;
+  let deadlineUnix = 0;
   let deadlineLabel = "";
-  if (escrow.status === "pending" && escrow.acceptDeadline) {
-    deadlineStr = escrow.acceptDeadline;
+  if (escrow.status === EscrowStatus.Pending) {
+    deadlineUnix = escrow.acceptDeadline;
     deadlineLabel = "Accept in";
-  } else if (escrow.status === "accepted" && escrow.disputeDeadline) {
-    deadlineStr = escrow.disputeDeadline;
+  } else if (
+    escrow.status === EscrowStatus.Accepted &&
+    escrow.disputeDeadline > 0
+  ) {
+    deadlineUnix = escrow.disputeDeadline;
     deadlineLabel = "Dispute window";
   }
 
-  // border color per status
   const borderColor =
-    escrow.status === "disputed"
+    escrow.status === EscrowStatus.Disputed
       ? "border-red-200 dark:border-red-800/50"
-      : escrow.status === "released"
+      : escrow.status === EscrowStatus.Released
         ? "border-koru-lime/30"
         : "border-neutral-200 dark:border-neutral-700";
+
+  const otherAddress = escrow.isRecipient ? escrow.depositor : escrow.recipient;
 
   return (
     <div
@@ -226,46 +223,41 @@ function EscrowRow({
         borderColor,
       )}
     >
-      {/* Top row: avatar + name | amount + badge */}
+      {/* Top row: address | amount + badge */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
-          {escrow.otherParty && (
-            <OptimizedAvatar
-              src={escrow.otherParty.profileImageUrl?.replace(
-                "_normal",
-                "_400x400",
-              )}
-              alt={escrow.otherParty.name}
-              size={36}
-              fallbackSeed={escrow.otherParty.username}
-            />
-          )}
+          {/* Colored avatar placeholder */}
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-koru-purple/60 to-koru-lime/60 flex items-center justify-center shrink-0">
+            <span className="text-[11px] font-bold text-white">
+              {escrow.isRecipient ? "IN" : "OUT"}
+            </span>
+          </div>
           <div className="min-w-0">
             <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
-              {escrow.otherParty?.name || "Unknown"}
+              {escrow.isRecipient ? "From" : "To"}
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
-              @{escrow.otherParty?.username || "user"}
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono truncate">
+              {shortenAddress(otherAddress)}
             </p>
           </div>
         </div>
         <div className="text-right shrink-0">
           <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-            ${escrow.amount.toFixed(2)}
+            ${fmtUsdc(escrow.amount)}
           </p>
           <StatusBadge status={escrow.status} />
         </div>
       </div>
 
       {/* Countdown row */}
-      {deadlineStr && (
+      {deadlineUnix > 0 && (
         <div className="mt-2">
-          <LiveCountdown deadline={deadlineStr} label={deadlineLabel} />
+          <LiveCountdown deadlineUnix={deadlineUnix} label={deadlineLabel} />
         </div>
       )}
 
-      {/* Withdraw button (only when withdrawable) */}
-      {canWithdrawStatus && escrow.isRecipient && (
+      {/* Withdraw button */}
+      {canRecipientWithdraw && (
         <div className="mt-2.5">
           <WithdrawButton
             escrowId={escrow.escrowId}
@@ -275,23 +267,20 @@ function EscrowRow({
       )}
 
       {/* Depositor reclaim for expired pending */}
-      {escrow.status === "pending" &&
-        !escrow.isRecipient &&
-        escrow.acceptDeadline &&
-        getCountdown(escrow.acceptDeadline).expired && (
-          <div className="mt-2.5">
-            <WithdrawButton
-              escrowId={escrow.escrowId}
-              onComplete={onWithdrawComplete}
-              label="Reclaim"
-            />
-          </div>
-        )}
+      {canDepositorReclaim && (
+        <div className="mt-2.5">
+          <WithdrawButton
+            escrowId={escrow.escrowId}
+            onComplete={onWithdrawComplete}
+            label="Reclaim"
+          />
+        </div>
+      )}
     </div>
   );
 }
 
-// ── Withdraw button sub-component ──────────────────────────────────────
+// ── Withdraw button ─────────────────────────────────────────────────────
 
 function WithdrawButton({
   escrowId,
@@ -338,30 +327,45 @@ function WithdrawButton({
   );
 }
 
-// ── Modal content (shared between dialog & drawer) ─────────────────────
+// ── Modal content (shared between dialog & drawer) ──────────────────────
 
-function ModalBody({ onClose }: { onClose: () => void }) {
-  const { data, error, mutate } = useSWR<{
-    escrows: EscrowItem[];
-    totals: { pending: number; ready: number; total: number };
-  }>("/api/user/escrows?role=all", fetcher, {
-    refreshInterval: 15_000,
-  });
+function ModalBody() {
+  const { address } = useAccount();
+  const { escrows, isLoading, error, refetch } = useContractEscrows(
+    address as Address | undefined,
+  );
 
-  const escrows = data?.escrows || [];
-  const totals = data?.totals || { pending: 0, ready: 0, total: 0 };
-
-  // Group escrows
-  const grouped = useMemo(() => {
-    const disputed = escrows.filter((e) => e.status === "disputed");
-    const pending = escrows.filter(
-      (e) => e.status === "pending" || e.status === "accepted",
-    );
-    const ready = escrows.filter((e) => e.status === "released");
-    return { disputed, pending, ready };
+  // Compute totals from contract data
+  const totals = useMemo(() => {
+    let pending = BigInt(0);
+    let ready = BigInt(0);
+    for (const e of escrows) {
+      if (e.isRecipient) {
+        if (
+          e.status === EscrowStatus.Pending ||
+          e.status === EscrowStatus.Accepted
+        ) {
+          pending += e.amount;
+        } else if (e.status === EscrowStatus.Released) {
+          ready += e.amount;
+        }
+      }
+    }
+    return { pending, ready };
   }, [escrows]);
 
-  const handleRefresh = useCallback(() => mutate(), [mutate]);
+  // Group escrows by category
+  const grouped = useMemo(() => {
+    const disputed = escrows.filter((e) => e.status === EscrowStatus.Disputed);
+    const inEscrow = escrows.filter(
+      (e) =>
+        e.status === EscrowStatus.Pending || e.status === EscrowStatus.Accepted,
+    );
+    const ready = escrows.filter((e) => e.status === EscrowStatus.Released);
+    return { disputed, inEscrow, ready };
+  }, [escrows]);
+
+  const handleRefresh = useCallback(() => refetch(), [refetch]);
 
   return (
     <div className="flex flex-col">
@@ -372,7 +376,7 @@ function ModalBody({ onClose }: { onClose: () => void }) {
             In Escrow
           </p>
           <p className="text-xl font-semibold text-koru-golden tabular-nums">
-            ${totals.pending.toFixed(2)}
+            ${fmtUsdc(totals.pending)}
           </p>
         </div>
         <div className="bg-koru-lime/10 rounded-xl p-3 border border-koru-lime/20">
@@ -380,7 +384,7 @@ function ModalBody({ onClose }: { onClose: () => void }) {
             Ready
           </p>
           <p className="text-xl font-semibold text-koru-lime tabular-nums">
-            ${totals.ready.toFixed(2)}
+            ${fmtUsdc(totals.ready)}
           </p>
         </div>
       </div>
@@ -390,7 +394,7 @@ function ModalBody({ onClose }: { onClose: () => void }) {
         {error ? (
           <div className="text-center py-8">
             <p className="text-neutral-500 dark:text-neutral-400">
-              Failed to load escrows
+              Failed to load escrows from contract
             </p>
             <Button
               variant="ghost"
@@ -401,7 +405,7 @@ function ModalBody({ onClose }: { onClose: () => void }) {
               Retry
             </Button>
           </div>
-        ) : !data ? (
+        ) : isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
               <div
@@ -434,7 +438,7 @@ function ModalBody({ onClose }: { onClose: () => void }) {
               >
                 {grouped.disputed.map((e) => (
                   <EscrowRow
-                    key={e.id}
+                    key={e.escrowId}
                     escrow={e}
                     onWithdrawComplete={handleRefresh}
                   />
@@ -443,14 +447,14 @@ function ModalBody({ onClose }: { onClose: () => void }) {
             )}
 
             {/* In Escrow */}
-            {grouped.pending.length > 0 && (
+            {grouped.inEscrow.length > 0 && (
               <Section
                 icon={<ClockIcon className="w-4 h-4 text-koru-golden" />}
-                title={`In Escrow (${grouped.pending.length})`}
+                title={`In Escrow (${grouped.inEscrow.length})`}
               >
-                {grouped.pending.map((e) => (
+                {grouped.inEscrow.map((e) => (
                   <EscrowRow
-                    key={e.id}
+                    key={e.escrowId}
                     escrow={e}
                     onWithdrawComplete={handleRefresh}
                   />
@@ -466,7 +470,7 @@ function ModalBody({ onClose }: { onClose: () => void }) {
               >
                 {grouped.ready.map((e) => (
                   <EscrowRow
-                    key={e.id}
+                    key={e.escrowId}
                     escrow={e}
                     onWithdrawComplete={handleRefresh}
                   />
@@ -507,7 +511,12 @@ function Section({
   );
 }
 
-// ── Main export ────────────────────────────────────────────────────────
+// ── Main export ─────────────────────────────────────────────────────────
+
+interface EscrowDetailsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
 
 export function EscrowDetailsModal({
   isOpen,
@@ -525,7 +534,7 @@ export function EscrowDetailsModal({
               Your active escrow payments and withdrawals
             </DialogDescription>
           </DialogHeader>
-          <ModalBody onClose={onClose} />
+          <ModalBody />
         </DialogContent>
       </Dialog>
     );
@@ -540,13 +549,13 @@ export function EscrowDetailsModal({
             Your active escrow payments and withdrawals
           </DrawerDescription>
         </DrawerHeader>
-        <ModalBody onClose={onClose} />
+        <ModalBody />
       </DrawerContent>
     </Drawer>
   );
 }
 
-// ── Icons ──────────────────────────────────────────────────────────────
+// ── Icons ───────────────────────────────────────────────────────────────
 
 function ClockIcon({ className }: { className?: string }) {
   return (

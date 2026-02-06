@@ -1356,3 +1356,158 @@ export function useContractPendingBalance(walletAddress?: Address) {
     refetch: fetchBalances,
   };
 }
+
+// =============================================================================
+// CONTRACT ESCROW LIST (for modal — reads all escrows from chain)
+// =============================================================================
+
+export interface ContractEscrowItem {
+  escrowId: number;
+  depositor: Address;
+  recipient: Address;
+  amount: bigint;
+  status: EscrowStatus;
+  createdAt: number;
+  acceptedAt: number;
+  disputedAt: number;
+  feeBps: number;
+  feeRecipient: Address;
+  /** Computed: is the current wallet the recipient? */
+  isRecipient: boolean;
+  /** accept deadline timestamp (seconds) */
+  acceptDeadline: number;
+  /** dispute deadline timestamp (seconds), 0 if not accepted */
+  disputeDeadline: number;
+}
+
+/**
+ * Hook that reads every escrow from the contract where the connected wallet
+ * is either depositor or recipient, returning full escrow details.
+ *
+ * This is the on-chain source of truth — no API/database involved.
+ */
+export function useContractEscrows(walletAddress?: Address) {
+  const publicClient = usePublicClient();
+  const [escrows, setEscrows] = useState<ContractEscrowItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const ACCEPT_WINDOW = 24 * 60 * 60; // 24 hours in seconds
+  const DISPUTE_WINDOW = 48 * 60 * 60; // 48 hours in seconds
+
+  const fetchEscrows = useCallback(async () => {
+    if (!walletAddress || !publicClient) {
+      setEscrows([]);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const escrowAddress = getContractAddress();
+      const normalizedWallet = walletAddress.toLowerCase();
+
+      // Get total escrow count
+      const escrowCount = await publicClient.readContract({
+        address: escrowAddress,
+        abi: KORU_ESCROW_ABI,
+        functionName: "getEscrowCount",
+      });
+
+      const count = Number(escrowCount);
+      if (count === 0) {
+        setEscrows([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Fetch all escrows in batches via multicall
+      const batchSize = 50;
+      const items: ContractEscrowItem[] = [];
+
+      for (let i = 0; i < count; i += batchSize) {
+        const batch = [];
+        for (let j = i; j < Math.min(i + batchSize, count); j++) {
+          batch.push({
+            address: escrowAddress,
+            abi: KORU_ESCROW_ABI,
+            functionName: "getEscrow" as const,
+            args: [BigInt(j)] as const,
+          });
+        }
+
+        const results = await publicClient.multicall({ contracts: batch });
+
+        for (let k = 0; k < results.length; k++) {
+          const result = results[k];
+          if (result.status === "success" && result.result) {
+            const escrow = result.result as Escrow;
+            const escrowId = i + k;
+            const isDepositor =
+              escrow.depositor.toLowerCase() === normalizedWallet;
+            const isRecipient =
+              escrow.recipient.toLowerCase() === normalizedWallet;
+
+            if (!isDepositor && !isRecipient) continue;
+
+            // Only include active statuses
+            const activeStatuses = [
+              EscrowStatus.Pending,
+              EscrowStatus.Accepted,
+              EscrowStatus.Released,
+              EscrowStatus.Disputed,
+            ];
+            if (!activeStatuses.includes(escrow.status)) continue;
+
+            const acceptDeadline = escrow.createdAt + ACCEPT_WINDOW;
+            const disputeDeadline =
+              escrow.acceptedAt > 0 ? escrow.acceptedAt + DISPUTE_WINDOW : 0;
+
+            items.push({
+              escrowId,
+              depositor: escrow.depositor,
+              recipient: escrow.recipient,
+              amount: escrow.amount,
+              status: escrow.status,
+              createdAt: escrow.createdAt,
+              acceptedAt: escrow.acceptedAt,
+              disputedAt: escrow.disputedAt,
+              feeBps: escrow.feeBps,
+              feeRecipient: escrow.feeRecipient,
+              isRecipient,
+              acceptDeadline,
+              disputeDeadline,
+            });
+          }
+        }
+      }
+
+      // Sort newest first
+      items.sort((a, b) => b.createdAt - a.createdAt);
+      setEscrows(items);
+    } catch (err) {
+      console.error("Error fetching contract escrows:", err);
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [walletAddress, publicClient]);
+
+  useEffect(() => {
+    fetchEscrows();
+  }, [fetchEscrows]);
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(fetchEscrows, 30000);
+    return () => clearInterval(interval);
+  }, [fetchEscrows]);
+
+  return {
+    escrows,
+    isLoading,
+    error,
+    refetch: fetchEscrows,
+  };
+}
