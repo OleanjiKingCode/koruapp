@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
@@ -493,9 +494,9 @@ export function AvailabilityModal({
   };
 
   const handleSaveAll = () => {
-    // Save all slots and call callback
     const data: AvailabilityData = { timezone, slots };
     onSave?.(data);
+    toast.success("Availability saved!");
     onOpenChange(false);
   };
 

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { OptimizedAvatar } from "@/components/ui/optimized-image";
@@ -132,7 +133,13 @@ function LoaderIcon({ className }: { className?: string }) {
 // Types
 interface Notification {
   id: string;
-  type: "message" | "payment" | "request" | "completed" | "summon_backed" | "summon_created";
+  type:
+    | "message"
+    | "payment"
+    | "request"
+    | "completed"
+    | "summon_backed"
+    | "summon_created";
   title: string;
   description: string | null;
   timeAgo: string;
@@ -200,7 +207,7 @@ function NotificationCard({
         "p-4 rounded-xl border transition-all cursor-pointer group",
         notification.read
           ? "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
-          : "bg-koru-purple/5 dark:bg-koru-purple/10 border-koru-purple/20 dark:border-koru-purple/30"
+          : "bg-koru-purple/5 dark:bg-koru-purple/10 border-koru-purple/20 dark:border-koru-purple/30",
       )}
     >
       <div className="flex items-start gap-4">
@@ -231,7 +238,7 @@ function NotificationCard({
                 "text-sm font-medium",
                 notification.read
                   ? "text-neutral-700 dark:text-neutral-300"
-                  : "text-neutral-900 dark:text-neutral-100"
+                  : "text-neutral-900 dark:text-neutral-100",
               )}
             >
               {notification.title}
@@ -295,14 +302,12 @@ export default function NotificationsPage() {
   }, [fetchNotifications]);
 
   const filteredNotifications =
-    filter === "unread"
-      ? notifications.filter((n) => !n.read)
-      : notifications;
+    filter === "unread" ? notifications.filter((n) => !n.read) : notifications;
 
   const handleMarkRead = async (id: string) => {
     // Optimistic update
     setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
     );
     setUnreadCount((prev) => Math.max(0, prev - 1));
 
@@ -332,6 +337,7 @@ export default function NotificationsPage() {
       });
     } catch (err) {
       console.error("Error marking all as read:", err);
+      toast.error("Failed to mark notifications as read.");
       // Revert on error
       fetchNotifications();
     }
@@ -391,7 +397,7 @@ export default function NotificationsPage() {
                 "px-4 py-2 rounded-lg text-sm font-medium transition-all",
                 filter === "all"
                   ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900"
-                  : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                  : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700",
               )}
             >
               All
@@ -402,7 +408,7 @@ export default function NotificationsPage() {
                 "px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2",
                 filter === "unread"
                   ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900"
-                  : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                  : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700",
               )}
             >
               Unread
@@ -412,7 +418,7 @@ export default function NotificationsPage() {
                     "text-xs px-1.5 py-0.5 rounded-full",
                     filter === "unread"
                       ? "bg-white/20"
-                      : "bg-koru-purple/10 text-koru-purple"
+                      : "bg-koru-purple/10 text-koru-purple",
                   )}
                 >
                   {unreadCount}
@@ -480,7 +486,9 @@ export default function NotificationsPage() {
                     <BellIcon className="w-8 h-8 text-neutral-400" />
                   </div>
                   <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-2">
-                    {filter === "unread" ? "All caught up!" : "No notifications yet"}
+                    {filter === "unread"
+                      ? "All caught up!"
+                      : "No notifications yet"}
                   </h3>
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">
                     {filter === "unread"

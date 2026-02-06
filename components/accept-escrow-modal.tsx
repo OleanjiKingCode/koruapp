@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useAcceptEscrow } from "@/lib/hooks/use-koru-escrow";
 import { CheckIcon, ClockIcon, DollarIcon } from "@/components/icons";
@@ -70,14 +71,20 @@ export function AcceptEscrowModal({
           });
 
           if (response.ok) {
+            toast.success("Escrow accepted!");
             onAccepted();
           } else {
             console.error("Failed to update chat status");
-            // Still call onAccepted since on-chain acceptance succeeded
+            toast.warning(
+              "Escrow accepted on-chain, but failed to update status.",
+            );
             onAccepted();
           }
         } catch (err) {
           console.error("Error updating database:", err);
+          toast.warning(
+            "Escrow accepted on-chain, but failed to update status.",
+          );
           onAccepted();
         } finally {
           setIsUpdatingDb(false);

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
+import { toast } from "sonner";
 import { useTheme } from "next-themes";
 import { SiFarcaster } from "react-icons/si";
 import { usePrivy } from "@privy-io/react-auth";
@@ -724,8 +725,11 @@ export default function ProfilePage() {
                               <button
                                 onClick={async () => {
                                   const result = await changeSyncedWallet();
-                                  if (!result.success && result.error) {
+                                  if (result.success) {
+                                    toast.success("Synced wallet updated!");
+                                  } else if (result.error) {
                                     console.error(result.error);
+                                    toast.error(result.error);
                                   }
                                 }}
                                 disabled={isChanging}
@@ -745,11 +749,13 @@ export default function ProfilePage() {
                               onClick={async () => {
                                 try {
                                   await privyLogout();
+                                  toast.success("Wallet disconnected.");
                                 } catch (error) {
                                   console.error(
                                     "Error disconnecting wallet:",
                                     error,
                                   );
+                                  toast.error("Failed to disconnect wallet.");
                                 }
                               }}
                               className="text-xs px-3 py-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all"
@@ -782,11 +788,13 @@ export default function ProfilePage() {
                           onClick={async () => {
                             try {
                               await privyLogout();
+                              toast.success("Wallet disconnected.");
                             } catch (error) {
                               console.error(
                                 "Error disconnecting wallet:",
                                 error,
                               );
+                              toast.error("Failed to disconnect wallet.");
                             }
                           }}
                           className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all shrink-0"
@@ -1330,9 +1338,22 @@ export default function ProfilePage() {
                                 : "text-koru-lime",
                           )}
                         >
-                          {tx.type === "refund" ? "+" : "-"}$
-                          {tx.amount.toFixed(2)}
+                          {tx.type === "refund"
+                            ? "+"
+                            : tx.type === "withdrawal"
+                              ? "+"
+                              : "-"}
+                          ${tx.amount.toFixed(2)}
                         </p>
+                        {tx.type === "withdrawal" &&
+                          tx.grossAmount &&
+                          tx.feeBps &&
+                          tx.feeBps > 0 && (
+                            <p className="text-[10px] text-neutral-400 dark:text-neutral-500">
+                              Gross ${tx.grossAmount.toFixed(2)} ·{" "}
+                              {(tx.feeBps / 100).toFixed(1)}% fee
+                            </p>
+                          )}
                         <p className="text-xs text-neutral-400 font-mono">
                           {tx.receiptId}
                         </p>

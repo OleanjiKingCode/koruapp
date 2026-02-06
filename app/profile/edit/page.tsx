@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
+import { toast } from "sonner";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -246,6 +247,7 @@ export default function EditProfilePage() {
       // Refresh user data to show updated values
       await refresh();
 
+      toast.success("Profile updated successfully!");
       setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);
@@ -253,8 +255,7 @@ export default function EditProfilePage() {
       }, 1500);
     } catch (error) {
       console.error("Error saving profile:", error);
-      // Show error message to user
-      alert(
+      toast.error(
         error instanceof Error
           ? error.message
           : "Failed to save profile. Please try again.",

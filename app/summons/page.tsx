@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import useSWR from "swr";
 import {
@@ -122,8 +123,6 @@ export default function SummonsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  // Back modal tags state
-  const [backSelectedTags, setBackSelectedTags] = useState<string[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -179,7 +178,6 @@ export default function SummonsPage() {
     setBackAmount("5");
     setBackReason("");
     setBackError(null);
-    setBackSelectedTags([]);
     setBackModalOpen(true);
   };
 
@@ -197,11 +195,6 @@ export default function SummonsPage() {
     const amount = parseFloat(backAmount);
     if (isNaN(amount) || amount < 1) {
       setBackError("Amount must be at least $1");
-      return;
-    }
-
-    if (backSelectedTags.length === 0) {
-      setBackError("Please select at least one tag");
       return;
     }
 
@@ -229,7 +222,6 @@ export default function SummonsPage() {
         body: JSON.stringify({
           summon_id: summonToBack.id,
           amount: amount,
-          tags: backSelectedTags,
           reason: trimmedReason,
         }),
       });
@@ -241,11 +233,12 @@ export default function SummonsPage() {
       }
 
       setBackModalOpen(false);
+      toast.success(`Successfully backed with $${amount}!`);
       mutate(); // Refresh the summons list
     } catch (err) {
-      setBackError(
-        err instanceof Error ? err.message : "Failed to back summon",
-      );
+      const msg = err instanceof Error ? err.message : "Failed to back summon";
+      setBackError(msg);
+      toast.error(msg);
     } finally {
       setIsBackingSubmitting(false);
     }
@@ -394,18 +387,20 @@ export default function SummonsPage() {
       const data = await response.json();
       if (data.summon) {
         setIsModalOpen(false);
-        // Refresh the summons list
+        toast.success("Summon created successfully!");
         mutate();
       } else {
         setError("Failed to create summon. Please try again.");
+        toast.error("Failed to create summon. Please try again.");
       }
     } catch (err) {
       console.error("Error creating summon:", err);
-      setError(
+      const msg =
         err instanceof Error
           ? err.message
-          : "An error occurred. Please try again.",
-      );
+          : "An error occurred. Please try again.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -1073,54 +1068,6 @@ export default function SummonsPage() {
                           </div>
                         )}
 
-                      {/* Tag selection for backer */}
-                      <div>
-                        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
-                          What interests you?
-                          {backSelectedTags.length > 0 && (
-                            <span className="ml-2 text-koru-purple">
-                              ({backSelectedTags.length} selected)
-                            </span>
-                          )}
-                        </label>
-                        <div className="max-h-32 overflow-y-auto p-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800">
-                          <div className="flex flex-wrap gap-1.5">
-                            {SUMMON_TAGS.map((tag) => {
-                              const isSelected = backSelectedTags.includes(tag);
-                              return (
-                                <button
-                                  key={tag}
-                                  type="button"
-                                  onClick={() => {
-                                    if (isSelected) {
-                                      setBackSelectedTags(
-                                        backSelectedTags.filter(
-                                          (t) => t !== tag,
-                                        ),
-                                      );
-                                    } else {
-                                      setBackSelectedTags([
-                                        ...backSelectedTags,
-                                        tag,
-                                      ]);
-                                    }
-                                  }}
-                                  className={cn(
-                                    "px-2 py-0.5 rounded-full text-xs font-medium transition-all",
-                                    isSelected
-                                      ? "bg-koru-purple text-white ring-2 ring-koru-purple/30"
-                                      : getTagColor(tag) +
-                                          " hover:ring-1 hover:ring-koru-purple/20",
-                                  )}
-                                >
-                                  {tag}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-
                       {/* Reason for backing */}
                       <div>
                         <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1 block">
@@ -1178,9 +1125,7 @@ export default function SummonsPage() {
                         <Button
                           className="flex-1 bg-koru-purple hover:bg-koru-purple/90"
                           onClick={handleSubmitBacking}
-                          disabled={
-                            isBackingSubmitting || backSelectedTags.length === 0
-                          }
+                          disabled={isBackingSubmitting}
                         >
                           {isBackingSubmitting
                             ? "Backing..."

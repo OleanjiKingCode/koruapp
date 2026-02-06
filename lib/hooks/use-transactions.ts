@@ -6,6 +6,10 @@ export interface Transaction {
   id: string;
   type: "payment" | "refund" | "withdrawal";
   amount: number;
+  /** Gross amount before fees (for withdrawals) */
+  grossAmount?: number;
+  /** Fee percentage in basis points (e.g. 500 = 5%) */
+  feeBps?: number;
   personId: string;
   personName: string;
   personHandle: string;
@@ -23,11 +27,11 @@ const DEFAULT_TRANSACTIONS: Transaction[] = [];
 export function useTransactions() {
   const [transactions, setTransactions] = useLocalStorage<Transaction[]>(
     "koru-transactions",
-    DEFAULT_TRANSACTIONS
+    DEFAULT_TRANSACTIONS,
   );
 
   const addTransaction = (
-    transaction: Omit<Transaction, "id" | "createdAt" | "receiptId">
+    transaction: Omit<Transaction, "id" | "createdAt" | "receiptId">,
   ) => {
     const now = new Date();
     const newTransaction: Transaction = {
@@ -43,7 +47,7 @@ export function useTransactions() {
 
   const updateTransaction = (id: string, updates: Partial<Transaction>) => {
     setTransactions((prev) =>
-      prev.map((tx) => (tx.id === id ? { ...tx, ...updates } : tx))
+      prev.map((tx) => (tx.id === id ? { ...tx, ...updates } : tx)),
     );
   };
 
@@ -73,10 +77,3 @@ export function useTransactions() {
     checkAutoRefunds,
   };
 }
-
-
-
-
-
-
-

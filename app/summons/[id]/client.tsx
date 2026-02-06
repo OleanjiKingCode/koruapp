@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -13,7 +14,7 @@ import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import { ShareModal } from "@/components/share";
 import { LoginModal } from "@/components/auth";
 import { cn, formatCurrency } from "@/lib/utils";
-import { getTagColor, SUMMON_TAGS, API_ROUTES, ROUTES } from "@/lib/constants";
+import { getTagColor, API_ROUTES, ROUTES } from "@/lib/constants";
 import type { Summon, SummonBacker } from "@/lib/types";
 
 // Extended summon type with additional fields
@@ -224,7 +225,7 @@ export function SummonDetailClient({
     {
       fallbackData: initialSummon ? { summon: initialSummon } : undefined,
       revalidateOnFocus: false,
-    }
+    },
   );
 
   const summon = data?.summon;
@@ -236,16 +237,13 @@ export function SummonDetailClient({
 
   // Back form state
   const [backAmount, setBackAmount] = useState("5");
-  const [backSelectedTags, setBackSelectedTags] = useState<string[]>([]);
   const [backError, setBackError] = useState<string | null>(null);
   const [isBackingSubmitting, setIsBackingSubmitting] = useState(false);
 
   // Check if user has already backed
   const hasUserBacked = () => {
     if (!session?.user?.dbId || !summon?.backersData) return false;
-    return summon.backersData.some(
-      (backer) => backer.id === session.user.dbId
-    );
+    return summon.backersData.some((backer) => backer.id === session.user.dbId);
   };
 
   const handleBack = () => {
@@ -255,7 +253,6 @@ export function SummonDetailClient({
     }
     setBackAmount("5");
     setBackError(null);
-    setBackSelectedTags([]);
     setBackModalOpen(true);
   };
 
@@ -271,11 +268,6 @@ export function SummonDetailClient({
       return;
     }
 
-    if (backSelectedTags.length === 0) {
-      setBackError("Please select at least one tag");
-      return;
-    }
-
     setIsBackingSubmitting(true);
     setBackError(null);
 
@@ -288,7 +280,6 @@ export function SummonDetailClient({
         body: JSON.stringify({
           summon_id: summon.id,
           amount: amount,
-          tags: backSelectedTags,
         }),
       });
 
@@ -299,11 +290,12 @@ export function SummonDetailClient({
       }
 
       setBackModalOpen(false);
+      toast.success(`Successfully backed with $${amount}!`);
       mutate(); // Refresh the summon data
     } catch (err) {
-      setBackError(
-        err instanceof Error ? err.message : "Failed to back summon"
-      );
+      const msg = err instanceof Error ? err.message : "Failed to back summon";
+      setBackError(msg);
+      toast.error(msg);
     } finally {
       setIsBackingSubmitting(false);
     }
@@ -365,8 +357,9 @@ export function SummonDetailClient({
 
   // Get sorted tags
   const sortedTags = summon.tags
-    ? Object.entries(summon.tags)
-        .sort(([, a], [, b]) => (b as number) - (a as number))
+    ? Object.entries(summon.tags).sort(
+        ([, a], [, b]) => (b as number) - (a as number),
+      )
     : [];
 
   return (
@@ -409,7 +402,7 @@ export function SummonDetailClient({
                       "text-xs font-medium",
                       summon.status === "active"
                         ? "bg-koru-lime/20 text-koru-lime border-koru-lime/30"
-                        : "bg-neutral-200 text-neutral-600"
+                        : "bg-neutral-200 text-neutral-600",
                     )}
                   >
                     {summon.status === "active" ? "Active" : summon.status}
@@ -484,11 +477,13 @@ export function SummonDetailClient({
                           variant="secondary"
                           className={cn(
                             "text-xs font-medium",
-                            getTagColor(tag)
+                            getTagColor(tag),
                           )}
                         >
                           {tag}
-                          <span className="ml-1 opacity-60">({count as number})</span>
+                          <span className="ml-1 opacity-60">
+                            ({count as number})
+                          </span>
                         </Badge>
                       ))}
                     </div>
@@ -525,46 +520,50 @@ export function SummonDetailClient({
                     Backers
                   </h3>
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    {summon.backers} {summon.backers === 1 ? "person" : "people"} backing this summon
+                    {summon.backers}{" "}
+                    {summon.backers === 1 ? "person" : "people"} backing this
+                    summon
                   </p>
                 </div>
               </div>
 
               {summon.backersData && summon.backersData.length > 0 ? (
                 <div className="space-y-3">
-                  {(summon.backersData as ExtendedBacker[]).map((backer, idx) => (
-                    <div
-                      key={backer.id || idx}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-700"
-                    >
-                      <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                        <OptimizedAvatar
-                          src={backer.profileImageUrl}
-                          alt={backer.name}
-                          size={40}
-                          fallbackSeed={backer.username}
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-neutral-900 dark:text-neutral-100 truncate">
-                          {backer.name}
-                        </p>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate">
-                          @{backer.username}
-                        </p>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="font-semibold text-koru-golden">
-                          {formatCurrency(backer.amount)}
-                        </p>
-                        {backer.backedAt && (
-                          <p className="text-xs text-neutral-400">
-                            {formatTimeAgo(backer.backedAt)}
+                  {(summon.backersData as ExtendedBacker[]).map(
+                    (backer, idx) => (
+                      <div
+                        key={backer.id || idx}
+                        className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-700"
+                      >
+                        <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                          <OptimizedAvatar
+                            src={backer.profileImageUrl}
+                            alt={backer.name}
+                            size={40}
+                            fallbackSeed={backer.username}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-neutral-900 dark:text-neutral-100 truncate">
+                            {backer.name}
                           </p>
-                        )}
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate">
+                            @{backer.username}
+                          </p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="font-semibold text-koru-golden">
+                            {formatCurrency(backer.amount)}
+                          </p>
+                          {backer.backedAt && (
+                            <p className="text-xs text-neutral-400">
+                              {formatTimeAgo(backer.backedAt)}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ),
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-3 py-8">
@@ -617,7 +616,9 @@ export function SummonDetailClient({
                 <span
                   className={cn(
                     "font-semibold",
-                    summon.trend === "up" ? "text-emerald-500" : "text-rose-500"
+                    summon.trend === "up"
+                      ? "text-emerald-500"
+                      : "text-rose-500",
                   )}
                 >
                   {summon.trendValue.toFixed(1)}%
@@ -666,7 +667,7 @@ export function SummonDetailClient({
                       "text-xs font-medium",
                       summon.status === "active"
                         ? "bg-koru-lime/20 text-koru-lime"
-                        : "bg-neutral-200 text-neutral-600"
+                        : "bg-neutral-200 text-neutral-600",
                     )}
                   >
                     {summon.status === "active" ? "Active" : summon.status}
@@ -687,7 +688,8 @@ export function SummonDetailClient({
                   Want to see @{summon.targetHandle} on Koru?
                 </h4>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
-                  Back this summon to show your support and help get their attention!
+                  Back this summon to show your support and help get their
+                  attention!
                 </p>
                 <Button
                   onClick={handleBack}
@@ -763,68 +765,26 @@ export function SummonDetailClient({
                           </label>
                           <div className="flex flex-wrap gap-1.5">
                             {Object.entries(summon.tags)
-                              .sort(([, a], [, b]) => (b as number) - (a as number))
+                              .sort(
+                                ([, a], [, b]) => (b as number) - (a as number),
+                              )
                               .map(([tag, count]) => (
                                 <span
                                   key={tag}
                                   className={cn(
                                     "px-2 py-0.5 rounded-full text-xs font-medium",
-                                    getTagColor(tag)
+                                    getTagColor(tag),
                                   )}
                                 >
                                   {tag}{" "}
-                                  <span className="opacity-60">({count as number})</span>
+                                  <span className="opacity-60">
+                                    ({count as number})
+                                  </span>
                                 </span>
                               ))}
                           </div>
                         </div>
                       )}
-
-                      {/* Tag selection for backer */}
-                      <div>
-                        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
-                          What interests you?
-                          {backSelectedTags.length > 0 && (
-                            <span className="ml-2 text-koru-purple">
-                              ({backSelectedTags.length} selected)
-                            </span>
-                          )}
-                        </label>
-                        <div className="max-h-32 overflow-y-auto p-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800">
-                          <div className="flex flex-wrap gap-1.5">
-                            {SUMMON_TAGS.map((tag) => {
-                              const isSelected = backSelectedTags.includes(tag);
-                              return (
-                                <button
-                                  key={tag}
-                                  type="button"
-                                  onClick={() => {
-                                    if (isSelected) {
-                                      setBackSelectedTags(
-                                        backSelectedTags.filter((t) => t !== tag)
-                                      );
-                                    } else {
-                                      setBackSelectedTags([
-                                        ...backSelectedTags,
-                                        tag,
-                                      ]);
-                                    }
-                                  }}
-                                  className={cn(
-                                    "px-2 py-0.5 rounded-full text-xs font-medium transition-all",
-                                    isSelected
-                                      ? "bg-koru-purple text-white ring-2 ring-koru-purple/30"
-                                      : getTagColor(tag) +
-                                          " hover:ring-1 hover:ring-koru-purple/20"
-                                  )}
-                                >
-                                  {tag}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
 
                       <div>
                         <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1 block">
@@ -861,9 +821,7 @@ export function SummonDetailClient({
                         <Button
                           className="flex-1 bg-koru-purple hover:bg-koru-purple/90"
                           onClick={handleSubmitBacking}
-                          disabled={
-                            isBackingSubmitting || backSelectedTags.length === 0
-                          }
+                          disabled={isBackingSubmitting}
                         >
                           {isBackingSubmitting
                             ? "Backing..."

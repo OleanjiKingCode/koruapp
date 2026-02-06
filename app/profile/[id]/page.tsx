@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { useParams, useRouter, notFound } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
@@ -576,18 +577,20 @@ export default function ViewProfilePage() {
       if (!response.ok) {
         const error = await response.json();
         console.error("Failed to create chat:", error);
-        // Still close the modal, but maybe show an error
+        toast.error("Failed to create chat. Please try again.");
         setBookingModalOpen(false);
         return;
       }
 
       const { chat } = await response.json();
       setBookingModalOpen(false);
+      toast.success("Chat created! Redirecting...");
 
       // Navigate to the new chat using the chat ID
       router.push(ROUTES.CHAT(chat.id));
     } catch (error) {
       console.error("Error creating chat:", error);
+      toast.error("Failed to create chat. Please try again.");
       setBookingModalOpen(false);
     }
   };
@@ -1107,18 +1110,21 @@ function SummonModal({
 
       const data = await response.json();
       if (data.summon) {
+        toast.success("Summon created successfully!");
         onSuccess();
         onOpenChange(false);
       } else {
         setError("Failed to create summon. Please try again.");
+        toast.error("Failed to create summon. Please try again.");
       }
     } catch (err) {
       console.error("Error creating summon:", err);
-      setError(
+      const msg =
         err instanceof Error
           ? err.message
-          : "An error occurred. Please try again.",
-      );
+          : "An error occurred. Please try again.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { toast } from "sonner";
 import { toPng } from "html-to-image";
 import { ProfileShareCard } from "./profile-share-card";
 import { AppealShareCard } from "./appeal-share-card";
@@ -162,7 +163,7 @@ export function ShareModal({
     const promises = Array.from(images).map(async (img) => {
       if (img.src.startsWith("data:")) return; // Already base64
       if (img.src.startsWith("/")) return; // Local images are fine
-      
+
       try {
         // Fetch through a proxy or use crossOrigin
         const response = await fetch(img.src);
@@ -188,7 +189,7 @@ export function ShareModal({
     try {
       // Wait for images to load
       await new Promise((resolve) => setTimeout(resolve, 100));
-      
+
       // Try to convert external images to base64
       await convertImagesToBase64(cardRef.current);
 
@@ -221,6 +222,7 @@ export function ShareModal({
     link.click();
 
     setDownloaded(true);
+    toast.success("Image downloaded!");
     setTimeout(() => setDownloaded(false), 2000);
   }, [generateImage, type, userData, activeSummon]);
 
@@ -239,9 +241,11 @@ export function ShareModal({
       ]);
 
       setCopied(true);
+      toast.success("Image copied to clipboard!");
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error("Error copying to clipboard:", error);
+      toast.error("Couldn't copy image — downloading instead.");
       handleDownload();
     }
   }, [generateImage, handleDownload]);
@@ -266,7 +270,7 @@ export function ShareModal({
         : `${baseUrl}/summons/${activeSummon?.id}`;
 
     const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-      text
+      text,
     )}&url=${encodeURIComponent(url)}`;
 
     window.open(tweetUrl, "_blank", "width=550,height=420");
@@ -282,9 +286,11 @@ export function ShareModal({
     try {
       await navigator.clipboard.writeText(url);
       setLinkCopied(true);
+      toast.success("Link copied to clipboard!");
       setTimeout(() => setLinkCopied(false), 2000);
     } catch (error) {
       console.error("Error copying link:", error);
+      toast.error("Failed to copy link.");
     }
   }, [type, activeSummon]);
 
@@ -305,8 +311,7 @@ export function ShareModal({
       icon: LinkIcon,
       label: "Copy Link",
       onClick: handleCopyLink,
-      className:
-        "bg-koru-purple text-white hover:bg-koru-purple/90",
+      className: "bg-koru-purple text-white hover:bg-koru-purple/90",
       activeIcon: CheckIcon,
       activeLabel: "Copied!",
       isActive: linkCopied,

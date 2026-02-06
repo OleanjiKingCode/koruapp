@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { toast } from "sonner";
 import { getSupabaseClient } from "@/lib/supabase-client";
 import { API_ROUTES } from "@/lib/constants";
 import type { RealtimeChannel } from "@supabase/supabase-js";
@@ -45,7 +46,7 @@ export function useChatMessages({
   const [error, setError] = useState<Error | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  
+
   const channelRef = useRef<RealtimeChannel | null>(null);
   const optimisticIdCounter = useRef(0);
 
@@ -56,7 +57,7 @@ export function useChatMessages({
     try {
       setIsLoading(true);
       const res = await fetch(API_ROUTES.CHAT_MESSAGES(chatId));
-      
+
       if (!res.ok) {
         throw new Error("Failed to fetch messages");
       }
@@ -99,7 +100,7 @@ export function useChatMessages({
         },
         (payload) => {
           const newMessage = payload.new as ChatMessage;
-          
+
           // Add the new message if it's not from us (our messages are added optimistically)
           // or if it's a confirmation of our optimistic message
           setMessages((prev) => {
@@ -108,7 +109,7 @@ export function useChatMessages({
               (m) =>
                 m.id.startsWith("optimistic-") &&
                 m.content === newMessage.content &&
-                m.sender_id === newMessage.sender_id
+                m.sender_id === newMessage.sender_id,
             );
 
             if (existsAsOptimistic) {
@@ -118,7 +119,7 @@ export function useChatMessages({
                 m.content === newMessage.content &&
                 m.sender_id === newMessage.sender_id
                   ? newMessage
-                  : m
+                  : m,
               );
             }
 
@@ -130,7 +131,7 @@ export function useChatMessages({
             // Add new message
             return [...prev, newMessage];
           });
-        }
+        },
       )
       .on(
         "postgres_changes",
@@ -143,9 +144,9 @@ export function useChatMessages({
         (payload) => {
           const updatedMessage = payload.new as ChatMessage;
           setMessages((prev) =>
-            prev.map((m) => (m.id === updatedMessage.id ? updatedMessage : m))
+            prev.map((m) => (m.id === updatedMessage.id ? updatedMessage : m)),
           );
-        }
+        },
       )
       .subscribe((status) => {
         setIsConnected(status === "SUBSCRIBED");
@@ -202,12 +203,13 @@ export function useChatMessages({
         // Remove optimistic message on error
         setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
         console.error("Error sending message:", err);
+        toast.error("Failed to send message. Please try again.");
         return false;
       } finally {
         setIsSending(false);
       }
     },
-    [chatId, userId]
+    [chatId, userId],
   );
 
   return {
@@ -219,6 +221,3 @@ export function useChatMessages({
     isConnected,
   };
 }
-
-
-

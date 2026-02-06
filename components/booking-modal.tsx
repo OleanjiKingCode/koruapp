@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
@@ -426,12 +427,14 @@ export function BookingModal({
       console.log("[BookingModal] Escrow ID:", result.escrowId.toString());
 
       // Save to DB and show receipt
+      toast.success("Payment successful!");
       await saveEscrowAndShowReceiptWithData(result.escrowId, result.txHash);
     } catch (err) {
       console.error("[BookingModal] Payment failed:", err);
-      setError(
-        (err as Error).message || "Transaction failed. Please try again.",
-      );
+      const msg =
+        (err as Error).message || "Transaction failed. Please try again.";
+      setError(msg);
+      toast.error(msg);
       setStep("confirm");
     }
   };
@@ -512,6 +515,7 @@ export function BookingModal({
         });
       } catch (err) {
         console.error("Failed to save escrow to database:", err);
+        toast.warning("Payment recorded on-chain, but failed to save receipt.");
       }
     }
 

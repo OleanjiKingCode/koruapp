@@ -15,9 +15,7 @@ export default function ContactPage() {
         >
           {/* Header */}
           <div className="text-center space-y-4">
-            <h1 className="text-5xl font-bold text-foreground">
-              Contact Us
-            </h1>
+            <h1 className="text-5xl font-bold text-foreground">Contact Us</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Have a question or need help? Reach out to us on X.
             </p>
@@ -31,7 +29,11 @@ export default function ContactPage() {
             className="bg-white dark:bg-neutral-900 rounded-2xl p-8 border border-neutral-200 dark:border-neutral-800 text-center space-y-6"
           >
             <div className="w-16 h-16 rounded-full bg-neutral-900 dark:bg-white flex items-center justify-center mx-auto">
-              <svg className="w-8 h-8 text-white dark:text-neutral-900" viewBox="0 0 24 24" fill="currentColor">
+              <svg
+                className="w-8 h-8 text-white dark:text-neutral-900"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
               </svg>
             </div>
@@ -101,6 +103,7 @@ CONTACT FORM - COMMENTED OUT FOR LATER USE
 
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -153,13 +156,14 @@ function ContactForm() {
       }
 
       setSubmitted(true);
+      toast.success("Message sent! We'll get back to you soon.");
     } catch (error) {
       console.error("Contact form error:", error);
-      setSubmitError(
-        error instanceof Error
-          ? error.message
-          : "Failed to send message. Please try again."
-      );
+      const msg = error instanceof Error
+        ? error.message
+        : "Failed to send message. Please try again.";
+      setSubmitError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }

@@ -245,16 +245,23 @@ function EscrowRow({
         </div>
         <div className="text-right shrink-0">
           {escrow.isRecipient ? (
-            <>
+            <div
+              className="group relative cursor-default"
+              title={
+                escrow.feeBps > 0
+                  ? `Gross: $${fmtUsdc(escrow.amount)} · Fee (${(escrow.feeBps / 100).toFixed(1)}%): $${fmtUsdc((escrow.amount * BigInt(escrow.feeBps)) / BigInt(10000))} · You receive: $${fmtUsdc(calcNetAmount(escrow.amount, escrow.feeBps))}`
+                  : undefined
+              }
+            >
               <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
                 ${fmtUsdc(calcNetAmount(escrow.amount, escrow.feeBps))}
               </p>
               {escrow.feeBps > 0 && (
-                <p className="text-[10px] text-neutral-400 dark:text-neutral-500 line-through">
-                  ${fmtUsdc(escrow.amount)}
+                <p className="text-[10px] text-neutral-400 dark:text-neutral-500">
+                  {(escrow.feeBps / 100).toFixed(1)}% fee applied
                 </p>
               )}
-            </>
+            </div>
           ) : (
             <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
               ${fmtUsdc(escrow.amount)}
@@ -281,6 +288,7 @@ function EscrowRow({
             netAmountUsdc={Number(
               formatUnits(calcNetAmount(escrow.amount, escrow.feeBps), 6),
             )}
+            feeBps={escrow.feeBps}
             counterpartyAddress={otherAddress}
             isRecipient={true}
           />
@@ -296,6 +304,7 @@ function EscrowRow({
             label="Reclaim"
             amountUsdc={Number(formatUnits(escrow.amount, 6))}
             netAmountUsdc={Number(formatUnits(escrow.amount, 6))}
+            feeBps={0}
             counterpartyAddress={otherAddress}
             isRecipient={false}
           />
@@ -313,6 +322,7 @@ function WithdrawButton({
   label = "Withdraw",
   amountUsdc,
   netAmountUsdc,
+  feeBps,
   counterpartyAddress,
   isRecipient,
 }: {
@@ -321,6 +331,7 @@ function WithdrawButton({
   label?: string;
   amountUsdc: number;
   netAmountUsdc: number;
+  feeBps: number;
   counterpartyAddress: string;
   isRecipient: boolean;
 }) {
@@ -349,6 +360,8 @@ function WithdrawButton({
       addTransaction({
         type: label === "Reclaim" ? "refund" : "withdrawal",
         amount: label === "Reclaim" ? amountUsdc : netAmountUsdc,
+        grossAmount: amountUsdc,
+        feeBps,
         personId: counterpartyAddress,
         personName: shortenAddress(counterpartyAddress),
         personHandle: counterpartyAddress,
@@ -425,22 +438,39 @@ function ModalBody() {
   );
 
   // Compute totals using effectiveStatus + contract withdraw flags
-  // Show NET amounts (after fee) for the recipient — what they'll actually receive
+  // Recipients: show NET amounts (after fee) — what they'll actually receive
+  // Depositors: show full amounts for reclaims
   const totals = useMemo(() => {
     let pending = BigInt(0);
     let ready = BigInt(0);
     for (const e of escrows) {
+      const s = e.effectiveStatus;
+      if (s === EscrowStatus.Completed || s === EscrowStatus.Cancelled)
+        continue;
+
       if (e.isRecipient) {
         const net = calcNetAmount(e.amount, e.feeBps);
         if (e.canRecipientWithdraw) {
           ready += net;
         } else if (
-          e.effectiveStatus === EscrowStatus.Pending ||
-          e.effectiveStatus === EscrowStatus.Accepted
+          s === EscrowStatus.Pending ||
+          s === EscrowStatus.Accepted ||
+          s === EscrowStatus.Disputed
         ) {
           pending += net;
-        } else if (e.effectiveStatus === EscrowStatus.Released) {
+        } else if (s === EscrowStatus.Released) {
           ready += net;
+        }
+      } else {
+        // Depositor — can reclaim expired/pending escrows
+        if (e.canDepositorWithdraw) {
+          ready += e.amount;
+        } else if (
+          s === EscrowStatus.Pending ||
+          s === EscrowStatus.Accepted ||
+          s === EscrowStatus.Disputed
+        ) {
+          pending += e.amount;
         }
       }
     }
@@ -449,24 +479,46 @@ function ModalBody() {
 
   // Group escrows by category using effectiveStatus + contract withdraw flags
   const grouped = useMemo(() => {
-    const disputed = escrows.filter(
-      (e) => e.effectiveStatus === EscrowStatus.Disputed,
-    );
-    // "Ready" = Released OR contract says canRecipientWithdraw / canDepositorWithdraw
-    const ready = escrows.filter(
-      (e) =>
-        e.effectiveStatus !== EscrowStatus.Disputed &&
-        (e.effectiveStatus === EscrowStatus.Released ||
-          e.canRecipientWithdraw ||
-          e.canDepositorWithdraw),
-    );
-    const readyIds = new Set(ready.map((e) => e.escrowId));
-    const disputedIds = new Set(disputed.map((e) => e.escrowId));
-    // "In Escrow" = everything else that's not disputed or ready
-    const inEscrow = escrows.filter(
-      (e) => !readyIds.has(e.escrowId) && !disputedIds.has(e.escrowId),
-    );
-    return { disputed, inEscrow, ready };
+    const disputed: ContractEscrowItem[] = [];
+    const ready: ContractEscrowItem[] = [];
+    const inEscrow: ContractEscrowItem[] = [];
+    const expired: ContractEscrowItem[] = [];
+    const completed: ContractEscrowItem[] = [];
+
+    for (const e of escrows) {
+      const s = e.effectiveStatus;
+
+      // Completed / Cancelled — settled, show for reference
+      if (s === EscrowStatus.Completed || s === EscrowStatus.Cancelled) {
+        completed.push(e);
+      }
+      // Disputed — needs resolution
+      else if (s === EscrowStatus.Disputed) {
+        disputed.push(e);
+      }
+      // Expired — depositor can reclaim
+      else if (s === EscrowStatus.Expired) {
+        if (e.canDepositorWithdraw) {
+          ready.push(e); // depositor can reclaim → ready
+        } else {
+          expired.push(e);
+        }
+      }
+      // Ready — Released, or contract says can withdraw
+      else if (
+        s === EscrowStatus.Released ||
+        e.canRecipientWithdraw ||
+        e.canDepositorWithdraw
+      ) {
+        ready.push(e);
+      }
+      // In Escrow — Pending or Accepted, still waiting
+      else {
+        inEscrow.push(e);
+      }
+    }
+
+    return { disputed, inEscrow, ready, expired, completed };
   }, [escrows]);
 
   const handleRefresh = useCallback(() => refetch(), [refetch]);
@@ -573,6 +625,40 @@ function ModalBody() {
                 title={`Ready to Withdraw (${grouped.ready.length})`}
               >
                 {grouped.ready.map((e) => (
+                  <EscrowRow
+                    key={e.escrowId}
+                    escrow={e}
+                    onWithdrawComplete={handleRefresh}
+                  />
+                ))}
+              </Section>
+            )}
+
+            {/* Expired */}
+            {grouped.expired.length > 0 && (
+              <Section
+                icon={<ClockIcon className="w-4 h-4 text-neutral-400" />}
+                title={`Expired (${grouped.expired.length})`}
+                titleColor="text-neutral-500 dark:text-neutral-400"
+              >
+                {grouped.expired.map((e) => (
+                  <EscrowRow
+                    key={e.escrowId}
+                    escrow={e}
+                    onWithdrawComplete={handleRefresh}
+                  />
+                ))}
+              </Section>
+            )}
+
+            {/* Completed */}
+            {grouped.completed.length > 0 && (
+              <Section
+                icon={<CheckIcon className="w-4 h-4 text-neutral-400" />}
+                title={`Completed (${grouped.completed.length})`}
+                titleColor="text-neutral-500 dark:text-neutral-400"
+              >
+                {grouped.completed.map((e) => (
                   <EscrowRow
                     key={e.escrowId}
                     escrow={e}

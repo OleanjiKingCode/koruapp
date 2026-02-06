@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -203,9 +204,11 @@ export function SummonDetailsModal({
     try {
       await navigator.clipboard.writeText(url);
       setLinkCopied(true);
+      toast.success("Link copied to clipboard!");
       setTimeout(() => setLinkCopied(false), 2000);
     } catch (error) {
       console.error("Error copying link:", error);
+      toast.error("Failed to copy link.");
     }
   };
 
