@@ -159,7 +159,7 @@ export default function NotFound() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="text-8xl   font-bold text-neutral-200 dark:text-neutral-800 mb-4"
+          className="text-8xl font-bold text-neutral-200 dark:text-neutral-800 mb-4"
         >
           404
         </motion.h1>
@@ -168,7 +168,7 @@ export default function NotFound() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="text-2xl   text-neutral-900 dark:text-neutral-100 mb-4"
+          className="text-2xl text-neutral-900 dark:text-neutral-100 mb-4"
         >
           Kaya got lost
         </motion.h2>
@@ -177,7 +177,7 @@ export default function NotFound() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="text-neutral-600 dark:text-neutral-400   mb-8"
+          className="text-neutral-600 dark:text-neutral-400 mb-8"
         >
           This page doesn't exist, but don't worry — Kaya's recalibrating the
           compass.
@@ -214,6 +214,3 @@ function HomeIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-
-
-

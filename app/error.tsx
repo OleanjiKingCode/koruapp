@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 
@@ -17,7 +16,8 @@ export default function Error({ error, reset }: ErrorProps) {
         <motion.div
           className="absolute top-1/3 left-1/3 w-64 h-64 rounded-full"
           style={{
-            background: "radial-gradient(circle, rgba(239, 68, 68, 0.15) 0%, transparent 70%)",
+            background:
+              "radial-gradient(circle, rgba(239, 68, 68, 0.15) 0%, transparent 70%)",
           }}
           animate={{ scale: [1, 1.1, 1], opacity: [0.15, 0.25, 0.15] }}
           transition={{ duration: 5, repeat: Infinity }}
@@ -25,7 +25,8 @@ export default function Error({ error, reset }: ErrorProps) {
         <motion.div
           className="absolute bottom-1/3 right-1/3 w-48 h-48 rounded-full"
           style={{
-            background: "radial-gradient(circle, rgba(195, 133, 238, 0.15) 0%, transparent 70%)",
+            background:
+              "radial-gradient(circle, rgba(195, 133, 238, 0.15) 0%, transparent 70%)",
           }}
           animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.25, 0.15] }}
           transition={{ duration: 7, repeat: Infinity, delay: 1 }}
@@ -47,30 +48,90 @@ export default function Error({ error, reset }: ErrorProps) {
           <div className="relative w-32 h-32">
             <svg viewBox="0 0 100 100" className="w-full h-full">
               {/* Body */}
-              <circle cx="50" cy="55" r="35" fill="currentColor" className="text-neutral-200 dark:text-neutral-800" />
-              
+              <circle
+                cx="50"
+                cy="55"
+                r="35"
+                fill="currentColor"
+                className="text-neutral-200 dark:text-neutral-800"
+              />
+
               {/* Dizzy X eyes */}
               <g className="text-koru-purple">
-                <line x1="32" y1="44" x2="44" y2="56" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                <line x1="44" y1="44" x2="32" y2="56" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                <line
+                  x1="32"
+                  y1="44"
+                  x2="44"
+                  y2="56"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                />
+                <line
+                  x1="44"
+                  y1="44"
+                  x2="32"
+                  y2="56"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                />
               </g>
               <g className="text-koru-purple">
-                <line x1="56" y1="44" x2="68" y2="56" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                <line x1="68" y1="44" x2="56" y2="56" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                <line
+                  x1="56"
+                  y1="44"
+                  x2="68"
+                  y2="56"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                />
+                <line
+                  x1="68"
+                  y1="44"
+                  x2="56"
+                  y2="56"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                />
               </g>
-              
+
               {/* Beak - slightly open */}
-              <path d="M50 60 L46 68 L54 68 Z" fill="currentColor" className="text-koru-golden" />
-              
+              <path
+                d="M50 60 L46 68 L54 68 Z"
+                fill="currentColor"
+                className="text-koru-golden"
+              />
+
               {/* Stars around head */}
               <motion.g
                 animate={{ rotate: 360 }}
                 transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                 style={{ transformOrigin: "50px 40px" }}
               >
-                <circle cx="30" cy="30" r="3" fill="currentColor" className="text-koru-golden" />
-                <circle cx="50" cy="25" r="3" fill="currentColor" className="text-koru-purple" />
-                <circle cx="70" cy="30" r="3" fill="currentColor" className="text-koru-golden" />
+                <circle
+                  cx="30"
+                  cy="30"
+                  r="3"
+                  fill="currentColor"
+                  className="text-koru-golden"
+                />
+                <circle
+                  cx="50"
+                  cy="25"
+                  r="3"
+                  fill="currentColor"
+                  className="text-koru-purple"
+                />
+                <circle
+                  cx="70"
+                  cy="30"
+                  r="3"
+                  fill="currentColor"
+                  className="text-koru-golden"
+                />
               </motion.g>
             </svg>
           </div>
@@ -134,7 +195,13 @@ export default function Error({ error, reset }: ErrorProps) {
 
 function RefreshIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
       <path d="M21 3v5h-5" />
       <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
@@ -145,16 +212,15 @@ function RefreshIcon({ className }: { className?: string }) {
 
 function HomeIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
       <polyline points="9 22 9 12 15 12 15 22" />
     </svg>
   );
 }
-
-
-
-
-
-
-

@@ -149,6 +149,18 @@ export function FloatingNav() {
 
   const isAuthenticated = status === "authenticated";
 
+  // Close settings panel on Escape key
+  useEffect(() => {
+    if (!isSettingsOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsSettingsOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isSettingsOpen]);
+
   // Hide nav when modal/drawer is open on mobile
   if (isModalOpen) {
     return null;
@@ -232,6 +244,7 @@ export function FloatingNav() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: "spring", stiffness: 120, damping: 20 }}
+            aria-label="Main navigation"
             className="fixed bottom-6 inset-x-0 z-50 flex justify-center px-4 sm:hidden"
           >
             <div className="relative">
@@ -359,6 +372,10 @@ export function FloatingNav() {
                 <motion.button
                   onClick={() => setIsSettingsOpen(!isSettingsOpen)}
                   whileTap={{ scale: 0.9 }}
+                  aria-label={
+                    isSettingsOpen ? "Close settings" : "Open settings"
+                  }
+                  aria-expanded={isSettingsOpen}
                   className={cn(
                     "w-10 h-10 flex items-center justify-center ml-1 rounded-full transition-all cursor-pointer",
                     isSettingsOpen
@@ -436,6 +453,7 @@ export function FloatingNav() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: "spring", stiffness: 120, damping: 20 }}
+            aria-label="Main navigation"
             className="fixed bottom-6 inset-x-0 z-50 justify-center px-4 hidden sm:flex"
           >
             <motion.div
@@ -569,6 +587,8 @@ export function FloatingNav() {
                 onClick={() => setIsSettingsOpen(!isSettingsOpen)}
                 whileHover={{ scale: 1.05, rotate: 15 }}
                 whileTap={{ scale: 0.95 }}
+                aria-label={isSettingsOpen ? "Close settings" : "Open settings"}
+                aria-expanded={isSettingsOpen}
                 className={cn(
                   "p-3 rounded-xl transition-all cursor-pointer",
                   isSettingsOpen
@@ -673,6 +693,9 @@ export function FloatingNav() {
                   </h3>
                   <button
                     onClick={() => setTheme(isDark ? "light" : "dark")}
+                    aria-label={
+                      isDark ? "Switch to light mode" : "Switch to dark mode"
+                    }
                     className={cn(
                       "p-2 rounded-xl transition-all",
                       isDark
