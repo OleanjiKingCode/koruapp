@@ -443,10 +443,21 @@ function ModalBody() {
   const totals = useMemo(() => {
     let pending = BigInt(0);
     let ready = BigInt(0);
+    let collected = BigInt(0);
     for (const e of escrows) {
       const s = e.effectiveStatus;
-      if (s === EscrowStatus.Completed || s === EscrowStatus.Cancelled)
+
+      // Completed escrows — already withdrawn
+      if (s === EscrowStatus.Completed) {
+        if (e.isRecipient) {
+          collected += calcNetAmount(e.amount, e.feeBps);
+        } else {
+          collected += e.amount;
+        }
         continue;
+      }
+
+      if (s === EscrowStatus.Cancelled) continue;
 
       if (e.isRecipient) {
         const net = calcNetAmount(e.amount, e.feeBps);
@@ -474,7 +485,7 @@ function ModalBody() {
         }
       }
     }
-    return { pending, ready };
+    return { pending, ready, collected };
   }, [escrows]);
 
   // Group escrows by category using effectiveStatus + contract withdraw flags
@@ -526,21 +537,29 @@ function ModalBody() {
   return (
     <div className="flex flex-col">
       {/* Totals */}
-      <div className="grid grid-cols-2 gap-2 px-2 pb-2">
-        <div className="bg-koru-golden/10 rounded-xl p-3 border border-koru-golden/20">
-          <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mb-0.5 uppercase tracking-wide font-medium">
+      <div className="grid grid-cols-3 gap-2 px-2 pb-2">
+        <div className="bg-koru-golden/10 rounded-xl p-2.5 border border-koru-golden/20">
+          <p className="text-[10px] text-neutral-500 dark:text-neutral-400 mb-0.5 uppercase tracking-wide font-medium">
             In Escrow
           </p>
-          <p className="text-xl font-semibold text-koru-golden tabular-nums">
+          <p className="text-lg font-semibold text-koru-golden tabular-nums">
             ${fmtUsdc(totals.pending)}
           </p>
         </div>
-        <div className="bg-koru-lime/10 rounded-xl p-3 border border-koru-lime/20">
-          <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mb-0.5 uppercase tracking-wide font-medium">
+        <div className="bg-koru-lime/10 rounded-xl p-2.5 border border-koru-lime/20">
+          <p className="text-[10px] text-neutral-500 dark:text-neutral-400 mb-0.5 uppercase tracking-wide font-medium">
             Ready
           </p>
-          <p className="text-xl font-semibold text-koru-lime tabular-nums">
+          <p className="text-lg font-semibold text-koru-lime tabular-nums">
             ${fmtUsdc(totals.ready)}
+          </p>
+        </div>
+        <div className="bg-koru-purple/10 rounded-xl p-2.5 border border-koru-purple/20">
+          <p className="text-[10px] text-neutral-500 dark:text-neutral-400 mb-0.5 uppercase tracking-wide font-medium">
+            Collected
+          </p>
+          <p className="text-lg font-semibold text-koru-purple tabular-nums">
+            ${fmtUsdc(totals.collected)}
           </p>
         </div>
       </div>
