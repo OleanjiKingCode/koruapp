@@ -11,6 +11,7 @@ import {
   FilterBar,
   ProfileCard,
   EmptyState,
+  TableRowSkeleton,
 } from "@/components/shared";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -272,7 +273,7 @@ function DiscoverContent() {
           (isLoadingFeatured &&
             !isShowingSearchResults &&
             featuredProfiles.length === 0) ? (
-            <LoadingGrid />
+            <LoadingGrid viewMode={viewMode} />
           ) : isShowingSearchResults ? (
             // Twitter Search Results
             hasSearchResults ? (
@@ -356,10 +357,30 @@ function SearchStatusIndicator({
   );
 }
 
-function LoadingGrid() {
+function LoadingGrid({ viewMode = "grid" }: { viewMode?: "grid" | "list" }) {
+  if (viewMode === "list") {
+    return (
+      <motion.div
+        key="loading-table"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="overflow-x-auto rounded-2xl border border-neutral-200 dark:border-neutral-800"
+      >
+        <table className="w-full">
+          <tbody>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <TableRowSkeleton key={i} />
+            ))}
+          </tbody>
+        </table>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
-      key="loading"
+      key="loading-grid"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}

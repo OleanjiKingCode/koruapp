@@ -278,8 +278,12 @@ export default function ProfilePage() {
   const {
     createdSummons,
     backedSummons,
+    targetedSummons,
     isLoading: isLoadingSummons,
   } = useUserSummons();
+  const [summonFilter, setSummonFilter] = useState<
+    "all" | "created" | "backed" | "targeted"
+  >("all");
   const { stats, isLoading: isLoadingStats } = useUserStats();
 
   // Loading state combines user loading and initial animation
@@ -1021,7 +1025,11 @@ export default function ProfilePage() {
                 className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700 data-[state=active]:shadow-sm flex items-center gap-1.5"
               >
                 <BellIcon className="w-4 h-4" />
-                Summons ({createdSummons.length + backedSummons.length})
+                Summons (
+                {createdSummons.length +
+                  backedSummons.length +
+                  targetedSummons.length}
+                )
               </TabsTrigger>
               <TabsTrigger
                 value="transactions"
@@ -1113,6 +1121,48 @@ export default function ProfilePage() {
 
             {/* Summons Tab */}
             <TabsContent value="summons" className="space-y-4">
+              {/* Filter pills */}
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1">
+                {[
+                  {
+                    key: "all" as const,
+                    label: "All",
+                    count:
+                      createdSummons.length +
+                      backedSummons.length +
+                      targetedSummons.length,
+                  },
+                  {
+                    key: "created" as const,
+                    label: "Created",
+                    count: createdSummons.length,
+                  },
+                  {
+                    key: "backed" as const,
+                    label: "Backed",
+                    count: backedSummons.length,
+                  },
+                  {
+                    key: "targeted" as const,
+                    label: "Summoned for Me",
+                    count: targetedSummons.length,
+                  },
+                ].map(({ key, label, count }) => (
+                  <button
+                    key={key}
+                    onClick={() => setSummonFilter(key)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap",
+                      summonFilter === key
+                        ? "bg-koru-purple text-white"
+                        : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300",
+                    )}
+                  >
+                    {label} ({count})
+                  </button>
+                ))}
+              </div>
+
               {isLoadingSummons ? (
                 <>
                   {Array.from({ length: 3 }).map((_, i) => (
@@ -1122,136 +1172,243 @@ export default function ProfilePage() {
                     />
                   ))}
                 </>
-              ) : createdSummons.length > 0 || backedSummons.length > 0 ? (
-                <>
-                  {/* Created Summons */}
-                  {createdSummons.map((summon: Summon, index: number) => (
-                    <motion.div
-                      key={summon.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-5 hover:border-koru-golden/30 dark:hover:border-koru-golden/30 transition-all group hover:shadow-lg"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        {/* Left */}
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-koru-golden/20 to-koru-lime/20 flex items-center justify-center">
-                            <BeaconIcon className="w-5 h-5 text-koru-golden" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="  font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-koru-golden transition-colors">
-                                @{summon.target_username}
-                              </h3>
-                              <StatusPill status={summon.status} />
-                            </div>
-                            <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                              {summon.target_name}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Right */}
-                        <div className="flex items-center gap-3">
-                          <div className="text-right shrink-0">
-                            <p className="  font-semibold text-koru-golden">
-                              ${summon.pledged_amount.toFixed(2)}
-                            </p>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                              {summon.backers_count} backers
-                            </p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleShareSummon({
-                                id: summon.id,
-                                targetHandle: summon.target_username,
-                                targetName: summon.target_name,
-                                pledgedAmount: `$${summon.pledged_amount.toFixed(
-                                  2,
-                                )}`,
-                                backers: summon.backers_count,
-                                status: summon.status,
-                                date: new Date(
-                                  summon.created_at,
-                                ).toLocaleDateString(),
-                              });
-                            }}
-                            className="text-neutral-400 hover:text-koru-golden"
-                          >
-                            <ShareIcon className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Date */}
-                      <p className="mt-3 text-xs text-neutral-400 dark:text-neutral-500">
-                        Created{" "}
-                        {new Date(summon.created_at).toLocaleDateString()}
-                      </p>
-                    </motion.div>
-                  ))}
-
-                  {/* Backed Summons */}
-                  {backedSummons.length > 0 && (
-                    <>
-                      <div className="pt-4 pb-2">
-                        <h4 className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-                          Summons You Backed
-                        </h4>
-                      </div>
-                      {backedSummons.map((summon: Summon, index: number) => (
-                        <motion.div
-                          key={summon.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                          className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-5 hover:border-koru-purple/30 dark:hover:border-koru-purple/30 transition-all group hover:shadow-lg"
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-koru-purple/20 to-koru-golden/20 flex items-center justify-center">
-                                <BeaconIcon className="w-5 h-5 text-koru-purple" />
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <h3 className="  font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-koru-purple transition-colors">
-                                    @{summon.target_username}
-                                  </h3>
-                                  <StatusPill status={summon.status} />
-                                  <Badge className="bg-koru-purple/10 text-koru-purple border-0 text-xs">
-                                    Backed
-                                  </Badge>
-                                </div>
-                                <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                                  {summon.target_name}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="text-right shrink-0">
-                              <p className="  font-semibold text-koru-golden">
-                                ${summon.pledged_amount.toFixed(2)}
-                              </p>
-                              <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                                {summon.backers_count} backers
-                              </p>
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </>
-                  )}
-                </>
               ) : (
-                <EmptyState
-                  icon="beacon"
-                  title="No summons yet"
-                  description="Create a summon to attract attention to someone you want to reach."
-                />
+                (() => {
+                  const showCreated =
+                    summonFilter === "all" || summonFilter === "created";
+                  const showBacked =
+                    summonFilter === "all" || summonFilter === "backed";
+                  const showTargeted =
+                    summonFilter === "all" || summonFilter === "targeted";
+                  const hasAny =
+                    (showCreated && createdSummons.length > 0) ||
+                    (showBacked && backedSummons.length > 0) ||
+                    (showTargeted && targetedSummons.length > 0);
+
+                  if (!hasAny) {
+                    return (
+                      <EmptyState
+                        icon="beacon"
+                        title={
+                          summonFilter === "targeted"
+                            ? "No one summoned you yet"
+                            : summonFilter === "backed"
+                              ? "You haven't backed any summons"
+                              : summonFilter === "created"
+                                ? "You haven't created any summons"
+                                : "No summons yet"
+                        }
+                        description={
+                          summonFilter === "targeted"
+                            ? "When someone creates a summon for you, it will appear here."
+                            : "Create a summon to attract attention to someone you want to reach."
+                        }
+                      />
+                    );
+                  }
+
+                  return (
+                    <>
+                      {/* Summoned for Me */}
+                      {showTargeted && targetedSummons.length > 0 && (
+                        <>
+                          {summonFilter === "all" && (
+                            <div className="pb-1">
+                              <h4 className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                                Summoned for You
+                              </h4>
+                            </div>
+                          )}
+                          {targetedSummons.map(
+                            (summon: Summon, index: number) => (
+                              <motion.div
+                                key={`targeted-${summon.id}`}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                                className="bg-white dark:bg-neutral-900 rounded-2xl border border-koru-lime/30 dark:border-koru-lime/20 p-5 hover:border-koru-lime/50 transition-all group hover:shadow-lg"
+                              >
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-koru-lime/20 to-koru-purple/20 flex items-center justify-center">
+                                      <BeaconIcon className="w-5 h-5 text-koru-lime" />
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-koru-lime transition-colors">
+                                          @{summon.target_username}
+                                        </h3>
+                                        <StatusPill status={summon.status} />
+                                        <Badge className="bg-koru-lime/10 text-koru-lime border-0 text-xs">
+                                          For You
+                                        </Badge>
+                                      </div>
+                                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                        {summon.backers_count}{" "}
+                                        {summon.backers_count === 1
+                                          ? "person wants"
+                                          : "people want"}{" "}
+                                        to talk to you
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right shrink-0">
+                                    <p className="font-semibold text-koru-golden">
+                                      ${summon.pledged_amount.toFixed(2)}
+                                    </p>
+                                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                      {summon.backers_count} backers
+                                    </p>
+                                  </div>
+                                </div>
+                                <p className="mt-3 text-xs text-neutral-400 dark:text-neutral-500">
+                                  Created{" "}
+                                  {new Date(
+                                    summon.created_at,
+                                  ).toLocaleDateString()}
+                                </p>
+                              </motion.div>
+                            ),
+                          )}
+                        </>
+                      )}
+
+                      {/* Created Summons */}
+                      {showCreated && createdSummons.length > 0 && (
+                        <>
+                          {summonFilter === "all" && (
+                            <div className="pt-4 pb-1">
+                              <h4 className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                                Created by You
+                              </h4>
+                            </div>
+                          )}
+                          {createdSummons.map(
+                            (summon: Summon, index: number) => (
+                              <motion.div
+                                key={summon.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                                className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-5 hover:border-koru-golden/30 dark:hover:border-koru-golden/30 transition-all group hover:shadow-lg"
+                              >
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-koru-golden/20 to-koru-lime/20 flex items-center justify-center">
+                                      <BeaconIcon className="w-5 h-5 text-koru-golden" />
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-koru-golden transition-colors">
+                                          @{summon.target_username}
+                                        </h3>
+                                        <StatusPill status={summon.status} />
+                                      </div>
+                                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                        {summon.target_name}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <div className="text-right shrink-0">
+                                      <p className="font-semibold text-koru-golden">
+                                        ${summon.pledged_amount.toFixed(2)}
+                                      </p>
+                                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                        {summon.backers_count} backers
+                                      </p>
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleShareSummon({
+                                          id: summon.id,
+                                          targetHandle: summon.target_username,
+                                          targetName: summon.target_name,
+                                          pledgedAmount: `$${summon.pledged_amount.toFixed(2)}`,
+                                          backers: summon.backers_count,
+                                          status: summon.status,
+                                          date: new Date(
+                                            summon.created_at,
+                                          ).toLocaleDateString(),
+                                        });
+                                      }}
+                                      className="text-neutral-400 hover:text-koru-golden"
+                                    >
+                                      <ShareIcon className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <p className="mt-3 text-xs text-neutral-400 dark:text-neutral-500">
+                                  Created{" "}
+                                  {new Date(
+                                    summon.created_at,
+                                  ).toLocaleDateString()}
+                                </p>
+                              </motion.div>
+                            ),
+                          )}
+                        </>
+                      )}
+
+                      {/* Backed Summons */}
+                      {showBacked && backedSummons.length > 0 && (
+                        <>
+                          {summonFilter === "all" && (
+                            <div className="pt-4 pb-1">
+                              <h4 className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                                Summons You Backed
+                              </h4>
+                            </div>
+                          )}
+                          {backedSummons.map(
+                            (summon: Summon, index: number) => (
+                              <motion.div
+                                key={`backed-${summon.id}`}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                                className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-5 hover:border-koru-purple/30 dark:hover:border-koru-purple/30 transition-all group hover:shadow-lg"
+                              >
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-koru-purple/20 to-koru-golden/20 flex items-center justify-center">
+                                      <BeaconIcon className="w-5 h-5 text-koru-purple" />
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-koru-purple transition-colors">
+                                          @{summon.target_username}
+                                        </h3>
+                                        <StatusPill status={summon.status} />
+                                        <Badge className="bg-koru-purple/10 text-koru-purple border-0 text-xs">
+                                          Backed
+                                        </Badge>
+                                      </div>
+                                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                        {summon.target_name}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right shrink-0">
+                                    <p className="font-semibold text-koru-golden">
+                                      ${summon.pledged_amount.toFixed(2)}
+                                    </p>
+                                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                      {summon.backers_count} backers
+                                    </p>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            ),
+                          )}
+                        </>
+                      )}
+                    </>
+                  );
+                })()
               )}
             </TabsContent>
 

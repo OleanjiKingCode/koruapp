@@ -59,7 +59,7 @@ export function Footer() {
       image: kayaImages[Math.floor(Math.random() * kayaImages.length)],
       position: kayaPositions[Math.floor(Math.random() * kayaPositions.length)],
     }),
-    []
+    [],
   );
 
   // Memoized visibility check function
@@ -163,14 +163,14 @@ export function Footer() {
                 "rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden",
                 isDark
                   ? "bg-neutral-900 border border-neutral-800 shadow-black/40"
-                  : "bg-white border border-neutral-200 shadow-black/10"
+                  : "bg-white border border-neutral-200 shadow-black/10",
               )}
             >
               {/* Kaya - Background Decoration (randomized position & image) */}
               <div
                 className={cn(
                   "absolute pointer-events-none select-none",
-                  kayaVariant.position.anchor
+                  kayaVariant.position.anchor,
                 )}
               >
                 <Image
@@ -181,7 +181,7 @@ export function Footer() {
                   className={cn(
                     "object-contain",
                     kayaVariant.position.transform,
-                    isDark ? "opacity-[0.08]" : "opacity-[0.06]"
+                    isDark ? "opacity-[0.08]" : "opacity-[0.06]",
                   )}
                   aria-hidden="true"
                 />
@@ -195,7 +195,7 @@ export function Footer() {
                     <h2
                       className={cn(
                         "text-2xl   mb-2",
-                        isDark ? "text-white" : "text-neutral-900"
+                        isDark ? "text-white" : "text-neutral-900",
                       )}
                     >
                       Kōru
@@ -203,7 +203,7 @@ export function Footer() {
                     <p
                       className={cn(
                         "text-sm   italic",
-                        isDark ? "text-neutral-400" : "text-neutral-600"
+                        isDark ? "text-neutral-400" : "text-neutral-600",
                       )}
                     >
                       Pay for access. Earn for time.
@@ -216,7 +216,7 @@ export function Footer() {
                       <h3
                         className={cn(
                           "text-sm   font-semibold mb-3",
-                          isDark ? "text-white" : "text-neutral-900"
+                          isDark ? "text-white" : "text-neutral-900",
                         )}
                       >
                         Product
@@ -230,7 +230,7 @@ export function Footer() {
                                 "text-sm   transition-colors",
                                 isDark
                                   ? "text-neutral-400 hover:text-white"
-                                  : "text-neutral-600 hover:text-neutral-900"
+                                  : "text-neutral-600 hover:text-neutral-900",
                               )}
                             >
                               {link.name}
@@ -243,7 +243,7 @@ export function Footer() {
                       <h3
                         className={cn(
                           "text-sm   font-semibold mb-3",
-                          isDark ? "text-white" : "text-neutral-900"
+                          isDark ? "text-white" : "text-neutral-900",
                         )}
                       >
                         Support
@@ -257,7 +257,7 @@ export function Footer() {
                                 "text-sm   transition-colors",
                                 isDark
                                   ? "text-neutral-400 hover:text-white"
-                                  : "text-neutral-600 hover:text-neutral-900"
+                                  : "text-neutral-600 hover:text-neutral-900",
                               )}
                             >
                               {link.name}
@@ -301,7 +301,7 @@ export function Footer() {
                 <div
                   className={cn(
                     "h-px mb-6",
-                    isDark ? "bg-neutral-800" : "bg-neutral-200"
+                    isDark ? "bg-neutral-800" : "bg-neutral-200",
                   )}
                 />
 
@@ -311,10 +311,10 @@ export function Footer() {
                   <p
                     className={cn(
                       "text-sm  ",
-                      isDark ? "text-neutral-500" : "text-neutral-500"
+                      isDark ? "text-neutral-500" : "text-neutral-500",
                     )}
                   >
-                    © 2025 Kōru. All rights reserved.
+                    © {new Date().getFullYear()} Kōru. All rights reserved.
                   </p>
 
                   {/* Socials & Theme Toggle */}
@@ -331,13 +331,13 @@ export function Footer() {
                             "p-2 rounded-lg transition-colors",
                             isDark
                               ? "bg-neutral-800 hover:bg-neutral-700"
-                              : "bg-neutral-100 hover:bg-neutral-200"
+                              : "bg-neutral-100 hover:bg-neutral-200",
                           )}
                         >
                           <Icon
                             className={cn(
                               "w-4 h-4",
-                              isDark ? "text-neutral-400" : "text-neutral-600"
+                              isDark ? "text-neutral-400" : "text-neutral-600",
                             )}
                           />
                         </a>

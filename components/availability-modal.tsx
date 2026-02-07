@@ -401,6 +401,9 @@ export function AvailabilityModal({
   >("name");
   const [dateSelectionPattern, setDateSelectionPattern] =
     useState<DateSelectionPattern>("custom");
+  const [selectedDayPatterns, setSelectedDayPatterns] = useState<
+    DateSelectionPattern[]
+  >([]);
 
   const activeSlot = useMemo(() => {
     return slots.find((s) => s.id === activeSlotId) || null;
@@ -424,15 +427,48 @@ export function AvailabilityModal({
       setConfigPrice(slot.price || 50);
       setConfigSelectedDates(slot.selectedDates || []);
       setDateSelectionPattern("custom");
+      setSelectedDayPatterns([]);
       setConfigSubStep("name");
       setStep("configure");
     }
   };
 
   const handlePatternSelect = (pattern: DateSelectionPattern) => {
+    const dayPatterns: DateSelectionPattern[] = [
+      "every_monday",
+      "every_tuesday",
+      "every_wednesday",
+      "every_thursday",
+      "every_friday",
+    ];
+
+    if (dayPatterns.includes(pattern)) {
+      // Toggle day in multi-select array
+      const isSelected = selectedDayPatterns.includes(pattern);
+      const newDays = isSelected
+        ? selectedDayPatterns.filter((d) => d !== pattern)
+        : [...selectedDayPatterns, pattern];
+      setSelectedDayPatterns(newDays);
+      setDateSelectionPattern(newDays.length > 0 ? newDays[0] : "custom");
+
+      // Merge dates from all selected days
+      if (newDays.length === 0) {
+        setConfigSelectedDates([]);
+      } else {
+        const allDates = new Set<string>();
+        for (const day of newDays) {
+          const dates = generateDatesFromPattern(day);
+          dates.forEach((d) => allDates.add(d));
+        }
+        setConfigSelectedDates(Array.from(allDates).sort());
+      }
+      return;
+    }
+
+    // Non-day patterns: single select, clear day selection
+    setSelectedDayPatterns([]);
     setDateSelectionPattern(pattern);
     if (pattern === "custom") {
-      // Keep current selection
       return;
     }
     const generatedDates = generateDatesFromPattern(pattern);
@@ -981,7 +1017,7 @@ export function AvailabilityModal({
                         onClick={() => handlePatternSelect(pattern)}
                         className={cn(
                           "px-3 py-2 rounded-lg text-xs font-medium transition-all",
-                          dateSelectionPattern === pattern
+                          selectedDayPatterns.includes(pattern)
                             ? "bg-koru-golden text-neutral-900 shadow-lg shadow-koru-golden/30"
                             : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-koru-golden/10",
                         )}
@@ -1135,7 +1171,7 @@ export function AvailabilityModal({
           )}
         >
           <DialogTitle className="sr-only">Set Your Availability</DialogTitle>
-          {modalBody}
+          <div className="overflow-y-auto max-h-[85vh]">{modalBody}</div>
         </DialogContent>
       </Dialog>
     );

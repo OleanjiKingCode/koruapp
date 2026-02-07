@@ -28,7 +28,7 @@ export function useUserChats() {
     {
       revalidateOnFocus: false,
       dedupingInterval: 60000, // 1 minute
-    }
+    },
   );
 
   return {
@@ -47,17 +47,19 @@ export function useUserSummons() {
   const { data, error, isLoading } = useSWR(
     userId ? `user-summons-${userId}` : null,
     async () => {
-      if (!userId) return { createdSummons: [], backedSummons: [] };
+      if (!userId)
+        return { createdSummons: [], backedSummons: [], targetedSummons: [] };
       const response = await fetch(API_ROUTES.USER_SUMMONS);
       if (!response.ok) throw new Error("Failed to fetch summons");
       return await response.json();
     },
-    { revalidateOnFocus: false, dedupingInterval: 60000 }
+    { revalidateOnFocus: false, dedupingInterval: 60000 },
   );
 
   return {
     createdSummons: data?.createdSummons || [],
     backedSummons: data?.backedSummons || [],
+    targetedSummons: data?.targetedSummons || [],
     isLoading,
     error,
   };
@@ -73,7 +75,7 @@ export function useUserTransactions(limit = 10) {
     async () => {
       if (!userId) return [];
       const response = await fetch(
-        `${API_ROUTES.USER_TRANSACTIONS}?limit=${limit}`
+        `${API_ROUTES.USER_TRANSACTIONS}?limit=${limit}`,
       );
       if (!response.ok) throw new Error("Failed to fetch transactions");
       const result = await response.json();
@@ -82,7 +84,7 @@ export function useUserTransactions(limit = 10) {
     {
       revalidateOnFocus: false,
       dedupingInterval: 30000, // 30 seconds for transactions
-    }
+    },
   );
 
   return {
@@ -110,7 +112,7 @@ export function useUserWallets() {
     {
       revalidateOnFocus: false,
       dedupingInterval: 60000,
-    }
+    },
   );
 
   return {
@@ -139,7 +141,7 @@ export function useUserAvailability() {
     {
       revalidateOnFocus: false,
       dedupingInterval: 60000,
-    }
+    },
   );
 
   return {
@@ -167,7 +169,7 @@ export function useUserStats() {
     {
       revalidateOnFocus: false,
       dedupingInterval: 60000,
-    }
+    },
   );
 
   return {
@@ -190,6 +192,7 @@ export function useProfileData() {
   const {
     createdSummons,
     backedSummons,
+    targetedSummons,
     isLoading: isLoadingSummons,
   } = useUserSummons();
   const { transactions, isLoading: isLoadingTransactions } =
@@ -207,6 +210,7 @@ export function useProfileData() {
     chats,
     createdSummons,
     backedSummons,
+    targetedSummons,
     transactions,
     wallets,
     primaryWallet,

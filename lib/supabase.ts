@@ -716,6 +716,20 @@ export async function getUserBackedSummons(userId: string): Promise<Summon[]> {
   return appeals;
 }
 
+// Get summons where user is the target (people summoned them)
+export async function getUserTargetedSummons(
+  twitterId: string,
+): Promise<Summon[]> {
+  const { data, error } = await supabase
+    .from("appeals")
+    .select("*")
+    .eq("target_twitter_id", twitterId)
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+  return data;
+}
+
 // Get all active summons
 export async function getActiveSummons(limit = 50): Promise<Summon[]> {
   const { data, error } = await supabase
