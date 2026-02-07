@@ -423,6 +423,7 @@ export interface Summon {
   pledged_amount: number;
   goal_amount: number | null;
   backers_count: number;
+  tags?: Record<string, number>;
   status: "active" | "successful" | "expired" | "cancelled";
   expires_at: string | null;
   successful_at: string | null;
@@ -683,37 +684,61 @@ export async function createChat(chat: {
 // SUMMONS (APPEALS) OPERATIONS
 // =============================================
 
+// Helper to transform a summons table row to the Summon interface
+function transformSummonRow(s: any): Summon {
+  return {
+    id: s.id,
+    creator_id: s.creator_id,
+    target_twitter_id: s.target_twitter_id,
+    target_username: s.target_handle || s.target_username,
+    target_name: s.target_name,
+    target_profile_image: s.target_image || s.target_profile_image || null,
+    title: null,
+    message: s.request || s.message || "",
+    pledged_amount: Number(s.total_backed || s.amount || s.pledged_amount || 0),
+    goal_amount: null,
+    backers_count: s.backers_count || 0,
+    tags: s.tags || {},
+    status: s.status as "active" | "successful" | "expired" | "cancelled",
+    expires_at: s.expires_at,
+    successful_at: s.completed_at || s.successful_at || null,
+    created_at: s.created_at,
+    updated_at: s.updated_at,
+  };
+}
+
 // Get user's created summons
 export async function getUserSummons(userId: string): Promise<Summon[]> {
   const { data, error } = await supabase
-    .from("appeals")
+    .from("summons")
     .select("*")
     .eq("creator_id", userId)
     .order("created_at", { ascending: false });
 
   if (error || !data) return [];
-  return data;
+  return data.map(transformSummonRow);
 }
 
 // Get user's backed summons
 export async function getUserBackedSummons(userId: string): Promise<Summon[]> {
+  // First check the summon_backers table
   const { data, error } = await supabase
-    .from("appeal_backers")
-    .select("appeal_id")
+    .from("summon_backers")
+    .select("summon_id")
     .eq("user_id", userId);
 
   if (error || !data || data.length === 0) return [];
 
-  const appealIds = data.map((b) => b.appeal_id);
+  const summonIds = data.map((b) => b.summon_id);
 
-  const { data: appeals, error: appealsError } = await supabase
-    .from("appeals")
+  const { data: summons, error: summonsError } = await supabase
+    .from("summons")
     .select("*")
-    .in("id", appealIds)
+    .in("id", summonIds)
     .order("created_at", { ascending: false });
 
-  if (appealsError || !appeals) return [];
-  return appeals;
+  if (summonsError || !summons) return [];
+  return summons.map(transformSummonRow);
 }
 
 // Get summons where user is the target (people summoned them)
@@ -721,13 +746,13 @@ export async function getUserTargetedSummons(
   twitterId: string,
 ): Promise<Summon[]> {
   const { data, error } = await supabase
-    .from("appeals")
+    .from("summons")
     .select("*")
     .eq("target_twitter_id", twitterId)
     .order("created_at", { ascending: false });
 
   if (error || !data) return [];
-  return data;
+  return data.map(transformSummonRow);
 }
 
 // Get all active summons
@@ -740,28 +765,7 @@ export async function getActiveSummons(limit = 50): Promise<Summon[]> {
     .limit(limit);
 
   if (error || !data) return [];
-
-  // Transform to match Summon interface
-  return data.map((s: any) => ({
-    id: s.id,
-    creator_id: s.creator_id,
-    target_twitter_id: s.target_twitter_id,
-    target_username: s.target_handle,
-    target_name: s.target_name,
-    target_profile_image: s.target_image,
-    title: null,
-    message: s.request,
-    pledged_amount: Number(s.total_backed || s.amount || 0),
-    goal_amount: null,
-    backers_count: s.backers_count || 0,
-    backers: s.backers || [], // Include backers array
-    tags: s.tags || {}, // Include tags
-    status: s.status as "active" | "successful" | "expired" | "cancelled",
-    expires_at: s.expires_at,
-    successful_at: s.completed_at,
-    created_at: s.created_at,
-    updated_at: s.updated_at,
-  }));
+  return data.map(transformSummonRow);
 }
 
 // Create a new summon (appeal)
