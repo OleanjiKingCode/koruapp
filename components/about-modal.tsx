@@ -19,7 +19,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
             onClick={onClose}
           />
 
@@ -29,7 +29,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="fixed inset-4 md:inset-10 lg:inset-20 z-50 overflow-hidden rounded-2xl bg-neutral-50 dark:bg-neutral-900 shadow-2xl"
+            className="fixed inset-4 md:inset-10 lg:inset-20 z-[60] overflow-hidden rounded-2xl bg-neutral-50 dark:bg-neutral-900 shadow-2xl"
           >
             {/* Close button */}
             <button
@@ -86,7 +86,8 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                     The best opportunities often go to whoever already has{" "}
                     <TextHighlight type="highlight" color="#dab079" delay={0.2}>
                       connections, clout, or a warm intro
-                    </TextHighlight>.
+                    </TextHighlight>
+                    .
                   </p>
                 </motion.section>
 
@@ -101,25 +102,36 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                     Kōru makes access{" "}
                     <TextHighlight type="highlight" color="#9deb61" delay={0.1}>
                       fair and predictable
-                    </TextHighlight>:
+                    </TextHighlight>
+                    :
                   </p>
                   <ul className="space-y-3 text-lg md:text-xl text-neutral-700 dark:text-neutral-300  ">
                     <li className="flex items-start gap-3">
                       <span className="text-neutral-400 mt-1">→</span>
                       <span>
                         If you're serious,{" "}
-                        <TextHighlight type="underline" color="#c385ee" delay={0.2}>
+                        <TextHighlight
+                          type="underline"
+                          color="#c385ee"
+                          delay={0.2}
+                        >
                           you can prove it
-                        </TextHighlight>.
+                        </TextHighlight>
+                        .
                       </span>
                     </li>
                     <li className="flex items-start gap-3">
                       <span className="text-neutral-400 mt-1">→</span>
                       <span>
                         If they're busy, their{" "}
-                        <TextHighlight type="highlight" color="#dab079" delay={0.3}>
+                        <TextHighlight
+                          type="highlight"
+                          color="#dab079"
+                          delay={0.3}
+                        >
                           attention is respected and compensated
-                        </TextHighlight>.
+                        </TextHighlight>
+                        .
                       </span>
                     </li>
                     <li className="flex items-start gap-3">
@@ -128,7 +140,8 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                         The outcome is clear:{" "}
                         <TextHighlight type="box" color="#9deb61" delay={0.4}>
                           reply or refund
-                        </TextHighlight>.
+                        </TextHighlight>
+                        .
                       </span>
                     </li>
                   </ul>
@@ -157,7 +170,8 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                     </li>
                     <li className="list-disc">
                       <TextHighlight type="strike" color="#ef4444" delay={0.3}>
-                        losing deals, collaborations, hires, and life-changing intros to silence
+                        losing deals, collaborations, hires, and life-changing
+                        intros to silence
                       </TextHighlight>
                     </li>
                   </ul>
@@ -184,24 +198,42 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                     — with a{" "}
                     <TextHighlight type="box" color="#9deb61" delay={0.2}>
                       guaranteed reply
-                    </TextHighlight>.
+                    </TextHighlight>
+                    .
                   </p>
                   <div className="space-y-3 text-lg md:text-xl text-neutral-600 dark:text-neutral-400  ">
-                    <p>You send a message with a{" "}
-                      <TextHighlight type="underline" color="#dab079" delay={0.3}>
+                    <p>
+                      You send a message with a{" "}
+                      <TextHighlight
+                        type="underline"
+                        color="#dab079"
+                        delay={0.3}
+                      >
                         clear ask
-                      </TextHighlight>.
+                      </TextHighlight>
+                      .
                     </p>
-                    <p>The recipient replies{" "}
-                      <TextHighlight type="underline" color="#c385ee" delay={0.4}>
+                    <p>
+                      The recipient replies{" "}
+                      <TextHighlight
+                        type="underline"
+                        color="#c385ee"
+                        delay={0.4}
+                      >
                         within a set time
-                      </TextHighlight>.
+                      </TextHighlight>
+                      .
                     </p>
                     <p>
                       If they don't,{" "}
-                      <TextHighlight type="highlight" color="#9deb61" delay={0.5}>
+                      <TextHighlight
+                        type="highlight"
+                        color="#9deb61"
+                        delay={0.5}
+                      >
                         you get your money back
-                      </TextHighlight>.
+                      </TextHighlight>
+                      .
                     </p>
                   </div>
                 </motion.section>
@@ -221,31 +253,52 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                   </p>
                   <ul className="space-y-2 text-lg md:text-xl text-neutral-600 dark:text-neutral-400   pl-6">
                     <li className="list-disc">
-                      <TextHighlight type="highlight" color="rgba(218, 176, 121, 0.4)" delay={0.1}>
+                      <TextHighlight
+                        type="highlight"
+                        color="rgba(218, 176, 121, 0.4)"
+                        delay={0.1}
+                      >
                         creators
-                      </TextHighlight>{" "}you want feedback from
+                      </TextHighlight>{" "}
+                      you want feedback from
                     </li>
                     <li className="list-disc">
-                      <TextHighlight type="highlight" color="rgba(195, 133, 238, 0.4)" delay={0.2}>
+                      <TextHighlight
+                        type="highlight"
+                        color="rgba(195, 133, 238, 0.4)"
+                        delay={0.2}
+                      >
                         founders
-                      </TextHighlight>{" "}you want advice from
+                      </TextHighlight>{" "}
+                      you want advice from
                     </li>
                     <li className="list-disc">
-                      <TextHighlight type="highlight" color="rgba(157, 235, 97, 0.4)" delay={0.3}>
+                      <TextHighlight
+                        type="highlight"
+                        color="rgba(157, 235, 97, 0.4)"
+                        delay={0.3}
+                      >
                         investors
-                      </TextHighlight>{" "}you want to pitch
+                      </TextHighlight>{" "}
+                      you want to pitch
                     </li>
                     <li className="list-disc">
-                      <TextHighlight type="highlight" color="rgba(218, 176, 121, 0.4)" delay={0.4}>
+                      <TextHighlight
+                        type="highlight"
+                        color="rgba(218, 176, 121, 0.4)"
+                        delay={0.4}
+                      >
                         operators
-                      </TextHighlight>{" "}you want answers from
+                      </TextHighlight>{" "}
+                      you want answers from
                     </li>
                   </ul>
                   <p className="text-xl md:text-2xl text-neutral-900 dark:text-neutral-100   pt-2">
                     …and{" "}
                     <TextHighlight type="highlight" color="#9deb61" delay={0.5}>
                       actually get a response
-                    </TextHighlight>.
+                    </TextHighlight>
+                    .
                   </p>
                 </motion.section>
 
@@ -267,19 +320,27 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                     into a{" "}
                     <TextHighlight type="box" color="#9deb61" delay={0.2}>
                       system
-                    </TextHighlight>.
+                    </TextHighlight>
+                    .
                   </p>
                   <p className="text-lg md:text-xl text-neutral-600 dark:text-neutral-400   leading-relaxed">
                     A system where{" "}
                     <TextHighlight type="underline" color="#dab079" delay={0.3}>
                       attention has value
-                    </TextHighlight>,{" "}
+                    </TextHighlight>
+                    ,{" "}
                     <TextHighlight type="underline" color="#c385ee" delay={0.4}>
                       time is respected
-                    </TextHighlight>, and{" "}
-                    <TextHighlight type="highlight" color="rgba(157, 235, 97, 0.5)" delay={0.5}>
+                    </TextHighlight>
+                    , and{" "}
+                    <TextHighlight
+                      type="highlight"
+                      color="rgba(157, 235, 97, 0.5)"
+                      delay={0.5}
+                    >
                       good opportunities don't die in silence
-                    </TextHighlight>.
+                    </TextHighlight>
+                    .
                   </p>
                 </motion.section>
 

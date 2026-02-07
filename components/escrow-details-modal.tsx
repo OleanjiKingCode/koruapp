@@ -732,7 +732,7 @@ export function EscrowDetailsModal({
 
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent>
+      <DrawerContent className="select-text">
         <DrawerHeader className="text-left px-3">
           <DrawerTitle>Escrow Details</DrawerTitle>
           <DrawerDescription>

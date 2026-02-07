@@ -13,24 +13,25 @@ export const USDC_ADDRESSES: Record<number, Address> = {
 };
 
 // Escrow Status enum matching the contract
+// MUST match Solidity enum order: Pending, Accepted, Released, Completed, Expired, Disputed, Cancelled
 export enum EscrowStatus {
   Pending = 0,
   Accepted = 1,
   Released = 2,
-  Disputed = 3,
-  Completed = 4,
-  Cancelled = 5,
-  Expired = 6,
+  Completed = 3,
+  Expired = 4,
+  Disputed = 5,
+  Cancelled = 6,
 }
 
 export const STATUS_LABELS: Record<EscrowStatus, string> = {
   [EscrowStatus.Pending]: "Pending",
   [EscrowStatus.Accepted]: "Accepted",
   [EscrowStatus.Released]: "Released",
-  [EscrowStatus.Disputed]: "Disputed",
   [EscrowStatus.Completed]: "Completed",
-  [EscrowStatus.Cancelled]: "Cancelled",
   [EscrowStatus.Expired]: "Expired",
+  [EscrowStatus.Disputed]: "Disputed",
+  [EscrowStatus.Cancelled]: "Cancelled",
 };
 
 // Escrow data structure (uint48 values come back as number from viem)

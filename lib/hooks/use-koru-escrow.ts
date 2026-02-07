@@ -1351,7 +1351,8 @@ export function useContractPendingBalance(walletAddress?: Address) {
         totalReady += netAmount;
       } else if (
         effectiveStatus === EscrowStatus.Pending ||
-        effectiveStatus === EscrowStatus.Accepted
+        effectiveStatus === EscrowStatus.Accepted ||
+        effectiveStatus === EscrowStatus.Disputed
       ) {
         totalPending += netAmount;
       } else if (effectiveStatus === EscrowStatus.Released) {
