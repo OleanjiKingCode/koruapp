@@ -267,7 +267,7 @@ export function SummonDetailsModal({
             className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
             onClick={() => onOpenChange(false)}
           />
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none overflow-y-auto">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 pointer-events-none overflow-y-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}

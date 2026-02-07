@@ -526,7 +526,7 @@ function ModalBody() {
   return (
     <div className="flex flex-col">
       {/* Totals */}
-      <div className="grid grid-cols-2 gap-2 px-3 pb-3">
+      <div className="grid grid-cols-2 gap-2 px-2 pb-2">
         <div className="bg-koru-golden/10 rounded-xl p-3 border border-koru-golden/20">
           <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mb-0.5 uppercase tracking-wide font-medium">
             In Escrow
@@ -546,7 +546,11 @@ function ModalBody() {
       </div>
 
       {/* Scrollable list */}
-      <div className="overflow-y-auto px-3 pb-3" style={{ maxHeight: "50vh" }}>
+      <div
+        className="overflow-y-auto px-2 pb-2"
+        style={{ maxHeight: "50vh" }}
+        data-vaul-no-drag
+      >
         {error ? (
           <div className="text-center py-8">
             <p className="text-neutral-500 dark:text-neutral-400">
@@ -718,7 +722,7 @@ export function EscrowDetailsModal({
     return (
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
-          <DialogHeader className="px-3 pt-3 pb-2">
+          <DialogHeader className="px-2 pt-2 pb-2">
             <DialogTitle>Escrow Details</DialogTitle>
             <DialogDescription>
               Your active escrow payments and withdrawals
@@ -731,15 +735,21 @@ export function EscrowDetailsModal({
   }
 
   return (
-    <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Drawer
+      open={isOpen}
+      onOpenChange={(open) => !open && onClose()}
+      modal={false}
+    >
       <DrawerContent className="select-text">
-        <DrawerHeader className="text-left px-3">
+        <DrawerHeader className="text-left px-2">
           <DrawerTitle>Escrow Details</DrawerTitle>
           <DrawerDescription>
             Your active escrow payments and withdrawals
           </DrawerDescription>
         </DrawerHeader>
-        <ModalBody />
+        <div data-vaul-no-drag>
+          <ModalBody />
+        </div>
       </DrawerContent>
     </Drawer>
   );

@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { useMediaQuery } from "@/lib/hooks/use-media-query"
+import * as React from "react";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import {
   Drawer,
   DrawerClose,
@@ -19,17 +19,17 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from "@/components/ui/drawer"
+} from "@/components/ui/drawer";
 
 interface ResponsiveModalProps {
-  open?: boolean
-  onOpenChange?: (open: boolean) => void
-  trigger?: React.ReactNode
-  title?: string
-  description?: string
-  children: React.ReactNode
-  footer?: React.ReactNode
-  className?: string
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger?: React.ReactNode;
+  title?: string;
+  description?: string;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+  className?: string;
 }
 
 export function ResponsiveModal({
@@ -42,7 +42,7 @@ export function ResponsiveModal({
   footer,
   className,
 }: ResponsiveModalProps) {
-  const isDesktop = useMediaQuery("(min-width: 640px)")
+  const isDesktop = useMediaQuery("(min-width: 640px)");
 
   if (isDesktop) {
     return (
@@ -52,30 +52,36 @@ export function ResponsiveModal({
           {(title || description) && (
             <DialogHeader>
               {title && <DialogTitle>{title}</DialogTitle>}
-              {description && <DialogDescription>{description}</DialogDescription>}
+              {description && (
+                <DialogDescription>{description}</DialogDescription>
+              )}
             </DialogHeader>
           )}
           {children}
         </DialogContent>
       </Dialog>
-    )
+    );
   }
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer open={open} onOpenChange={onOpenChange} modal={false}>
       {trigger && <DrawerTrigger asChild>{trigger}</DrawerTrigger>}
       <DrawerContent className={className}>
         {(title || description) && (
           <DrawerHeader className="text-left">
             {title && <DrawerTitle>{title}</DrawerTitle>}
-            {description && <DrawerDescription>{description}</DrawerDescription>}
+            {description && (
+              <DrawerDescription>{description}</DrawerDescription>
+            )}
           </DrawerHeader>
         )}
-        <div className="px-4 pb-4">{children}</div>
+        <div className="px-4 pb-4" data-vaul-no-drag>
+          {children}
+        </div>
         {footer && <DrawerFooter>{footer}</DrawerFooter>}
       </DrawerContent>
     </Drawer>
-  )
+  );
 }
 
 // Export individual parts for more control
@@ -94,8 +100,4 @@ export {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-}
-
-
-
-
+};

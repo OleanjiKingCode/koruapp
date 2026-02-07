@@ -180,7 +180,7 @@ export function LoginModal({
   }
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer open={open} onOpenChange={onOpenChange} modal={false}>
       <DrawerContent
         className={cn(
           "overflow-hidden border-0",
@@ -188,7 +188,7 @@ export function LoginModal({
         )}
       >
         <DrawerTitle className="sr-only">{title}</DrawerTitle>
-        {modalBody}
+        <div data-vaul-no-drag>{modalBody}</div>
       </DrawerContent>
     </Drawer>
   );

@@ -603,7 +603,7 @@ export function BookingModal({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.2 }}
-          className="p-3"
+          className="p-2"
         >
           {/* Header */}
           <div className="mb-6">
@@ -714,7 +714,7 @@ export function BookingModal({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.2 }}
-          className="p-3"
+          className="p-2"
         >
           {/* Header with Back */}
           <div className="flex items-center gap-3 mb-4">
@@ -823,7 +823,7 @@ export function BookingModal({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.2 }}
-          className="p-3"
+          className="p-2"
         >
           {/* Header with Back */}
           <div className="flex items-center gap-3 mb-6">
@@ -943,7 +943,7 @@ export function BookingModal({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.2 }}
-          className="p-3"
+          className="p-2"
         >
           {/* Header with Back */}
           <div className="flex items-center gap-3 mb-6">
@@ -1122,7 +1122,7 @@ export function BookingModal({
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.2 }}
-          className="p-8 flex flex-col items-center justify-center min-h-[300px]"
+          className="p-2 flex flex-col items-center justify-center min-h-[300px]"
         >
           {/* Loading Animation Container */}
           <div className="relative mb-6">
@@ -1251,7 +1251,7 @@ export function BookingModal({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
-          className="p-3"
+          className="p-2"
         >
           {/* Success Icon */}
           <div className="flex justify-center mb-6">
@@ -1451,10 +1451,12 @@ export function BookingModal({
   }
 
   return (
-    <Drawer open={open} onOpenChange={handleOpenChange}>
+    <Drawer open={open} onOpenChange={handleOpenChange} modal={false}>
       <DrawerContent className="overflow-hidden">
         <DrawerTitle className="sr-only">Book a Session</DrawerTitle>
-        <div className="overflow-y-auto max-h-[85vh]">{modalBody}</div>
+        <div className="overflow-y-auto max-h-[85vh]" data-vaul-no-drag>
+          {modalBody}
+        </div>
       </DrawerContent>
     </Drawer>
   );

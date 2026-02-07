@@ -543,7 +543,7 @@ export function AvailabilityModal({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.2 }}
-          className="p-3"
+          className="p-2"
         >
           {/* Header */}
           <div className="mb-6">
@@ -1142,10 +1142,12 @@ export function AvailabilityModal({
   }
 
   return (
-    <Drawer open={open} onOpenChange={handleOpenChange}>
+    <Drawer open={open} onOpenChange={handleOpenChange} modal={false}>
       <DrawerContent className="overflow-hidden">
         <DrawerTitle className="sr-only">Set Your Availability</DrawerTitle>
-        <div className="overflow-y-auto max-h-[85vh]">{modalBody}</div>
+        <div className="overflow-y-auto max-h-[85vh]" data-vaul-no-drag>
+          {modalBody}
+        </div>
       </DrawerContent>
     </Drawer>
   );
