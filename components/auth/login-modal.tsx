@@ -47,7 +47,7 @@ export function LoginModal({
   const modalBody = (
     <div className="relative">
       {/* Content */}
-      <div className="relative p-6 sm:p-8">
+      <div className="relative p-2 sm:p-4">
         {/* Logo */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}

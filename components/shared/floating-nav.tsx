@@ -305,7 +305,10 @@ export function FloatingNav() {
                   const showUserImage =
                     isProfileItem && isAuthenticated && session?.user?.image;
                   const showWalletInfo =
-                    isProfileItem && privyReady && walletAddress;
+                    isProfileItem &&
+                    isAuthenticated &&
+                    privyReady &&
+                    walletAddress;
 
                   return (
                     <Link
@@ -490,7 +493,10 @@ export function FloatingNav() {
                 const showUserImage =
                   isProfileItem && isAuthenticated && session?.user?.image;
                 const showWalletInfo =
-                  isProfileItem && privyReady && walletAddress;
+                  isProfileItem &&
+                  isAuthenticated &&
+                  privyReady &&
+                  walletAddress;
 
                 return (
                   <Link
