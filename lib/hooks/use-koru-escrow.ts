@@ -1465,22 +1465,16 @@ export function useContractEscrows(walletAddress?: Address) {
     },
   });
 
-  // Filter to only escrows relevant to this wallet (active statuses)
+  // Filter to only escrows relevant to this wallet
+  // Include all statuses so completed/expired escrows show in history sections
   const relevantIds = useMemo(() => {
     if (!allEscrowsData || !walletAddress) return [];
     const normalizedWallet = walletAddress.toLowerCase();
     const ids: number[] = [];
-    const activeStatuses = [
-      EscrowStatus.Pending,
-      EscrowStatus.Accepted,
-      EscrowStatus.Released,
-      EscrowStatus.Disputed,
-    ];
     for (let i = 0; i < allEscrowsData.length; i++) {
       const result = allEscrowsData[i];
       if (result?.status !== "success" || !result.result) continue;
       const escrow = result.result as Escrow;
-      if (!activeStatuses.includes(escrow.status)) continue;
       const isDepositor = escrow.depositor.toLowerCase() === normalizedWallet;
       const isRecipient = escrow.recipient.toLowerCase() === normalizedWallet;
       if (isDepositor || isRecipient) ids.push(i);
