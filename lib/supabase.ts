@@ -332,6 +332,12 @@ export interface UserAvailability {
   slots: AvailabilitySlotData[];
 }
 
+// Summon IDs tracked on the user record for fast lookups
+export interface UserSummonIds {
+  backed_ids: string[];
+  targeted_ids: string[];
+}
+
 // Types for connected wallets (embedded in user)
 export interface ConnectedWallet {
   address: string;
@@ -374,6 +380,7 @@ export interface User {
   // Embedded data (JSONB columns)
   availability: UserAvailability | null;
   connected_wallets: ConnectedWallet[] | null;
+  summon_ids: UserSummonIds | null;
 
   // Stats
   total_chats: number;
@@ -724,13 +731,23 @@ export async function getUserSummons(userId: string): Promise<Summon[]> {
   return data.map(transformSummonRow);
 }
 
-// Get user's backed summons (queries the backers JSONB array on the summons table)
+// Get user's backed summons using summon_ids from the user record
 export async function getUserBackedSummons(userId: string): Promise<Summon[]> {
-  // Query summons where the backers JSONB array contains this user
+  // 1. Get the user's summon_ids
+  const { data: user } = await supabase
+    .from("users")
+    .select("summon_ids")
+    .eq("id", userId)
+    .single();
+
+  const backedIds = user?.summon_ids?.backed_ids || [];
+  if (backedIds.length === 0) return [];
+
+  // 2. Fetch those summons by ID
   const { data, error } = await supabase
     .from("summons")
     .select("*")
-    .contains("backers", [{ user_id: userId }])
+    .in("id", backedIds)
     .order("created_at", { ascending: false });
 
   if (error || !data) {
@@ -740,13 +757,37 @@ export async function getUserBackedSummons(userId: string): Promise<Summon[]> {
   return data.map(transformSummonRow);
 }
 
-// Get summons where user is the target (people summoned them)
-// Checks both target_twitter_id and target_handle since either could match
+// Get summons targeting this user using summon_ids from the user record
 export async function getUserTargetedSummons(
   twitterId: string,
   username?: string,
+  dbUserId?: string,
 ): Promise<Summon[]> {
-  // Build an OR filter to check both the twitter ID and the username/handle
+  // If we have the DB user ID, use the fast path via summon_ids
+  if (dbUserId) {
+    const { data: user } = await supabase
+      .from("users")
+      .select("summon_ids")
+      .eq("id", dbUserId)
+      .single();
+
+    const targetedIds = user?.summon_ids?.targeted_ids || [];
+    if (targetedIds.length === 0) return [];
+
+    const { data, error } = await supabase
+      .from("summons")
+      .select("*")
+      .in("id", targetedIds)
+      .order("created_at", { ascending: false });
+
+    if (error || !data) {
+      if (error) captureDbError(error, "getUserTargetedSummons", { dbUserId });
+      return [];
+    }
+    return data.map(transformSummonRow);
+  }
+
+  // Fallback: scan summons table by twitter ID / handle
   const orConditions = [`target_twitter_id.eq.${twitterId}`];
   if (username) {
     orConditions.push(`target_handle.eq.${username}`);
@@ -764,6 +805,79 @@ export async function getUserTargetedSummons(
     return [];
   }
   return data.map(transformSummonRow);
+}
+
+// =============================================
+// Summon ID tracking on user records
+// =============================================
+
+const DEFAULT_SUMMON_IDS: UserSummonIds = { backed_ids: [], targeted_ids: [] };
+
+/**
+ * Add a summon ID to a user's summon_ids field.
+ * @param field - "backed_ids" or "targeted_ids"
+ */
+export async function addSummonIdToUser(
+  userId: string,
+  summonId: string,
+  field: "backed_ids" | "targeted_ids",
+): Promise<void> {
+  // Fetch current summon_ids
+  const { data: user } = await supabase
+    .from("users")
+    .select("summon_ids")
+    .eq("id", userId)
+    .single();
+
+  const current: UserSummonIds = user?.summon_ids || { ...DEFAULT_SUMMON_IDS };
+  const ids = current[field] || [];
+
+  // Don't add duplicates
+  if (ids.includes(summonId)) return;
+
+  const updated = { ...current, [field]: [...ids, summonId] };
+
+  await supabase.from("users").update({ summon_ids: updated }).eq("id", userId);
+}
+
+/**
+ * Sync a user's summon_ids by scanning the summons table.
+ * Call this on login/signup to catch summons created before the user joined,
+ * or to repair any missing entries.
+ */
+export async function syncUserSummonIds(
+  userId: string,
+  twitterId: string,
+  username: string,
+): Promise<UserSummonIds> {
+  // 1. Find all summons this user backed (via backers JSONB array)
+  const { data: backedSummons } = await supabase
+    .from("summons")
+    .select("id")
+    .contains("backers", [{ user_id: userId }]);
+
+  const backedIds = (backedSummons || []).map((s) => s.id);
+
+  // 2. Find all summons targeting this user (by twitter ID or username)
+  const { data: targetedSummons } = await supabase
+    .from("summons")
+    .select("id")
+    .or(`target_twitter_id.eq.${twitterId},target_handle.eq.${username}`);
+
+  const targetedIds = (targetedSummons || []).map((s) => s.id);
+
+  const summonIds: UserSummonIds = {
+    backed_ids: backedIds,
+    targeted_ids: targetedIds,
+  };
+
+  // 3. Write back to user record
+  await supabase
+    .from("users")
+    .update({ summon_ids: summonIds })
+    .eq("id", userId);
+
+  return summonIds;
 }
 
 // Get all active summons

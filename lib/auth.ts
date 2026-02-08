@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import NextAuth from "next-auth";
 import Twitter from "next-auth/providers/twitter";
-import { upsertUser } from "./supabase";
+import { upsertUser, syncUserSummonIds } from "./supabase";
 import {
   parseTwitterSearchResponse,
   type TwitterSearchResponse,
@@ -173,12 +173,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             // Store the database user ID
             if (dbUser) {
               token.dbUserId = dbUser.id;
-              // Update user with banner URL if we have it (fire and forget)
-              if (bannerUrl && dbUser.id) {
-                // Note: upsertUser doesn't support banner_url, so we'd need to update separately
-                // For now, we'll store it in twitter_profiles cache via the search API
-                // The search API already handles this
-              }
+
+              // Sync summon_ids on login — catches summons created
+              // before the user joined Koru, and repairs any gaps.
+              // Fire-and-forget so it doesn't slow down the login.
+              syncUserSummonIds(dbUser.id, data.id, data.username).catch(
+                (err) =>
+                  console.warn("Failed to sync summon IDs on login:", err),
+              );
             } else {
               console.warn(
                 "Failed to save user to database, but continuing with login",

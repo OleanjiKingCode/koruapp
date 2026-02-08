@@ -17,12 +17,13 @@ export async function GET() {
 
     const twitterId = session.user.id;
     const username = session.user.username;
+    const dbUserId = session.user.dbId;
 
     const [createdSummons, backedSummons, targetedSummons] = await Promise.all([
-      getUserSummons(session.user.dbId),
-      getUserBackedSummons(session.user.dbId),
+      getUserSummons(dbUserId),
+      getUserBackedSummons(dbUserId),
       twitterId
-        ? getUserTargetedSummons(twitterId, username)
+        ? getUserTargetedSummons(twitterId, username, dbUserId)
         : Promise.resolve([]),
     ]);
 

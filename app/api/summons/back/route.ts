@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { captureApiError } from "@/lib/sentry";
-import { supabase } from "@/lib/supabase";
+import { supabase, addSummonIdToUser } from "@/lib/supabase";
 import { notifySummonBacked } from "@/lib/notifications";
 
 interface BackerInfo {
@@ -121,6 +121,9 @@ export async function POST(request: NextRequest) {
         { status: 500 },
       );
     }
+
+    // Add summon ID to the user's summon_ids.backed_ids for fast lookups
+    await addSummonIdToUser(session.user.dbId, summon_id, "backed_ids");
 
     // Also add to summon_backers table for backwards compatibility
     // Ignore errors - the backers array is the source of truth now

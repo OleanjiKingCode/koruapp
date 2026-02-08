@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { supabase, getActiveSummons } from "@/lib/supabase";
+import { supabase, getActiveSummons, addSummonIdToUser } from "@/lib/supabase";
 import { captureApiError } from "@/lib/sentry";
 import { notifySummonCreated } from "@/lib/notifications";
 
@@ -220,6 +220,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Creator is the first backer — add to their backed_ids
+    await addSummonIdToUser(session.user.dbId, summon.id, "backed_ids");
+
     // Increment the creator's total_summons_created count
     // Try RPC first, then fall back to manual update
     const { error: rpcError } = await supabase.rpc("increment_user_summons", {
@@ -245,9 +248,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Notify the target user if they're on the platform and this is their first summon
+    // Check if target user is already on Koru
     try {
-      // Check if target user exists on the platform by username
       const { data: targetUser } = await supabase
         .from("users")
         .select("id, username")
@@ -255,14 +257,16 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (targetUser) {
-        // Check if this is the first summon for this user
+        // Add summon to the target user's targeted_ids
+        await addSummonIdToUser(targetUser.id, summon.id, "targeted_ids");
+
+        // Check if this is the first summon for this user and notify
         const { count: previousSummons } = await supabase
           .from("summons")
           .select("*", { count: "exact", head: true })
           .eq("target_handle", target_username)
           .neq("id", summon.id);
 
-        // Only notify if this is the first summon for them
         if (previousSummons === 0) {
           await notifySummonCreated(
             targetUser.id,
