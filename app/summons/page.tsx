@@ -802,94 +802,89 @@ export default function SummonsPage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col gap-2 mb-6"
+          className="flex flex-wrap items-center gap-3 mb-6"
         >
-          {/* Top row: Categories + View Toggle */}
-          <div className="flex items-center gap-3">
-            {/* Category Tabs */}
-            <div className="flex items-center gap-1 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-xl">
-              {CATEGORIES.slice(0, 4).map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
-                    selectedCategory === cat
-                      ? "bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm"
-                      : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300",
-                  )}
-                >
-                  {cat}
-                </button>
-              ))}
-              {/* Clear filter button */}
-              {selectedCategory !== "All" && (
-                <button
-                  onClick={() => setSelectedCategory("All")}
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-all"
-                  title="Clear category filter"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-
-            {/* Clear search button */}
-            {searchQuery && (
+          {/* Category Tabs */}
+          <div className="flex items-center gap-1 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-xl">
+            {CATEGORIES.slice(0, 4).map((cat) => (
               <button
-                onClick={() => setSearchQuery("")}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-all bg-neutral-100 dark:bg-neutral-800 shrink-0"
-                title="Clear search"
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
+                  selectedCategory === cat
+                    ? "bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm"
+                    : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300",
+                )}
               >
-                Clear Search
+                {cat}
+              </button>
+            ))}
+            {/* Clear filter button */}
+            {selectedCategory !== "All" && (
+              <button
+                onClick={() => setSelectedCategory("All")}
+                className="px-3 py-1.5 rounded-lg text-sm font-medium text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-all"
+                title="Clear category filter"
+              >
+                ✕
               </button>
             )}
-
-            {/* View Toggle - pushed right */}
-            <div className="flex items-center gap-1 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-xl ml-auto shrink-0">
-              <button
-                onClick={() => setViewMode("treemap")}
-                className={cn(
-                  "p-2 rounded-lg transition-all",
-                  viewMode === "treemap"
-                    ? "bg-white dark:bg-neutral-700 shadow-sm"
-                    : "text-neutral-500 hover:text-neutral-700",
-                )}
-              >
-                <GridIcon className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={cn(
-                  "p-2 rounded-lg transition-all",
-                  viewMode === "list"
-                    ? "bg-white dark:bg-neutral-700 shadow-sm"
-                    : "text-neutral-500 hover:text-neutral-700",
-                )}
-              >
-                <ListIcon className="w-4 h-4" />
-              </button>
-            </div>
           </div>
 
-          {/* Bottom row: Time Filters - scrollable on mobile */}
-          <div className="overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
-            <div className="flex items-center gap-1 w-max sm:w-auto">
-              {TIME_FILTERS.map((time) => (
-                <button
-                  key={time}
-                  onClick={() => setSelectedTime(time)}
-                  className={cn(
-                    "px-3 py-1.5 text-sm font-medium transition-all whitespace-nowrap rounded-lg",
-                    selectedTime === time
-                      ? "text-koru-purple bg-koru-purple/10"
-                      : "text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300",
-                  )}
-                >
-                  {time}
-                </button>
-              ))}
-            </div>
+          {/* Time Filters */}
+          <div className="flex items-center gap-1">
+            {TIME_FILTERS.map((time) => (
+              <button
+                key={time}
+                onClick={() => setSelectedTime(time)}
+                className={cn(
+                  "px-3 py-1.5 text-sm font-medium transition-all rounded-lg",
+                  selectedTime === time
+                    ? "text-koru-purple bg-koru-purple/10"
+                    : "text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300",
+                )}
+              >
+                {time}
+              </button>
+            ))}
+          </div>
+
+          {/* Clear search button */}
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="px-3 py-1.5 rounded-lg text-sm font-medium text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-all bg-neutral-100 dark:bg-neutral-800 shrink-0"
+              title="Clear search"
+            >
+              Clear Search
+            </button>
+          )}
+
+          {/* View Toggle - pushed right */}
+          <div className="flex items-center gap-1 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-xl ml-auto shrink-0">
+            <button
+              onClick={() => setViewMode("treemap")}
+              className={cn(
+                "p-2 rounded-lg transition-all",
+                viewMode === "treemap"
+                  ? "bg-white dark:bg-neutral-700 shadow-sm"
+                  : "text-neutral-500 hover:text-neutral-700",
+              )}
+            >
+              <GridIcon className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={cn(
+                "p-2 rounded-lg transition-all",
+                viewMode === "list"
+                  ? "bg-white dark:bg-neutral-700 shadow-sm"
+                  : "text-neutral-500 hover:text-neutral-700",
+              )}
+            >
+              <ListIcon className="w-4 h-4" />
+            </button>
           </div>
         </motion.div>
 

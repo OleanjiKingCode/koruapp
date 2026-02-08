@@ -123,7 +123,7 @@ export default function RootLayout({
                 <AppShell>{children}</AppShell>
                 <CookieConsentModal />
                 <Toaster
-                  position="top-center"
+                  position="bottom-right"
                   toastOptions={{
                     style: {
                       fontFamily: "var(--font-quicksand)",
