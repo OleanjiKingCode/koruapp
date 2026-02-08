@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const { data: summon, error: fetchError } = await supabase
       .from("summons")
       .select(
-        "total_backed, backers_count, backers, tags, creator_id, target_username",
+        "total_backed, backers_count, backers, tags, creator_id, target_handle",
       )
       .eq("id", summon_id)
       .single();
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
           userData.username,
           userData.profile_image_url,
           pledgeAmount,
-          summon.target_username || "",
+          summon.target_handle || "",
           summon_id,
         );
       } catch (notifyError) {
