@@ -87,7 +87,11 @@ export function useChatMessages({
     // Fetch initial messages
     fetchMessages();
 
-    // Subscribe to new messages for this chat
+    // Subscribe to new messages for this chat.
+    // Messages are encrypted at rest in the database, so real-time payloads
+    // arrive with encrypted content. Instead of decrypting client-side
+    // (which would expose the key), we re-fetch from the API which
+    // decrypts server-side and returns plaintext.
     const channel = supabase
       .channel(`chat:${chatId}`)
       .on(
@@ -101,36 +105,44 @@ export function useChatMessages({
         (payload) => {
           const newMessage = payload.new as ChatMessage;
 
-          // Add the new message if it's not from us (our messages are added optimistically)
-          // or if it's a confirmation of our optimistic message
-          setMessages((prev) => {
-            // Check if this message already exists (was added optimistically)
-            const existsAsOptimistic = prev.some(
-              (m) =>
-                m.id.startsWith("optimistic-") &&
-                m.content === newMessage.content &&
-                m.sender_id === newMessage.sender_id,
-            );
-
-            if (existsAsOptimistic) {
-              // Replace the optimistic message with the real one
-              return prev.map((m) =>
-                m.id.startsWith("optimistic-") &&
-                m.content === newMessage.content &&
-                m.sender_id === newMessage.sender_id
-                  ? newMessage
-                  : m,
+          // For our own messages: the optimistic message already has
+          // plaintext content. Replace it using the real message ID
+          // but keep our plaintext content.
+          if (newMessage.sender_id === userId) {
+            setMessages((prev) => {
+              // Find the optimistic message for this sender
+              const optimisticIdx = prev.findIndex(
+                (m) =>
+                  m.id.startsWith("optimistic-") &&
+                  m.sender_id === newMessage.sender_id,
               );
-            }
 
-            // Check if message already exists
-            if (prev.some((m) => m.id === newMessage.id)) {
+              if (optimisticIdx !== -1) {
+                // Replace optimistic with real message, keeping plaintext content
+                const optimistic = prev[optimisticIdx];
+                const updated = [...prev];
+                updated[optimisticIdx] = {
+                  ...newMessage,
+                  content: optimistic.content, // Keep the plaintext from optimistic
+                  sender: optimistic.sender,
+                };
+                return updated;
+              }
+
+              // Already exists as real message
+              if (prev.some((m) => m.id === newMessage.id)) {
+                return prev;
+              }
+
+              // Shouldn't happen for own messages, but re-fetch to be safe
+              fetchMessages();
               return prev;
-            }
-
-            // Add new message
-            return [...prev, newMessage];
-          });
+            });
+          } else {
+            // For other users' messages: content is encrypted.
+            // Re-fetch all messages from the API to get decrypted content.
+            fetchMessages();
+          }
         },
       )
       .on(
@@ -143,8 +155,14 @@ export function useChatMessages({
         },
         (payload) => {
           const updatedMessage = payload.new as ChatMessage;
+          // For UPDATE events (e.g. read receipts), update metadata
+          // but preserve the existing decrypted content
           setMessages((prev) =>
-            prev.map((m) => (m.id === updatedMessage.id ? updatedMessage : m)),
+            prev.map((m) =>
+              m.id === updatedMessage.id
+                ? { ...updatedMessage, content: m.content, sender: m.sender }
+                : m,
+            ),
           );
         },
       )

@@ -16,11 +16,14 @@ export async function GET() {
     }
 
     const twitterId = session.user.id;
+    const username = session.user.username;
 
     const [createdSummons, backedSummons, targetedSummons] = await Promise.all([
       getUserSummons(session.user.dbId),
       getUserBackedSummons(session.user.dbId),
-      twitterId ? getUserTargetedSummons(twitterId) : Promise.resolve([]),
+      twitterId
+        ? getUserTargetedSummons(twitterId, username)
+        : Promise.resolve([]),
     ]);
 
     return NextResponse.json({

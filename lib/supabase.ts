@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { captureDbError } from "./sentry";
+import { encrypt, decrypt, decryptMessages } from "./encryption";
 
 // Lazy initialization of Supabase client (server-side only)
 let supabaseInstance: SupabaseClient | null = null;
@@ -424,6 +425,7 @@ export interface Summon {
   goal_amount: number | null;
   backers_count: number;
   tags?: Record<string, number>;
+  backers?: any[]; // Raw backers JSONB array from DB
   status: "active" | "successful" | "expired" | "cancelled";
   expires_at: string | null;
   successful_at: string | null;
@@ -619,10 +621,12 @@ export async function getUserChats(userId: string): Promise<Chat[]> {
   if (error || !data) return [];
 
   // Transform to include otherParty based on the current user
+  // and decrypt last_message preview
   return data.map((chat: any) => {
     const isRequester = chat.requester_id === userId;
     return {
       ...chat,
+      last_message: chat.last_message ? decrypt(chat.last_message) : null,
       otherParty: isRequester ? chat.creator : chat.requester,
     };
   });
@@ -699,6 +703,7 @@ function transformSummonRow(s: any): Summon {
     goal_amount: null,
     backers_count: s.backers_count || 0,
     tags: s.tags || {},
+    backers: s.backers || [], // Preserve raw backers JSONB array
     status: s.status as "active" | "successful" | "expired" | "cancelled",
     expires_at: s.expires_at,
     successful_at: s.completed_at || s.successful_at || null,
@@ -719,39 +724,45 @@ export async function getUserSummons(userId: string): Promise<Summon[]> {
   return data.map(transformSummonRow);
 }
 
-// Get user's backed summons
+// Get user's backed summons (queries the backers JSONB array on the summons table)
 export async function getUserBackedSummons(userId: string): Promise<Summon[]> {
-  // First check the summon_backers table
+  // Query summons where the backers JSONB array contains this user
   const { data, error } = await supabase
-    .from("summon_backers")
-    .select("summon_id")
-    .eq("user_id", userId);
-
-  if (error || !data || data.length === 0) return [];
-
-  const summonIds = data.map((b) => b.summon_id);
-
-  const { data: summons, error: summonsError } = await supabase
     .from("summons")
     .select("*")
-    .in("id", summonIds)
+    .contains("backers", [{ user_id: userId }])
     .order("created_at", { ascending: false });
 
-  if (summonsError || !summons) return [];
-  return summons.map(transformSummonRow);
+  if (error || !data) {
+    if (error) captureDbError(error, "getUserBackedSummons", { userId });
+    return [];
+  }
+  return data.map(transformSummonRow);
 }
 
 // Get summons where user is the target (people summoned them)
+// Checks both target_twitter_id and target_handle since either could match
 export async function getUserTargetedSummons(
   twitterId: string,
+  username?: string,
 ): Promise<Summon[]> {
+  // Build an OR filter to check both the twitter ID and the username/handle
+  const orConditions = [`target_twitter_id.eq.${twitterId}`];
+  if (username) {
+    orConditions.push(`target_handle.eq.${username}`);
+  }
+
   const { data, error } = await supabase
     .from("summons")
     .select("*")
-    .eq("target_twitter_id", twitterId)
+    .or(orConditions.join(","))
     .order("created_at", { ascending: false });
 
-  if (error || !data) return [];
+  if (error || !data) {
+    if (error)
+      captureDbError(error, "getUserTargetedSummons", { twitterId, username });
+    return [];
+  }
   return data.map(transformSummonRow);
 }
 
@@ -1163,21 +1174,26 @@ export async function getChatMessages(
     if (error) captureDbError(error, "getChatMessages", { chatId });
     return [];
   }
-  return data;
+
+  // Decrypt message contents
+  return decryptMessages(data);
 }
 
-// Send a message
+// Send a message (content is encrypted before storage)
 export async function sendMessage(
   chatId: string,
   senderId: string,
   content: string,
 ): Promise<Message | null> {
+  const trimmedContent = content.trim();
+  const encryptedContent = encrypt(trimmedContent);
+
   const { data, error } = await supabase
     .from("messages")
     .insert({
       chat_id: chatId,
       sender_id: senderId,
-      content: content.trim(),
+      content: encryptedContent,
     })
     .select(
       `
@@ -1197,15 +1213,23 @@ export async function sendMessage(
     return null;
   }
 
-  // Update the chat's last_message and last_message_at
+  // Update the chat's last_message (also encrypted) and last_message_at
+  const lastMessagePreview = trimmedContent.substring(0, 100);
+  const encryptedPreview = encrypt(lastMessagePreview);
+
   await supabase
     .from("chats")
     .update({
-      last_message: content.trim().substring(0, 100),
+      last_message: encryptedPreview,
       last_message_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq("id", chatId);
+
+  // Return the message with decrypted content for the API response
+  if (data) {
+    data.content = trimmedContent;
+  }
 
   return data;
 }
