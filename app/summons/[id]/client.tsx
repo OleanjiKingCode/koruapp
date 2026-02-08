@@ -237,6 +237,7 @@ export function SummonDetailClient({
 
   // Back form state
   const [backAmount, setBackAmount] = useState("5");
+  const [backReason, setBackReason] = useState("");
   const [backError, setBackError] = useState<string | null>(null);
   const [isBackingSubmitting, setIsBackingSubmitting] = useState(false);
 
@@ -252,6 +253,7 @@ export function SummonDetailClient({
       return;
     }
     setBackAmount("5");
+    setBackReason("");
     setBackError(null);
     setBackModalOpen(true);
   };
@@ -280,6 +282,7 @@ export function SummonDetailClient({
         body: JSON.stringify({
           summon_id: summon.id,
           amount: amount,
+          reason: backReason.trim() || undefined,
         }),
       });
 
@@ -533,34 +536,43 @@ export function SummonDetailClient({
                     (backer, idx) => (
                       <div
                         key={backer.id || idx}
-                        className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-700"
+                        className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-700"
                       >
-                        <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                          <OptimizedAvatar
-                            src={backer.profileImageUrl}
-                            alt={backer.name}
-                            size={40}
-                            fallbackSeed={backer.username}
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-neutral-900 dark:text-neutral-100 truncate">
-                            {backer.name}
-                          </p>
-                          <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate">
-                            @{backer.username}
-                          </p>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <p className="font-semibold text-koru-golden">
-                            {formatCurrency(backer.amount)}
-                          </p>
-                          {backer.backedAt && (
-                            <p className="text-xs text-neutral-400">
-                              {formatTimeAgo(backer.backedAt)}
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                            <OptimizedAvatar
+                              src={backer.profileImageUrl}
+                              alt={backer.name}
+                              size={40}
+                              fallbackSeed={backer.username}
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-neutral-900 dark:text-neutral-100 truncate">
+                              {backer.name}
                             </p>
-                          )}
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate">
+                              @{backer.username}
+                            </p>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="font-semibold text-koru-golden">
+                              {formatCurrency(backer.amount)}
+                            </p>
+                            {backer.backedAt && (
+                              <p className="text-xs text-neutral-400">
+                                {formatTimeAgo(backer.backedAt)}
+                              </p>
+                            )}
+                          </div>
                         </div>
+                        {backer.reason && (
+                          <div className="mt-2 pt-2 border-t border-neutral-200 dark:border-neutral-700">
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400 italic">
+                              &ldquo;{backer.reason}&rdquo;
+                            </p>
+                          </div>
+                        )}
                       </div>
                     ),
                   )}
@@ -803,6 +815,28 @@ export function SummonDetailClient({
                             className="w-full h-10 pl-7 pr-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-koru-purple/50"
                           />
                         </div>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1 block">
+                          Why are you backing?{" "}
+                          <span className="text-neutral-400 font-normal">
+                            (optional)
+                          </span>
+                        </label>
+                        <textarea
+                          value={backReason}
+                          onChange={(e) => setBackReason(e.target.value)}
+                          placeholder="Share why you want this person on Koru..."
+                          maxLength={280}
+                          rows={2}
+                          className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-koru-purple/50 resize-none text-sm"
+                        />
+                        {backReason.length > 0 && (
+                          <p className="text-xs text-neutral-400 mt-1 text-right">
+                            {backReason.length}/280
+                          </p>
+                        )}
                       </div>
 
                       {backError && (

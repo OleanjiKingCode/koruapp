@@ -9,6 +9,7 @@ interface BackerInfo {
   profile_image_url: string | null;
   amount: number;
   backed_at: string;
+  reason?: string;
 }
 
 export async function GET(
@@ -58,6 +59,7 @@ export async function GET(
       profileImageUrl: b.profile_image_url,
       amount: Number(b.amount),
       backedAt: b.backed_at,
+      reason: b.reason,
     }));
 
     // If no backers in array but we have a creator and backers_count > 0,
@@ -71,6 +73,7 @@ export async function GET(
           profileImageUrl: creator.profile_image_url,
           amount: Number(summon.pledged_amount || summon.amount || 0),
           backedAt: summon.created_at,
+          reason: undefined,
         },
       ];
     }
