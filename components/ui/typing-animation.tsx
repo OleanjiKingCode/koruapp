@@ -177,3 +177,10 @@ export function TypingAnimation({
   )
 }
 
+
+
+
+
+
+
+

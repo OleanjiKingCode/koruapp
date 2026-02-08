@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
 import { Quicksand, Tenor_Sans, Caveat } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/components/providers/auth-provider";
+import { PrivyProvider } from "@/components/providers/privy-provider";
+import { ModalProvider } from "@/lib/contexts/modal-context";
+import { AppShell } from "@/components/shared";
+import { CookieConsentModal } from "@/components/cookie-consent-modal";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const quicksand = Quicksand({
@@ -30,6 +38,8 @@ export const metadata: Metadata = {
   description: "Pay for access. Earn for time.",
   icons: {
     icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
   },
   openGraph: {
     title: "Koru",
@@ -63,6 +73,17 @@ export const metadata: Metadata = {
   },
 };
 
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Koru",
+  url: "https://www.koruapp.xyz",
+  logo: "https://www.koruapp.xyz/favicon.ico",
+  description:
+    "Pay for access. Earn for time. A marketplace for high-intent conversations with experts and creators.",
+  sameAs: ["https://x.com/koruapp"],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -70,36 +91,53 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* Additional Twitter meta tags for better compatibility */}
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:title" content="Koru" />
-        <meta
-          property="twitter:description"
-          content="Pay for access. Earn for time."
+      <head suppressHydrationWarning>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd),
+          }}
         />
-        <meta
-          property="twitter:image"
-          content="https://www.koruapp.xyz/koruBanner.png"
-        />
-        <meta
-          name="twitter:image:src"
-          content="https://www.koruapp.xyz/koruBanner.png"
-        />
-        <meta property="twitter:url" content="https://www.koruapp.xyz" />
-        <meta name="twitter:domain" content="www.koruapp.xyz" />
       </head>
       <body
         className={`${quicksand.variable} ${tenorSans.variable} ${lemonTuesday.variable} antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange={false}
-        >
-          {children}
-        </ThemeProvider>
+        <div
+          className="koru-bg-decoration koru-bg-top-left"
+          aria-hidden="true"
+        />
+        <div
+          className="koru-bg-decoration koru-bg-bottom-right"
+          aria-hidden="true"
+        />
+
+        <AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange={false}
+          >
+            <PrivyProvider>
+              <ModalProvider>
+                <AppShell>{children}</AppShell>
+                <CookieConsentModal />
+                <Toaster
+                  position="top-center"
+                  toastOptions={{
+                    style: {
+                      fontFamily: "var(--font-quicksand)",
+                    },
+                  }}
+                  richColors
+                  closeButton
+                />
+              </ModalProvider>
+            </PrivyProvider>
+          </ThemeProvider>
+        </AuthProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
