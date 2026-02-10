@@ -1191,7 +1191,7 @@ export function AvailabilityModal({
           )}
         >
           <DialogTitle className="sr-only">Set Your Availability</DialogTitle>
-          <div className="overflow-y-auto max-h-[calc(100dvh-6rem)] overscroll-contain pb-2">
+          <div className="overflow-y-auto scrollbar-none max-h-[80vh] overscroll-contain">
             {modalBody}
           </div>
         </DialogContent>
@@ -1204,7 +1204,7 @@ export function AvailabilityModal({
       <DrawerContent className="overflow-hidden">
         <DrawerTitle className="sr-only">Set Your Availability</DrawerTitle>
         <div
-          className="overflow-y-auto max-h-[calc(100dvh-5rem)] overscroll-contain pb-4"
+          className="overflow-y-auto scrollbar-none max-h-[80vh] overscroll-contain"
           data-vaul-no-drag
         >
           {modalBody}
