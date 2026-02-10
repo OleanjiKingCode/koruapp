@@ -829,7 +829,9 @@ export function AvailabilityModal({
                 </label>
                 <Input
                   value={configName}
-                  onChange={(e) => setConfigName(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setConfigName(e.target.value)
+                  }
                   placeholder="e.g., Morning Sessions, Evening Calls..."
                   className="mb-4"
                   autoFocus
@@ -908,7 +910,7 @@ export function AvailabilityModal({
                     type="number"
                     min={0}
                     value={configPrice}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setConfigPrice(Number(e.target.value) || 0)
                     }
                     className="pl-8 text-lg font-semibold"
@@ -1191,7 +1193,9 @@ export function AvailabilityModal({
           )}
         >
           <DialogTitle className="sr-only">Set Your Availability</DialogTitle>
-          <div className="overflow-y-auto">{modalBody}</div>
+          <div className="overflow-y-auto scrollbar-none max-h-[80vh] overscroll-contain">
+            {modalBody}
+          </div>
         </DialogContent>
       </Dialog>
     );
@@ -1201,7 +1205,10 @@ export function AvailabilityModal({
     <Drawer open={open} onOpenChange={handleOpenChange} modal={false}>
       <DrawerContent className="overflow-hidden">
         <DrawerTitle className="sr-only">Set Your Availability</DrawerTitle>
-        <div className="overflow-y-auto" data-vaul-no-drag>
+        <div
+          className="overflow-y-auto scrollbar-none max-h-[80vh] overscroll-contain"
+          data-vaul-no-drag
+        >
           {modalBody}
         </div>
       </DrawerContent>
