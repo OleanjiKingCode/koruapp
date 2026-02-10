@@ -125,12 +125,8 @@ export default function RootLayout({
                 <Toaster
                   position="bottom-right"
                   toastOptions={{
-                    style: {
-                      fontFamily: "var(--font-quicksand)",
-                    },
+                    unstyled: true,
                   }}
-                  richColors
-                  closeButton
                 />
               </ModalProvider>
             </PrivyProvider>

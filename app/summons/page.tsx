@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useSession } from "next-auth/react";
 import useSWR from "swr";
 import {

@@ -103,7 +103,7 @@ CONTACT FORM - COMMENTED OUT FOR LATER USE
 
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";

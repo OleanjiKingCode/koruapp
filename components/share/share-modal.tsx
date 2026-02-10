@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { toPng } from "html-to-image";
 import { ProfileShareCard } from "./profile-share-card";
 import { AppealShareCard } from "./appeal-share-card";

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import { useAcceptEscrow } from "@/lib/hooks/use-koru-escrow";
 import { CheckIcon, ClockIcon, DollarIcon } from "@/components/icons";

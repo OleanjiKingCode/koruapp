@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { getSupabaseClient } from "@/lib/supabase-client";
 import { API_ROUTES } from "@/lib/constants";
 import type { RealtimeChannel } from "@supabase/supabase-js";
