@@ -1110,7 +1110,13 @@ function SummonModal({
 
       const data = await response.json();
       if (data.summon) {
-        toast.success("Summon created successfully!");
+        if (data.backed_existing) {
+          toast.success(
+            `A summon already exists for ${personName.split(" ")[0]} — you've been added as a backer!`,
+          );
+        } else {
+          toast.success("Summon created successfully!");
+        }
         onSuccess();
         onOpenChange(false);
       } else {

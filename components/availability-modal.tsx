@@ -237,6 +237,8 @@ export type DateSelectionPattern =
   | "every_wednesday"
   | "every_thursday"
   | "every_friday"
+  | "every_saturday"
+  | "every_sunday"
   | "next_1_month"
   | "next_3_months"
   | "all_available";
@@ -292,6 +294,12 @@ export function generateDatesFromPattern(
         break;
       case "every_friday":
         shouldInclude = dayOfWeek === 5;
+        break;
+      case "every_saturday":
+        shouldInclude = dayOfWeek === 6;
+        break;
+      case "every_sunday":
+        shouldInclude = dayOfWeek === 0;
         break;
       case "next_1_month":
       case "next_3_months":
@@ -440,6 +448,8 @@ export function AvailabilityModal({
       "every_wednesday",
       "every_thursday",
       "every_friday",
+      "every_saturday",
+      "every_sunday",
     ];
 
     if (dayPatterns.includes(pattern)) {
@@ -958,7 +968,9 @@ export function AvailabilityModal({
                       )}
                     >
                       <span className="block">Weekdays</span>
-                      <span className="text-xs opacity-70">Mon - Fri</span>
+                      <span className="text-xs opacity-70">
+                        Mon - Fri · Next 8 weeks
+                      </span>
                     </button>
                     <button
                       onClick={() => handlePatternSelect("weekends")}
@@ -970,7 +982,9 @@ export function AvailabilityModal({
                       )}
                     >
                       <span className="block">Weekends</span>
-                      <span className="text-xs opacity-70">Sat & Sun</span>
+                      <span className="text-xs opacity-70">
+                        Sat & Sun · Next 8 weeks
+                      </span>
                     </button>
                     <button
                       onClick={() => handlePatternSelect("next_1_month")}
@@ -982,7 +996,9 @@ export function AvailabilityModal({
                       )}
                     >
                       <span className="block">Next Month</span>
-                      <span className="text-xs opacity-70">Weekdays only</span>
+                      <span className="text-xs opacity-70">
+                        Weekdays · ~30 days
+                      </span>
                     </button>
                     <button
                       onClick={() => handlePatternSelect("next_3_months")}
@@ -994,7 +1010,9 @@ export function AvailabilityModal({
                       )}
                     >
                       <span className="block">Next 3 Months</span>
-                      <span className="text-xs opacity-70">Weekdays only</span>
+                      <span className="text-xs opacity-70">
+                        Weekdays · ~90 days
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -1011,6 +1029,8 @@ export function AvailabilityModal({
                       { pattern: "every_wednesday" as const, label: "Wed" },
                       { pattern: "every_thursday" as const, label: "Thu" },
                       { pattern: "every_friday" as const, label: "Fri" },
+                      { pattern: "every_saturday" as const, label: "Sat" },
+                      { pattern: "every_sunday" as const, label: "Sun" },
                     ].map(({ pattern, label }) => (
                       <button
                         key={pattern}
@@ -1113,7 +1133,7 @@ export function AvailabilityModal({
                   </span>
                 </div>
 
-                <div className="max-h-56 overflow-y-auto pr-1 -mr-1 mb-4 space-y-1.5">
+                <div className="mb-4 space-y-1.5">
                   {availableTimeSlots.map((time) => {
                     const isSelected = configTimes.includes(time);
                     return (
@@ -1171,7 +1191,7 @@ export function AvailabilityModal({
           )}
         >
           <DialogTitle className="sr-only">Set Your Availability</DialogTitle>
-          <div className="overflow-y-auto max-h-[85vh]">{modalBody}</div>
+          <div className="overflow-y-auto">{modalBody}</div>
         </DialogContent>
       </Dialog>
     );
@@ -1181,7 +1201,7 @@ export function AvailabilityModal({
     <Drawer open={open} onOpenChange={handleOpenChange} modal={false}>
       <DrawerContent className="overflow-hidden">
         <DrawerTitle className="sr-only">Set Your Availability</DrawerTitle>
-        <div className="overflow-y-auto max-h-[85vh]" data-vaul-no-drag>
+        <div className="overflow-y-auto" data-vaul-no-drag>
           {modalBody}
         </div>
       </DrawerContent>

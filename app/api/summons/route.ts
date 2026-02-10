@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabase, getActiveSummons, addSummonIdToUser } from "@/lib/supabase";
 import { captureApiError } from "@/lib/sentry";
-import { notifySummonCreated } from "@/lib/notifications";
+import { notifySummonCreated, notifySummonBacked } from "@/lib/notifications";
 
 interface BackerInfo {
   user_id: string;
@@ -165,9 +165,132 @@ export async function POST(request: NextRequest) {
     // Get creator info to add to backers array
     const { data: creatorData } = await supabase
       .from("users")
-      .select("id, username, name, profile_image_url")
+      .select(
+        "id, username, name, profile_image_url, total_summons_created, total_summons_backed",
+      )
       .eq("id", session.user.dbId)
       .single();
+
+    const pledgeAmountNum = parseFloat(pledged_amount);
+
+    // --- Check if an active summon already exists for this target ---
+    const { data: existingSummons } = await supabase
+      .from("summons")
+      .select(
+        "id, backers, backers_count, total_backed, tags, creator_id, target_handle",
+      )
+      .eq("target_handle", target_username)
+      .eq("status", "active")
+      .limit(1);
+
+    const existingSummon =
+      existingSummons && existingSummons.length > 0 ? existingSummons[0] : null;
+
+    if (existingSummon) {
+      // An active summon already exists for this target — back it instead of creating a duplicate
+      const existingBackers: BackerInfo[] = existingSummon.backers || [];
+      const alreadyBacked = existingBackers.some(
+        (b) => b.user_id === session.user.dbId,
+      );
+
+      if (alreadyBacked) {
+        return NextResponse.json(
+          {
+            error: "You have already backed a summon for this person",
+            existing_summon_id: existingSummon.id,
+          },
+          { status: 400 },
+        );
+      }
+
+      // Add user as a new backer to the existing summon
+      const newBacker: BackerInfo = {
+        user_id: session.user.dbId,
+        username: creatorData?.username || session.user.name || "user",
+        name: creatorData?.name || session.user.name || "User",
+        profile_image_url:
+          creatorData?.profile_image_url || session.user.image || null,
+        amount: pledgeAmountNum,
+        backed_at: new Date().toISOString(),
+        reason: message?.trim() || undefined,
+      };
+
+      const updatedBackers = [...existingBackers, newBacker];
+
+      // Merge tags from this backer
+      const existingTags: Record<string, number> = existingSummon.tags || {};
+      const updatedTags = { ...existingTags };
+      Object.keys(summonTags).forEach((tag) => {
+        updatedTags[tag] = (updatedTags[tag] || 0) + (summonTags[tag] || 1);
+      });
+
+      const { error: updateError } = await supabase
+        .from("summons")
+        .update({
+          backers: updatedBackers,
+          tags: updatedTags,
+          total_backed: (existingSummon.total_backed || 0) + pledgeAmountNum,
+          backers_count: updatedBackers.length,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existingSummon.id);
+
+      if (updateError) {
+        console.error("Error backing existing summon:", updateError);
+        return NextResponse.json(
+          {
+            error: "Failed to back existing summon",
+            details: updateError.message,
+          },
+          { status: 500 },
+        );
+      }
+
+      // Add summon ID to user's backed_ids
+      await addSummonIdToUser(
+        session.user.dbId,
+        existingSummon.id,
+        "backed_ids",
+      );
+
+      // Increment user's total_summons_backed
+      if (creatorData) {
+        await supabase
+          .from("users")
+          .update({
+            total_summons_backed: (creatorData.total_summons_backed || 0) + 1,
+          })
+          .eq("id", session.user.dbId);
+      }
+
+      // Notify summon creator
+      if (
+        existingSummon.creator_id &&
+        existingSummon.creator_id !== session.user.dbId
+      ) {
+        try {
+          await notifySummonBacked(
+            existingSummon.creator_id,
+            creatorData?.name || session.user.name || "Someone",
+            creatorData?.username || "user",
+            creatorData?.profile_image_url || null,
+            pledgeAmountNum,
+            existingSummon.target_handle || target_username,
+            existingSummon.id,
+          );
+        } catch (notifyError) {
+          console.error("Failed to send backing notification:", notifyError);
+        }
+      }
+
+      return NextResponse.json({
+        summon: existingSummon,
+        backed_existing: true,
+        message: "Backed existing summon successfully",
+      });
+    }
+
+    // --- No existing summon — create a new one ---
 
     // Create creator as first backer
     const creatorAsBacker: BackerInfo = {
@@ -176,7 +299,7 @@ export async function POST(request: NextRequest) {
       name: creatorData?.name || session.user.name || "User",
       profile_image_url:
         creatorData?.profile_image_url || session.user.image || null,
-      amount: parseFloat(pledged_amount),
+      amount: pledgeAmountNum,
       backed_at: new Date().toISOString(),
     };
 
@@ -192,11 +315,11 @@ export async function POST(request: NextRequest) {
         target_image: target_profile_image || null,
         request: message || Object.keys(summonTags).join(", "), // Fallback to tags as message
         tags: summonTags, // Store tag counts
-        amount: parseFloat(pledged_amount),
+        amount: pledgeAmountNum,
         expires_at: expires_at || null,
         status: "active",
         backers_count: 1, // Creator counts as first backer
-        total_backed: parseFloat(pledged_amount), // Initialize with pledged amount
+        total_backed: pledgeAmountNum, // Initialize with pledged amount
         backers: [creatorAsBacker], // Add creator to backers array
       })
       .select()
@@ -232,17 +355,11 @@ export async function POST(request: NextRequest) {
     if (rpcError) {
       // If RPC doesn't exist, fetch current value and increment manually
       console.warn("RPC function not available, updating manually:", rpcError);
-      const { data: userData } = await supabase
-        .from("users")
-        .select("total_summons_created")
-        .eq("id", session.user.dbId)
-        .single();
-
-      if (userData) {
+      if (creatorData) {
         await supabase
           .from("users")
           .update({
-            total_summons_created: (userData.total_summons_created || 0) + 1,
+            total_summons_created: (creatorData.total_summons_created || 0) + 1,
           })
           .eq("id", session.user.dbId);
       }
@@ -273,7 +390,7 @@ export async function POST(request: NextRequest) {
             creatorData?.name || session.user.name || "Someone",
             creatorData?.username || "user",
             creatorData?.profile_image_url || null,
-            parseFloat(pledged_amount),
+            pledgeAmountNum,
             summon.id,
           );
         }
