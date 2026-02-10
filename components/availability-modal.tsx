@@ -220,8 +220,9 @@ export function getCalendarBounds(weeks: number = 8): {
   maxDate: Date;
 } {
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
   const minDate = new Date(today);
-  minDate.setDate(minDate.getDate() + 1); // Tomorrow
+  minDate.setDate(minDate.getDate() + 1); // Start from tomorrow
   const maxDate = new Date(today);
   maxDate.setDate(maxDate.getDate() + weeks * 7);
   return { minDate, maxDate };
@@ -250,8 +251,9 @@ export function generateDatesFromPattern(
 ): string[] {
   const dates: string[] = [];
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
   const startDate = new Date(today);
-  startDate.setDate(startDate.getDate() + 1); // Tomorrow
+  startDate.setDate(startDate.getDate() + 1); // Start from tomorrow
 
   let endDate: Date;
   if (pattern === "next_1_month") {
