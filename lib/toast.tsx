@@ -45,7 +45,8 @@ function ToastContent({
 }) {
   return (
     <div
-      className={`flex items-center gap-3 rounded-2xl border ${borderColors[type]} bg-[#1a1028] px-4 py-3 text-white shadow-2xl shadow-black/40 min-w-[300px] max-w-[420px]`}
+      className={`flex items-center gap-3 rounded-2xl border ${borderColors[type]} px-4 py-3 text-white shadow-2xl shadow-black/40 min-w-[300px] max-w-[420px]`}
+      style={{ backgroundColor: "#110b1e" }}
     >
       <span className={`shrink-0 ${iconColors[type]}`}>{icons[type]}</span>
       <p
