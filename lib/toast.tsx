@@ -45,12 +45,12 @@ function ToastContent({
 }) {
   return (
     <div
-      className={`flex items-center gap-3 rounded-2xl border ${borderColors[type]} px-4 py-3 text-white shadow-2xl shadow-black/40 min-w-[300px] max-w-[420px]`}
+      className={`flex items-center gap-3 rounded-2xl border ${borderColors[type]} px-4 py-3 text-white shadow-2xl shadow-black/40 w-[350px]`}
       style={{ backgroundColor: "#110b1e" }}
     >
       <span className={`shrink-0 ${iconColors[type]}`}>{icons[type]}</span>
       <p
-        className="flex-1 text-[13px] font-medium leading-snug"
+        className="flex-1 text-[12px] font-medium leading-snug"
         style={{ fontFamily: "var(--font-quicksand)" }}
       >
         {message}
