@@ -11,27 +11,27 @@ import {
 type ToastType = "success" | "error" | "warning" | "info" | "loading";
 
 const borderColors: Record<ToastType, string> = {
-  success: "border-green-500",
-  error: "border-red-500",
-  warning: "border-orange-500",
-  info: "border-blue-500",
-  loading: "border-green-500",
+  success: "border-green-500/60",
+  error: "border-red-500/60",
+  warning: "border-orange-500/60",
+  info: "border-blue-500/60",
+  loading: "border-green-500/60",
 };
 
 const iconColors: Record<ToastType, string> = {
-  success: "text-green-500",
-  error: "text-red-500",
-  warning: "text-orange-500",
-  info: "text-blue-500",
-  loading: "text-green-500",
+  success: "text-green-400",
+  error: "text-red-400",
+  warning: "text-orange-400",
+  info: "text-blue-400",
+  loading: "text-green-400",
 };
 
 const icons: Record<ToastType, React.ReactNode> = {
-  success: <LuCircleCheck size={20} />,
-  error: <LuCircleX size={20} />,
-  warning: <LuTriangleAlert size={20} />,
-  info: <LuInfo size={20} />,
-  loading: <LuLoaderCircle size={20} className="animate-spin" />,
+  success: <LuCircleCheck size={18} />,
+  error: <LuCircleX size={18} />,
+  warning: <LuTriangleAlert size={18} />,
+  info: <LuInfo size={18} />,
+  loading: <LuLoaderCircle size={18} className="animate-spin" />,
 };
 
 function ToastContent({
@@ -45,20 +45,20 @@ function ToastContent({
 }) {
   return (
     <div
-      className={`flex items-center gap-3 rounded-xl border ${borderColors[type]} bg-[#110d1b] px-4 py-3 text-white shadow-xl min-w-[320px]`}
+      className={`flex items-center gap-3 rounded-2xl border ${borderColors[type]} bg-[#1a1028] px-4 py-3 text-white shadow-2xl shadow-black/40 min-w-[300px] max-w-[420px]`}
     >
       <span className={`shrink-0 ${iconColors[type]}`}>{icons[type]}</span>
       <p
-        className="flex-1 text-sm font-medium"
+        className="flex-1 text-[13px] font-medium leading-snug"
         style={{ fontFamily: "var(--font-quicksand)" }}
       >
         {message}
       </p>
       <button
         onClick={() => sonnerToast.dismiss(id)}
-        className="shrink-0 text-white/40 hover:text-white transition-colors cursor-pointer"
+        className="shrink-0 rounded-full p-1 text-white/30 hover:text-white/70 hover:bg-white/5 transition-all cursor-pointer"
       >
-        <LuX size={16} />
+        <LuX size={14} />
       </button>
     </div>
   );

@@ -124,6 +124,7 @@ export default function RootLayout({
                 <CookieConsentModal />
                 <Toaster
                   position="bottom-right"
+                  closeButton={false}
                   toastOptions={{
                     unstyled: true,
                   }}
