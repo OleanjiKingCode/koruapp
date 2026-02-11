@@ -45,19 +45,15 @@ function ToastContent({
 }) {
   return (
     <div
-      className={`flex items-center gap-3 rounded-2xl border ${borderColors[type]} px-4 py-3 text-white shadow-2xl shadow-black/40 w-[350px]`}
-      style={{ backgroundColor: "#110b1e" }}
+      className={`flex items-center gap-3 rounded-2xl border ${borderColors[type]} bg-[#110b1e] px-4 py-3 text-white shadow-2xl shadow-black/40 w-[350px] font-quicksand text-[12px]`}
     >
       <span className={`shrink-0 ${iconColors[type]}`}>{icons[type]}</span>
-      <p
-        className="flex-1 text-[12px] font-medium leading-snug"
-        style={{ fontFamily: "var(--font-quicksand)" }}
-      >
+      <p className="flex-1 text-[12px] font-medium leading-snug font-quicksand m-0">
         {message}
       </p>
       <button
         onClick={() => sonnerToast.dismiss(id)}
-        className="shrink-0 rounded-full p-1 text-white/30 hover:text-white/70 hover:bg-white/5 transition-all cursor-pointer"
+        className="shrink-0 rounded-full p-1 text-white/30 hover:text-white/70 hover:bg-white/5 transition-all cursor-pointer bg-transparent border-none"
       >
         <LuX size={14} />
       </button>

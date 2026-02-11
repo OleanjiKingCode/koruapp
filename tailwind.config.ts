@@ -1,10 +1,11 @@
-import type { Config } from "tailwindcss"
+import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./lib/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   darkMode: ["class"],
   theme: {
@@ -89,8 +90,10 @@ const config: Config = {
         },
       },
       boxShadow: {
-        "glow-purple": "0 0 40px rgba(195, 133, 238, 0.3), 0 0 80px rgba(195, 133, 238, 0.1)",
-        "glow-golden": "0 0 40px rgba(218, 176, 121, 0.3), 0 0 80px rgba(218, 176, 121, 0.1)",
+        "glow-purple":
+          "0 0 40px rgba(195, 133, 238, 0.3), 0 0 80px rgba(195, 133, 238, 0.1)",
+        "glow-golden":
+          "0 0 40px rgba(218, 176, 121, 0.3), 0 0 80px rgba(218, 176, 121, 0.1)",
         soft: "0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)",
       },
       maxWidth: {
@@ -99,5 +102,5 @@ const config: Config = {
     },
   },
   plugins: [require("tailwindcss-animate")],
-}
-export default config
+};
+export default config;
