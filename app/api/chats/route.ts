@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { createChat, getUserByUsername, supabase } from "@/lib/supabase";
 import { captureApiError } from "@/lib/sentry";
-import { notifyNewChatRequest } from "@/lib/notifications";
+import {
+  notifyNewChatRequest,
+  sendBookingSeekerEmail,
+} from "@/lib/notifications";
 
 // POST - Create a new chat
 export async function POST(request: NextRequest) {
@@ -113,6 +116,14 @@ export async function POST(request: NextRequest) {
           chat.id,
         );
       }
+      // Fire-and-forget seeker confirmation email
+      sendBookingSeekerEmail(
+        session.user.dbId,
+        creator.name || creator.username || "Host",
+        creator.username || "host",
+        amount || 0,
+        chat.id,
+      );
     } catch (notifyError) {
       console.error("Failed to send notification:", notifyError);
       // Don't fail the request, chat was created successfully

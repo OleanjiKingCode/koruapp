@@ -411,6 +411,15 @@ function WithdrawButton({
           : "Withdrawal successful!",
       );
 
+      // Fire-and-forget refund notification for depositor reclaims
+      if (label === "Reclaim") {
+        fetch("/api/escrow/notify-refund", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ escrowId, reason: "expiry" }),
+        }).catch(() => {});
+      }
+
       // Record the transaction
       addTransaction({
         type: label === "Reclaim" ? "refund" : "withdrawal",
@@ -508,13 +517,21 @@ function DisputeButton({
   useEffect(() => {
     if (isConfirmed) {
       toast.success("Dispute raised successfully!");
+
+      // Fire-and-forget dispute notification
+      fetch("/api/escrow/notify-dispute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ escrowId }),
+      }).catch(() => {});
+
       setTimeout(() => {
         onComplete();
         reset();
         setShowConfirm(false);
       }, 2000);
     }
-  }, [isConfirmed, onComplete, reset]);
+  }, [isConfirmed, onComplete, reset, escrowId]);
 
   useEffect(() => {
     if (simError) {

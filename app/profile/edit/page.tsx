@@ -146,6 +146,7 @@ export default function EditProfilePage() {
     displayName: "",
     bio: "",
     website: "",
+    email: "",
     twitterHandle: "",
   });
 
@@ -165,6 +166,7 @@ export default function EditProfilePage() {
         displayName: user.name || "",
         bio: user.bio || "",
         website: user.website || "",
+        email: user.email || "",
         twitterHandle: user.username || "",
       });
       setIsFormInitialized(true);
@@ -238,6 +240,7 @@ export default function EditProfilePage() {
         bio: formData.bio,
         tags: selectedTags,
         website: formData.website || undefined,
+        email: formData.email || undefined,
       });
 
       if (!result) {
@@ -515,6 +518,49 @@ export default function EditProfilePage() {
                         placeholder="https://your-website.com"
                       />
                     </div>
+                  </div>
+
+                  {/* Email - Editable */}
+                  <div className="md:col-span-2 space-y-2">
+                    <label
+                      htmlFor="email-input"
+                      className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                    >
+                      Email
+                      <span className="text-xs text-neutral-400 ml-2">
+                        (optional — for notifications)
+                      </span>
+                    </label>
+                    <div className="relative">
+                      <svg
+                        className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 z-10 pointer-events-none"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect width="20" height="16" x="2" y="4" rx="2" />
+                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                      </svg>
+                      <Input
+                        id="email-input"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) =>
+                          handleInputChange("email", e.target.value)
+                        }
+                        autoComplete="email"
+                        className="pl-11 h-12 rounded-xl bg-white dark:bg-neutral-800 border-2 border-neutral-200 dark:border-neutral-700 focus:border-koru-purple focus:ring-2 focus:ring-koru-purple/30 text-neutral-900 dark:text-neutral-100"
+                        placeholder="you@example.com"
+                      />
+                    </div>
+                    <p className="text-xs text-neutral-400">
+                      We&apos;ll send you email notifications for bookings,
+                      summons, and escrow updates.
+                    </p>
                   </div>
 
                   {/* Tags Section */}

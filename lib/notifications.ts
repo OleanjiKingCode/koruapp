@@ -1,5 +1,13 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import * as Sentry from "@sentry/nextjs";
+import {
+  sendEmail,
+  buildBookingCreatedHostEmail,
+  buildBookingCreatedSeekerEmail,
+  buildSummonCreatedEmail,
+  buildDisputeRaisedEmail,
+  buildEscrowRefundEmail,
+} from "@/lib/email";
 
 // Server-side notification creation helper
 // Use this in API routes to create notifications
@@ -21,6 +29,24 @@ function getSupabase(): SupabaseClient {
     supabaseInstance = createClient(url, key);
   }
   return supabaseInstance;
+}
+
+/**
+ * Look up a user's email and name by their DB user ID
+ */
+async function getUserEmail(
+  userId: string,
+): Promise<{ email: string | null; name: string | null }> {
+  try {
+    const { data } = await getSupabase()
+      .from("users")
+      .select("email, name")
+      .eq("id", userId)
+      .single();
+    return { email: data?.email || null, name: data?.name || null };
+  } catch {
+    return { email: null, name: null };
+  }
 }
 
 export type NotificationType =
@@ -109,7 +135,7 @@ export async function notifyNewChatRequest(
   amount: number,
   chatId: string,
 ) {
-  return createNotification({
+  const result = await createNotification({
     userId: recipientId,
     type: "request",
     title: "New chat request",
@@ -119,6 +145,21 @@ export async function notifyNewChatRequest(
     relatedUserImage: senderImage || undefined,
     metadata: { chatId, amount },
   });
+
+  // Fire-and-forget email to the host
+  getUserEmail(recipientId).then(({ email }) => {
+    if (email) {
+      const { subject, html } = buildBookingCreatedHostEmail({
+        seekerName: senderName,
+        seekerUsername: senderUsername,
+        amount,
+        chatId,
+      });
+      sendEmail({ to: email, subject, html });
+    }
+  });
+
+  return result;
 }
 
 /**
@@ -226,7 +267,7 @@ export async function notifySummonCreated(
   totalPledged: number,
   summonId: string,
 ) {
-  return createNotification({
+  const result = await createNotification({
     userId: targetUserId,
     type: "summon_created",
     title: "Someone summoned you!",
@@ -236,6 +277,20 @@ export async function notifySummonCreated(
     relatedUserImage: creatorImage || undefined,
     metadata: { summonId, totalPledged },
   });
+
+  // Fire-and-forget email to the summon target
+  getUserEmail(targetUserId).then(({ email }) => {
+    if (email) {
+      const { subject, html } = buildSummonCreatedEmail({
+        creatorName,
+        creatorUsername,
+        totalPledged,
+      });
+      sendEmail({ to: email, subject, html });
+    }
+  });
+
+  return result;
 }
 
 /**
@@ -258,4 +313,92 @@ export async function notifyChatAccepted(
     relatedUserImage: creatorImage || undefined,
     metadata: { chatId },
   });
+}
+
+/**
+ * Send booking confirmation email to the seeker (no DB notification — they initiated it)
+ */
+export function sendBookingSeekerEmail(
+  seekerId: string,
+  hostName: string,
+  hostUsername: string,
+  amount: number,
+  chatId: string,
+) {
+  getUserEmail(seekerId).then(({ email }) => {
+    if (email) {
+      const { subject, html } = buildBookingCreatedSeekerEmail({
+        hostName,
+        hostUsername,
+        amount,
+        chatId,
+      });
+      sendEmail({ to: email, subject, html });
+    }
+  });
+}
+
+/**
+ * Notify the other party about a dispute (DB notification + email)
+ */
+export async function notifyDisputeRaised(
+  otherPartyId: string,
+  disputerUsername: string,
+  amount: number,
+  chatId: string,
+) {
+  const result = await createNotification({
+    userId: otherPartyId,
+    type: "payment",
+    title: "Dispute raised on your escrow",
+    description: `@${disputerUsername} raised a dispute on a $${amount} escrow`,
+    link: `/chats`,
+    relatedUserUsername: disputerUsername,
+    metadata: { chatId, amount },
+  });
+
+  getUserEmail(otherPartyId).then(({ email }) => {
+    if (email) {
+      const { subject, html } = buildDisputeRaisedEmail({
+        disputerUsername,
+        amount,
+        chatId,
+      });
+      sendEmail({ to: email, subject, html });
+    }
+  });
+
+  return result;
+}
+
+/**
+ * Notify the depositor about an escrow refund (DB notification + email)
+ */
+export async function notifyEscrowRefund(
+  depositorId: string,
+  amount: number,
+  reason: "rejection" | "expiry",
+) {
+  const description =
+    reason === "rejection"
+      ? `Your $${amount} escrow was refunded because the host declined.`
+      : `Your $${amount} escrow expired and has been refunded.`;
+
+  const result = await createNotification({
+    userId: depositorId,
+    type: "payment",
+    title: "Escrow refund processed",
+    description,
+    link: `/chats`,
+    metadata: { amount, reason },
+  });
+
+  getUserEmail(depositorId).then(({ email }) => {
+    if (email) {
+      const { subject, html } = buildEscrowRefundEmail({ amount, reason });
+      sendEmail({ to: email, subject, html });
+    }
+  });
+
+  return result;
 }
