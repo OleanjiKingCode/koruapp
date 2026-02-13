@@ -27,6 +27,8 @@ interface ChatData {
   amount: number;
   slot_name: string | null;
   deadline_at: string | null;
+  booked_date: string | null;
+  booked_time: string | null;
   created_at: string;
   otherParty?: {
     id: string;
@@ -310,6 +312,8 @@ export default function ChatPage() {
           amount={chat.amount}
           payerName={otherParty.name}
           slotName={chat.slot_name}
+          bookedDate={chat.booked_date}
+          bookedTime={chat.booked_time}
           deadlineAt={chat.deadline_at}
           chatId={chatId}
           onAccepted={handleEscrowAccepted}
@@ -615,9 +619,20 @@ export default function ChatPage() {
                   <p className="font-medium text-neutral-900 dark:text-neutral-100">
                     {chat.slot_name || bookingInfo?.slotName}
                   </p>
-                  {bookingInfo?.date && (
+                  {(chat.booked_date || bookingInfo?.date) && (
                     <p className="text-xs text-neutral-500 mt-1">
-                      {bookingInfo.date} · {bookingInfo.time}
+                      {chat.booked_date
+                        ? new Date(
+                            chat.booked_date + "T00:00:00",
+                          ).toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                          })
+                        : bookingInfo?.date}
+                      {(chat.booked_time || bookingInfo?.time) && (
+                        <span> · {chat.booked_time || bookingInfo?.time}</span>
+                      )}
                     </p>
                   )}
                 </div>
@@ -641,7 +656,7 @@ export default function ChatPage() {
                     <InfoIcon className="w-5 h-5 text-koru-golden flex-shrink-0 mt-0.5" />
                     <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
                       If {otherParty.name.split(" ")[0]} doesn&apos;t accept
-                      within 24 hours, your payment will be{" "}
+                      within 24 hours of the session date, your payment will be{" "}
                       <span className="text-koru-golden font-medium">
                         automatically refunded
                       </span>{" "}

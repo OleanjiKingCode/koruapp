@@ -139,9 +139,9 @@ const FAQS: FAQItem[] = [
   },
   {
     category: "Smart Contract",
-    question: "What is the 24-hour accept window?",
+    question: "What is the accept window?",
     answer:
-      "When you create an escrow (initiate a paid message), the Host has 24 hours to accept. If they don't accept within this window, you can reclaim your full deposit automatically through the smart contract. No fees are charged if the Host doesn't accept.",
+      "When you create an escrow (initiate a paid message), the Host has until 24 hours after the session date to accept. For example, if you book a session for March 1st, the Host must accept by March 2nd. If they don't accept within this window, you can reclaim your full deposit automatically through the smart contract. No fees are charged if the Host doesn't accept.",
     slug: "accept-window",
   },
   {
@@ -176,7 +176,7 @@ const FAQS: FAQItem[] = [
     category: "Refunds",
     question: "When am I eligible for a refund?",
     answer:
-      "You're eligible for a full refund if: (1) The Host doesn't accept within 24 hours—you can reclaim automatically, (2) You raise a valid dispute within 48 hours of acceptance, (3) The Host fails to deliver what was promised. Refunds through the smart contract are instant.",
+      "You're eligible for a full refund if: (1) The Host doesn't accept within 24 hours of the session date—you can reclaim automatically, (2) You raise a valid dispute within 48 hours of the session, (3) The Host fails to deliver what was promised. Refunds through the smart contract are instant.",
     slug: "when-refund",
   },
   {
@@ -337,7 +337,7 @@ export default function FAQPage() {
                     "px-5 py-2.5 rounded-full text-sm font-medium transition-all",
                     isActive
                       ? "bg-koru-purple text-white shadow-lg shadow-koru-purple/30"
-                      : "bg-white/60 dark:bg-neutral-900/60 text-foreground/70 hover:bg-white/80 dark:hover:bg-neutral-900/80 border border-white/20 dark:border-neutral-800"
+                      : "bg-white/60 dark:bg-neutral-900/60 text-foreground/70 hover:bg-white/80 dark:hover:bg-neutral-900/80 border border-white/20 dark:border-neutral-800",
                   )}
                 >
                   {category}

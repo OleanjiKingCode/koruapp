@@ -55,8 +55,10 @@ const DrawerContent = React.forwardRef<
       )}
       {...props}
     >
-      {/* Drag handle — only this area can dismiss the drawer */}
-      <DrawerHandle className="!bg-neutral-300 dark:!bg-neutral-700 !w-12 !h-1.5 mt-3 mb-2" />
+      {/* Drag handle — taller touch area for dragging, snaps back to bottom */}
+      <div className="flex items-center justify-center pt-4 pb-3 cursor-grab active:cursor-grabbing shrink-0">
+        <DrawerHandle className="!bg-neutral-300 dark:!bg-neutral-700 !w-12 !h-1.5" />
+      </div>
       {children}
     </DrawerPrimitive.Content>
   </DrawerPortal>

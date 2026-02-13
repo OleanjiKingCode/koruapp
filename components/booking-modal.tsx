@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "@/lib/toast";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -47,6 +47,7 @@ interface BookingModalProps {
   onOpenChange: (open: boolean) => void;
   personName: string;
   personId: string;
+  personHandle?: string; // Username/handle for fetching booked slots
   recipientAddress?: Address; // Wallet address of the person being booked (optional for now)
   isRecipientOnKoru?: boolean; // Whether the recipient has a Koru account
   availability: AvailabilityData;
@@ -56,6 +57,12 @@ interface BookingModalProps {
     timeSlot: string,
     receipt: Receipt,
   ) => void;
+}
+
+/** A time slot that is already booked by someone else */
+interface BookedSlot {
+  booked_date: string;
+  booked_time: string;
 }
 
 export interface Receipt {
@@ -98,6 +105,7 @@ export function BookingModal({
   onOpenChange,
   personName,
   personId,
+  personHandle,
   recipientAddress,
   isRecipientOnKoru = true,
   availability,
@@ -116,8 +124,25 @@ export function BookingModal({
     return new Date(tomorrow.getFullYear(), tomorrow.getMonth(), 1);
   });
   const [error, setError] = useState<string | null>(null);
+  const [bookedSlots, setBookedSlots] = useState<BookedSlot[]>([]);
 
   const timezone = availability.timezone || "UTC";
+
+  // Fetch booked slots when modal opens
+  useEffect(() => {
+    if (open && personHandle) {
+      fetch(`/api/profile/${personHandle}/booked-slots`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.bookedSlots) {
+            setBookedSlots(data.bookedSlots);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to fetch booked slots:", err);
+        });
+    }
+  }, [open, personHandle]);
 
   // Privy wallet connection
   const { ready, authenticated, user, login } = usePrivy();
@@ -142,7 +167,15 @@ export function BookingModal({
     return slotDateTime <= now;
   };
 
-  // Helper: Get available (future) times for a slot on a specific date
+  // Helper: Check if a time slot is already booked on a specific date
+  const isTimeBooked = (date: Date, timeStr: string): boolean => {
+    const dateStr = formatLocalDateStr(date);
+    return bookedSlots.some(
+      (b) => b.booked_date === dateStr && b.booked_time === timeStr,
+    );
+  };
+
+  // Helper: Get available (future, non-booked) times for a slot on a specific date
   const getAvailableTimes = (
     slot: AvailabilitySlot,
     date: Date | null,
@@ -154,18 +187,34 @@ export function BookingModal({
     const selectedDay = new Date(date);
     selectedDay.setHours(0, 0, 0, 0);
 
-    // If date is in the future (not today), all times are available
+    // If date is in the future (not today), filter out booked times only
     if (selectedDay > today) {
-      return slot.times;
+      return slot.times.filter((time) => !isTimeBooked(date, time));
     }
 
-    // If date is today, filter out past times
+    // If date is today, filter out both past times and booked times
     if (selectedDay.getTime() === today.getTime()) {
-      return slot.times.filter((time) => !isTimePast(date, time));
+      return slot.times.filter(
+        (time) => !isTimePast(date, time) && !isTimeBooked(date, time),
+      );
     }
 
     // Date is in the past, no times available
     return [];
+  };
+
+  // Helper: Get booked times for a date (to show as disabled)
+  const getBookedTimes = (
+    slot: AvailabilitySlot,
+    date: Date | null,
+  ): string[] => {
+    if (!date || !slot.times) return [];
+    const dateStr = formatLocalDateStr(date);
+    return slot.times.filter((time) =>
+      bookedSlots.some(
+        (b) => b.booked_date === dateStr && b.booked_time === time,
+      ),
+    );
   };
 
   // Helper: Parse ISO date string (YYYY-MM-DD) to local Date at midnight
@@ -183,7 +232,7 @@ export function BookingModal({
     return `${year}-${month}-${day}`;
   };
 
-  // Helper: Check if a slot has any future available times
+  // Helper: Check if a slot has any future available (non-booked) times
   const slotHasFutureTimes = (slot: AvailabilitySlot): boolean => {
     if (!slot.selectedDates || slot.selectedDates.length === 0) return false;
 
@@ -194,10 +243,13 @@ export function BookingModal({
       // Parse date string as local date to avoid timezone issues
       const date = parseLocalDate(dateStr);
 
-      // Future date - has available times
-      if (date > today) return true;
+      // Future date - check if any times are not booked
+      if (date > today) {
+        const futureTimes = getAvailableTimes(slot, date);
+        if (futureTimes.length > 0) return true;
+      }
 
-      // Today - check if any times are still in the future
+      // Today - check if any times are still in the future and not booked
       if (date.getTime() === today.getTime()) {
         const futureTimes = getAvailableTimes(slot, date);
         if (futureTimes.length > 0) return true;
@@ -218,6 +270,16 @@ export function BookingModal({
     return parseUsdcAmount(selectedSlot!.price);
   }, [selectedSlot]);
 
+  // Convert selected date to unix timestamp for the contract's sessionDate
+  // This ensures the escrow timelines (accept/dispute windows) anchor to the session date
+  const sessionDateUnix = useMemo(() => {
+    if (!selectedDate) return undefined;
+    // Use the start of the selected day (midnight) as the session date anchor
+    const d = new Date(selectedDate);
+    d.setHours(0, 0, 0, 0);
+    return Math.floor(d.getTime() / 1000);
+  }, [selectedDate]);
+
   // Escrow hooks
   const { balance: usdcBalance, formatted: usdcFormatted } =
     useUsdcBalance(walletAddress);
@@ -225,7 +287,7 @@ export function BookingModal({
   const needsApproval = escrowAmount > BigInt(0) && allowance < escrowAmount;
   const hasEnoughBalance = usdcBalance >= escrowAmount;
 
-  // Simple escrow payment hook
+  // Simple escrow payment hook (with session-date-aware timelines)
   const {
     approveAndCreateEscrow,
     isProcessing,
@@ -238,6 +300,7 @@ export function BookingModal({
     recipientAddress ||
       ("0x0000000000000000000000000000000000000000" as Address),
     escrowAmount,
+    sessionDateUnix,
   );
 
   // Check if recipient can receive payment
@@ -278,7 +341,7 @@ export function BookingModal({
     return days;
   }, [currentMonth]);
 
-  // Check if a day is available (in the selected slot's selected dates AND not in the past)
+  // Check if a day is available (in the selected slot's selected dates AND not in the past AND has non-booked times)
   const isDayAvailable = (date: Date) => {
     if (!selectedSlot || !selectedSlot.selectedDates) return false;
 
@@ -297,14 +360,9 @@ export function BookingModal({
     // If date is before today, not available
     if (checkDate < today) return false;
 
-    // If date is today, check if there are any future times
-    if (checkDate.getTime() === today.getTime()) {
-      const futureTimes = getAvailableTimes(selectedSlot, date);
-      return futureTimes.length > 0;
-    }
-
-    // Future date - available
-    return true;
+    // Check if there are any available (non-booked) times left
+    const availableTimes = getAvailableTimes(selectedSlot, date);
+    return availableTimes.length > 0;
   };
 
   const handleSlotSelect = (slot: AvailabilitySlot) => {
@@ -452,7 +510,11 @@ export function BookingModal({
       date: formatDate(selectedDate),
       time: selectedTime,
       createdAt: now.toISOString(),
-      expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+      expiresAt: selectedDate
+        ? new Date(
+            new Date(selectedDate).setHours(0, 0, 0, 0) + 24 * 60 * 60 * 1000,
+          ).toISOString()
+        : new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
     };
 
     setReceipt(newReceipt);
@@ -488,7 +550,11 @@ export function BookingModal({
       date: formatDate(selectedDate),
       time: selectedTime,
       createdAt: now.toISOString(),
-      expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+      expiresAt: selectedDate
+        ? new Date(
+            new Date(selectedDate).setHours(0, 0, 0, 0) + 24 * 60 * 60 * 1000,
+          ).toISOString()
+        : new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
       escrowId: Number(resultEscrowId),
       txHash: resultTxHash,
       depositorAddress: walletAddress,
@@ -508,9 +574,12 @@ export function BookingModal({
           amount: selectedSlot.price,
           status: "pending",
           create_tx_hash: resultTxHash,
-          accept_deadline: new Date(
-            now.getTime() + 24 * 60 * 60 * 1000,
-          ).toISOString(),
+          accept_deadline: selectedDate
+            ? new Date(
+                new Date(selectedDate).setHours(0, 0, 0, 0) +
+                  24 * 60 * 60 * 1000,
+              ).toISOString()
+            : new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
           description: `${selectedSlot.name} session with ${personName}`,
         });
       } catch (err) {
@@ -843,18 +912,23 @@ export function BookingModal({
             </div>
           </div>
 
-          {/* Time Slots - Only show future times */}
+          {/* Time Slots - Only show future, non-booked times */}
           <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
             {(() => {
               const availableTimes = getAvailableTimes(
                 selectedSlot,
                 selectedDate,
               );
+              const bookedTimes = getBookedTimes(selectedSlot, selectedDate);
               const pastTimes = selectedSlot.times.filter(
-                (t) => !availableTimes.includes(t),
+                (t) => !availableTimes.includes(t) && !bookedTimes.includes(t),
               );
 
-              if (availableTimes.length === 0 && pastTimes.length === 0) {
+              if (
+                availableTimes.length === 0 &&
+                pastTimes.length === 0 &&
+                bookedTimes.length === 0
+              ) {
                 return (
                   <div className="text-center py-8">
                     <ClockIcon className="w-8 h-8 text-neutral-300 dark:text-neutral-600 mx-auto mb-2" />
@@ -867,7 +941,7 @@ export function BookingModal({
 
               return (
                 <>
-                  {/* Available (future) times */}
+                  {/* Available (future, non-booked) times */}
                   {availableTimes.length > 0 ? (
                     availableTimes.map((time) => (
                       <button
@@ -890,12 +964,45 @@ export function BookingModal({
                     <div className="text-center py-4 mb-4">
                       <AlertCircleIcon className="w-8 h-8 text-amber-500 mx-auto mb-2" />
                       <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                        All times for today have passed
+                        {bookedTimes.length > 0 && pastTimes.length === 0
+                          ? "All times for this day are booked"
+                          : "All times for today have passed"}
                       </p>
                       <p className="text-xs text-neutral-500 dark:text-neutral-500 mt-1">
                         Please select a different date
                       </p>
                     </div>
+                  )}
+
+                  {/* Booked times (greyed out with "Booked" label) */}
+                  {bookedTimes.length > 0 && (
+                    <>
+                      <div className="flex items-center gap-2 my-3">
+                        <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-700" />
+                        <span className="text-xs text-neutral-400 dark:text-neutral-500">
+                          Booked
+                        </span>
+                        <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-700" />
+                      </div>
+                      {bookedTimes.map((time) => (
+                        <div
+                          key={`booked-${time}`}
+                          className={cn(
+                            "w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium",
+                            "bg-koru-purple/5 dark:bg-koru-purple/10 text-neutral-400 dark:text-neutral-500",
+                            "border-2 border-koru-purple/20 cursor-not-allowed",
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <ClockIcon className="w-4 h-4" />
+                            <span className="font-mono">{time}</span>
+                          </div>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-koru-purple/10 text-koru-purple/60 font-medium">
+                            Booked
+                          </span>
+                        </div>
+                      ))}
+                    </>
                   )}
 
                   {/* Past times (greyed out) */}
@@ -1417,8 +1524,10 @@ export function BookingModal({
               <div className="flex items-start gap-3">
                 <ClockIcon className="w-5 h-5 text-koru-golden flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                  If {personName.split(" ")[0]} doesn&apos;t reply within{" "}
-                  <span className="text-koru-golden font-medium">24 hours</span>
+                  If {personName.split(" ")[0]} doesn&apos;t accept within{" "}
+                  <span className="text-koru-golden font-medium">
+                    24 hours after the session date
+                  </span>
                   , your payment will be automatically refunded to your Koru
                   withdrawable balance.
                 </p>
@@ -1454,7 +1563,10 @@ export function BookingModal({
     <Drawer open={open} onOpenChange={handleOpenChange} modal={false}>
       <DrawerContent className="overflow-hidden">
         <DrawerTitle className="sr-only">Book a Session</DrawerTitle>
-        <div className="overflow-y-auto max-h-[85vh]" data-vaul-no-drag>
+        <div
+          className="overflow-y-auto max-h-[85vh] px-2 pb-4"
+          data-vaul-no-drag
+        >
           {modalBody}
         </div>
       </DrawerContent>

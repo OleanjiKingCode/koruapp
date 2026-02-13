@@ -188,7 +188,9 @@ export function LoginModal({
         )}
       >
         <DrawerTitle className="sr-only">{title}</DrawerTitle>
-        <div data-vaul-no-drag>{modalBody}</div>
+        <div className="px-2 pb-4" data-vaul-no-drag>
+          {modalBody}
+        </div>
       </DrawerContent>
     </Drawer>
   );

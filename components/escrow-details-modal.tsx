@@ -23,6 +23,9 @@ import {
 } from "@/components/ui/drawer";
 import {
   useWithdrawEscrow,
+  useDisputeEscrow,
+  useCounterDispute,
+  useReleaseEscrow,
   useContractEscrows,
   type ContractEscrowItem,
 } from "@/lib/hooks/use-koru-escrow";
@@ -278,9 +281,10 @@ function EscrowRow({
         </div>
       )}
 
-      {/* Withdraw button — only when contract says it's allowed */}
-      {showWithdraw && (
-        <div className="mt-2.5">
+      {/* Action buttons */}
+      <div className="mt-2.5 space-y-2">
+        {/* Withdraw button — only when contract says it's allowed */}
+        {showWithdraw && (
           <WithdrawButton
             escrowId={escrow.escrowId}
             onComplete={onWithdrawComplete}
@@ -292,12 +296,10 @@ function EscrowRow({
             counterpartyAddress={otherAddress}
             isRecipient={true}
           />
-        </div>
-      )}
+        )}
 
-      {/* Depositor reclaim — only when contract says it's allowed */}
-      {showReclaim && (
-        <div className="mt-2.5">
+        {/* Depositor reclaim — only when contract says it's allowed */}
+        {showReclaim && (
           <WithdrawButton
             escrowId={escrow.escrowId}
             onComplete={onWithdrawComplete}
@@ -308,8 +310,61 @@ function EscrowRow({
             counterpartyAddress={otherAddress}
             isRecipient={false}
           />
-        </div>
-      )}
+        )}
+
+        {/* Depositor: Release funds early (when accepted, within dispute window) */}
+        {!escrow.isRecipient &&
+          effective === EscrowStatus.Accepted &&
+          escrow.disputeDeadline > 0 &&
+          escrow.disputeDeadline > Math.floor(Date.now() / 1000) && (
+            <ReleaseButton
+              escrowId={escrow.escrowId}
+              onComplete={onWithdrawComplete}
+            />
+          )}
+
+        {/* Depositor: Raise dispute (when accepted, within 48hr dispute window) */}
+        {!escrow.isRecipient &&
+          effective === EscrowStatus.Accepted &&
+          escrow.disputeDeadline > 0 &&
+          escrow.disputeDeadline > Math.floor(Date.now() / 1000) && (
+            <DisputeButton
+              escrowId={escrow.escrowId}
+              onComplete={onWithdrawComplete}
+            />
+          )}
+
+        {/* Recipient: Counter-dispute (when escrow is in disputed state) */}
+        {escrow.isRecipient && effective === EscrowStatus.Disputed && (
+          <CounterDisputeButton
+            escrowId={escrow.escrowId}
+            onComplete={onWithdrawComplete}
+          />
+        )}
+
+        {/* Depositor: Info when disputed (waiting for resolution) */}
+        {!escrow.isRecipient && effective === EscrowStatus.Disputed && (
+          <div className="p-2 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/50">
+            <p className="text-xs text-red-600 dark:text-red-400 leading-relaxed">
+              Dispute active. Funds are frozen until an admin resolves this or
+              90 days pass (50/50 split).
+            </p>
+          </div>
+        )}
+
+        {/* Recipient: Info when dispute window active */}
+        {escrow.isRecipient &&
+          effective === EscrowStatus.Accepted &&
+          escrow.disputeDeadline > 0 &&
+          escrow.disputeDeadline > Math.floor(Date.now() / 1000) && (
+            <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/50">
+              <p className="text-xs text-blue-600 dark:text-blue-400 leading-relaxed">
+                Dispute window active. Funds will be available for withdrawal
+                once the window closes.
+              </p>
+            </div>
+          )}
+      </div>
     </div>
   );
 }
@@ -426,6 +481,312 @@ function WithdrawButton({
               ? "Done!"
               : label}
     </Button>
+  );
+}
+
+// ── Dispute button ───────────────────────────────────────────────────────
+
+function DisputeButton({
+  escrowId,
+  onComplete,
+}: {
+  escrowId: number;
+  onComplete: () => void;
+}) {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const {
+    dispute,
+    isSimulating,
+    isPending,
+    isConfirming,
+    isConfirmed,
+    simError,
+    writeError,
+    reset,
+  } = useDisputeEscrow(BigInt(escrowId));
+
+  useEffect(() => {
+    if (isConfirmed) {
+      toast.success("Dispute raised successfully!");
+      setTimeout(() => {
+        onComplete();
+        reset();
+        setShowConfirm(false);
+      }, 2000);
+    }
+  }, [isConfirmed, onComplete, reset]);
+
+  useEffect(() => {
+    if (simError) {
+      toast.error("Failed to prepare dispute. Please try again.");
+      reset();
+    }
+  }, [simError, reset]);
+
+  useEffect(() => {
+    if (writeError) {
+      const msg = writeError.message?.includes("User rejected")
+        ? "Transaction was rejected."
+        : "Dispute failed. Please try again.";
+      toast.error(msg);
+      reset();
+    }
+  }, [writeError, reset]);
+
+  const isProcessing = isSimulating || isPending || isConfirming;
+
+  if (!showConfirm) {
+    return (
+      <Button
+        onClick={() => setShowConfirm(true)}
+        size="sm"
+        variant="outline"
+        className="w-full border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 h-8 text-xs font-medium"
+      >
+        <AlertIcon className="w-3.5 h-3.5 mr-1.5" />
+        Raise Dispute
+      </Button>
+    );
+  }
+
+  return (
+    <div className="space-y-2 p-2.5 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/50">
+      <p className="text-xs text-red-600 dark:text-red-400 leading-relaxed">
+        Are you sure you want to raise a dispute? This will freeze the funds
+        until resolution. The recipient will have 7 days to counter-dispute.
+      </p>
+      <div className="flex gap-2">
+        <Button
+          onClick={() => setShowConfirm(false)}
+          size="sm"
+          variant="outline"
+          className="flex-1 h-7 text-xs"
+          disabled={isProcessing}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={() => dispute()}
+          size="sm"
+          className="flex-1 bg-red-600 hover:bg-red-700 text-white h-7 text-xs"
+          disabled={isProcessing}
+        >
+          {isSimulating
+            ? "Preparing..."
+            : isPending
+              ? "Confirm..."
+              : isConfirming
+                ? "Processing..."
+                : isConfirmed
+                  ? "Done!"
+                  : "Confirm Dispute"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ── Counter-dispute button ──────────────────────────────────────────────
+
+function CounterDisputeButton({
+  escrowId,
+  onComplete,
+}: {
+  escrowId: number;
+  onComplete: () => void;
+}) {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const {
+    counterDispute,
+    isSimulating,
+    isPending,
+    isConfirming,
+    isConfirmed,
+    simError,
+    writeError,
+    reset,
+  } = useCounterDispute(BigInt(escrowId));
+
+  useEffect(() => {
+    if (isConfirmed) {
+      toast.success("Counter-dispute submitted!");
+      setTimeout(() => {
+        onComplete();
+        reset();
+        setShowConfirm(false);
+      }, 2000);
+    }
+  }, [isConfirmed, onComplete, reset]);
+
+  useEffect(() => {
+    if (simError) {
+      toast.error("Failed to prepare counter-dispute. Please try again.");
+      reset();
+    }
+  }, [simError, reset]);
+
+  useEffect(() => {
+    if (writeError) {
+      const msg = writeError.message?.includes("User rejected")
+        ? "Transaction was rejected."
+        : "Counter-dispute failed. Please try again.";
+      toast.error(msg);
+      reset();
+    }
+  }, [writeError, reset]);
+
+  const isProcessing = isSimulating || isPending || isConfirming;
+
+  if (!showConfirm) {
+    return (
+      <Button
+        onClick={() => setShowConfirm(true)}
+        size="sm"
+        variant="outline"
+        className="w-full border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 h-8 text-xs font-medium"
+      >
+        <AlertIcon className="w-3.5 h-3.5 mr-1.5" />
+        Counter-Dispute
+      </Button>
+    );
+  }
+
+  return (
+    <div className="space-y-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50">
+      <p className="text-xs text-amber-600 dark:text-amber-400 leading-relaxed">
+        Submit a counter-dispute to contest this claim. An admin will review and
+        decide the outcome. If no resolution is reached within 90 days, funds
+        are split 50/50.
+      </p>
+      <div className="flex gap-2">
+        <Button
+          onClick={() => setShowConfirm(false)}
+          size="sm"
+          variant="outline"
+          className="flex-1 h-7 text-xs"
+          disabled={isProcessing}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={() => counterDispute()}
+          size="sm"
+          className="flex-1 bg-amber-600 hover:bg-amber-700 text-white h-7 text-xs"
+          disabled={isProcessing}
+        >
+          {isSimulating
+            ? "Preparing..."
+            : isPending
+              ? "Confirm..."
+              : isConfirming
+                ? "Processing..."
+                : isConfirmed
+                  ? "Done!"
+                  : "Confirm Counter-Dispute"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ── Release button (early release by depositor) ─────────────────────────
+
+function ReleaseButton({
+  escrowId,
+  onComplete,
+}: {
+  escrowId: number;
+  onComplete: () => void;
+}) {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const {
+    release,
+    isSimulating,
+    isPending,
+    isConfirming,
+    isConfirmed,
+    simError,
+    writeError,
+    reset,
+  } = useReleaseEscrow(BigInt(escrowId));
+
+  useEffect(() => {
+    if (isConfirmed) {
+      toast.success("Funds released successfully!");
+      setTimeout(() => {
+        onComplete();
+        reset();
+        setShowConfirm(false);
+      }, 2000);
+    }
+  }, [isConfirmed, onComplete, reset]);
+
+  useEffect(() => {
+    if (simError) {
+      toast.error("Failed to prepare release. Please try again.");
+      reset();
+    }
+  }, [simError, reset]);
+
+  useEffect(() => {
+    if (writeError) {
+      const msg = writeError.message?.includes("User rejected")
+        ? "Transaction was rejected."
+        : "Release failed. Please try again.";
+      toast.error(msg);
+      reset();
+    }
+  }, [writeError, reset]);
+
+  const isProcessing = isSimulating || isPending || isConfirming;
+
+  if (!showConfirm) {
+    return (
+      <Button
+        onClick={() => setShowConfirm(true)}
+        size="sm"
+        className="w-full bg-koru-lime text-neutral-900 hover:bg-koru-lime/90 h-8 text-xs font-medium"
+      >
+        <CheckIcon className="w-3.5 h-3.5 mr-1.5" />
+        Release Funds
+      </Button>
+    );
+  }
+
+  return (
+    <div className="space-y-2 p-2.5 rounded-lg bg-koru-lime/10 border border-koru-lime/30">
+      <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+        Release funds early to the recipient? This confirms you are satisfied
+        and cannot be undone.
+      </p>
+      <div className="flex gap-2">
+        <Button
+          onClick={() => setShowConfirm(false)}
+          size="sm"
+          variant="outline"
+          className="flex-1 h-7 text-xs"
+          disabled={isProcessing}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={() => release()}
+          size="sm"
+          className="flex-1 bg-koru-lime hover:bg-koru-lime/90 text-neutral-900 h-7 text-xs"
+          disabled={isProcessing}
+        >
+          {isSimulating
+            ? "Preparing..."
+            : isPending
+              ? "Confirm..."
+              : isConfirming
+                ? "Processing..."
+                : isConfirmed
+                  ? "Done!"
+                  : "Confirm Release"}
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -760,13 +1121,13 @@ export function EscrowDetailsModal({
       modal={false}
     >
       <DrawerContent className="select-text">
-        <DrawerHeader className="text-left px-2">
+        <DrawerHeader className="text-left px-4">
           <DrawerTitle>Escrow Details</DrawerTitle>
           <DrawerDescription>
             Your active escrow payments and withdrawals
           </DrawerDescription>
         </DrawerHeader>
-        <div data-vaul-no-drag>
+        <div className="px-2 pb-4" data-vaul-no-drag>
           <ModalBody />
         </div>
       </DrawerContent>

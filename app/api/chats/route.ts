@@ -14,7 +14,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { creatorUsername, amount, slotName, slotDuration, escrowId } = body;
+    const {
+      creatorUsername,
+      amount,
+      slotName,
+      slotDuration,
+      escrowId,
+      bookedDate,
+      bookedTime,
+    } = body;
 
     if (!creatorUsername) {
       return NextResponse.json(
@@ -47,6 +55,8 @@ export async function POST(request: NextRequest) {
       amount: amount || 0,
       slot_name: slotName || null,
       slot_duration: slotDuration || null,
+      booked_date: bookedDate || null,
+      booked_time: bookedTime || null,
     });
 
     if (!chat) {

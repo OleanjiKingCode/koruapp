@@ -271,7 +271,7 @@ function ChatCard({
           <div className="mt-3 flex items-center">
             <span className="text-xs text-red-400 flex items-center gap-1">
               <RefundIcon className="w-3 h-3" />
-              Payment refunded - no response within 24h
+              Payment refunded - no response by accept deadline
             </span>
           </div>
         )}

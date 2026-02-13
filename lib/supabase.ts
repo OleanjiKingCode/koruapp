@@ -659,6 +659,8 @@ export async function createChat(chat: {
   slot_name?: string | null;
   slot_duration?: number | null;
   deadline_at?: string | null;
+  booked_date?: string | null; // ISO date string (YYYY-MM-DD) of the session
+  booked_time?: string | null; // Time string (e.g., "09:00-09:30") of the session
 }): Promise<Chat | null> {
   // Use pending status for paid chats (escrow needs acceptance)
   // Use active status for free chats
@@ -674,8 +676,15 @@ export async function createChat(chat: {
       slot_duration: chat.slot_duration,
       deadline_at:
         chat.deadline_at ||
-        new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        (chat.booked_date
+          ? new Date(
+              new Date(chat.booked_date + "T00:00:00").getTime() +
+                24 * 60 * 60 * 1000,
+            ).toISOString()
+          : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()),
       status: initialStatus,
+      booked_date: chat.booked_date || null,
+      booked_time: chat.booked_time || null,
     })
     .select()
     .single();
@@ -689,6 +698,22 @@ export async function createChat(chat: {
   }
 
   return data;
+}
+
+// Get booked time slots for a creator (to prevent double-booking)
+export async function getBookedSlots(
+  creatorId: string,
+): Promise<{ booked_date: string; booked_time: string }[]> {
+  const { data, error } = await supabase
+    .from("chats")
+    .select("booked_date, booked_time")
+    .eq("creator_id", creatorId)
+    .in("status", ["pending", "active"])
+    .not("booked_date", "is", null)
+    .not("booked_time", "is", null);
+
+  if (error || !data) return [];
+  return data as { booked_date: string; booked_time: string }[];
 }
 
 // =============================================

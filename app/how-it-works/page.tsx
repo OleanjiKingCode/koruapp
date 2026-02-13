@@ -67,7 +67,7 @@ export default function HowItWorksPage() {
           <p
             className={cn(
               "mb-6 text-sm md:text-base leading-relaxed",
-              isDark ? "text-neutral-300" : "text-neutral-600"
+              isDark ? "text-neutral-300" : "text-neutral-600",
             )}
           >
             Search for people by name or X handle. If they're on Kōru, message
@@ -80,7 +80,7 @@ export default function HowItWorksPage() {
                 "flex items-center gap-2 px-4 py-2 rounded-xl text-sm",
                 isDark
                   ? "bg-neutral-800 text-neutral-300"
-                  : "bg-neutral-100 text-neutral-600"
+                  : "bg-neutral-100 text-neutral-600",
               )}
             >
               <SearchIcon className="w-4 h-4 text-koru-purple" />
@@ -91,7 +91,7 @@ export default function HowItWorksPage() {
                 "flex items-center gap-2 px-4 py-2 rounded-xl text-sm",
                 isDark
                   ? "bg-neutral-800 text-neutral-300"
-                  : "bg-neutral-100 text-neutral-600"
+                  : "bg-neutral-100 text-neutral-600",
               )}
             >
               <UserIcon className="w-4 h-4 text-koru-golden" />
@@ -102,7 +102,7 @@ export default function HowItWorksPage() {
                 "flex items-center gap-2 px-4 py-2 rounded-xl text-sm",
                 isDark
                   ? "bg-neutral-800 text-neutral-300"
-                  : "bg-neutral-100 text-neutral-600"
+                  : "bg-neutral-100 text-neutral-600",
               )}
             >
               <SparkleIcon className="w-4 h-4 text-koru-lime" />
@@ -122,7 +122,7 @@ export default function HowItWorksPage() {
           <p
             className={cn(
               "mb-6 text-sm md:text-base leading-relaxed",
-              isDark ? "text-neutral-300" : "text-neutral-600"
+              isDark ? "text-neutral-300" : "text-neutral-600",
             )}
           >
             <strong>Summon:</strong> Pledge how much you'd pay to bring someone
@@ -134,7 +134,7 @@ export default function HowItWorksPage() {
               "p-4 rounded-2xl border",
               isDark
                 ? "bg-neutral-900 border-neutral-800"
-                : "bg-neutral-50 border-neutral-200"
+                : "bg-neutral-50 border-neutral-200",
             )}
           >
             <div className="flex items-center gap-3 mb-3">
@@ -145,7 +145,7 @@ export default function HowItWorksPage() {
                 <p
                   className={cn(
                     "font-semibold text-sm",
-                    isDark ? "text-white" : "text-neutral-900"
+                    isDark ? "text-white" : "text-neutral-900",
                   )}
                 >
                   Summon = Pledge (free)
@@ -153,7 +153,7 @@ export default function HowItWorksPage() {
                 <p
                   className={cn(
                     "text-xs",
-                    isDark ? "text-neutral-500" : "text-neutral-500"
+                    isDark ? "text-neutral-500" : "text-neutral-500",
                   )}
                 >
                   State what you'd pay if they join
@@ -168,7 +168,7 @@ export default function HowItWorksPage() {
                 <p
                   className={cn(
                     "font-semibold text-sm",
-                    isDark ? "text-white" : "text-neutral-900"
+                    isDark ? "text-white" : "text-neutral-900",
                   )}
                 >
                   Direct = Pay (escrow)
@@ -176,7 +176,7 @@ export default function HowItWorksPage() {
                 <p
                   className={cn(
                     "text-xs",
-                    isDark ? "text-neutral-500" : "text-neutral-500"
+                    isDark ? "text-neutral-500" : "text-neutral-500",
                   )}
                 >
                   Funds held safely until complete
@@ -197,7 +197,7 @@ export default function HowItWorksPage() {
           <p
             className={cn(
               "mb-6 text-sm md:text-base leading-relaxed",
-              isDark ? "text-neutral-300" : "text-neutral-600"
+              isDark ? "text-neutral-300" : "text-neutral-600",
             )}
           >
             Join the call at the scheduled time. Get personalized advice,
@@ -207,14 +207,14 @@ export default function HowItWorksPage() {
             <div
               className={cn(
                 "p-3 rounded-xl text-center",
-                isDark ? "bg-neutral-800" : "bg-neutral-100"
+                isDark ? "bg-neutral-800" : "bg-neutral-100",
               )}
             >
               <VideoIcon className="w-6 h-6 mx-auto mb-2 text-koru-purple" />
               <p
                 className={cn(
                   "text-xs",
-                  isDark ? "text-neutral-400" : "text-neutral-600"
+                  isDark ? "text-neutral-400" : "text-neutral-600",
                 )}
               >
                 Video calls
@@ -223,14 +223,14 @@ export default function HowItWorksPage() {
             <div
               className={cn(
                 "p-3 rounded-xl text-center",
-                isDark ? "bg-neutral-800" : "bg-neutral-100"
+                isDark ? "bg-neutral-800" : "bg-neutral-100",
               )}
             >
               <ChatBubbleIcon className="w-6 h-6 mx-auto mb-2 text-koru-golden" />
               <p
                 className={cn(
                   "text-xs",
-                  isDark ? "text-neutral-400" : "text-neutral-600"
+                  isDark ? "text-neutral-400" : "text-neutral-600",
                 )}
               >
                 Messaging
@@ -239,14 +239,14 @@ export default function HowItWorksPage() {
             <div
               className={cn(
                 "p-3 rounded-xl text-center",
-                isDark ? "bg-neutral-800" : "bg-neutral-100"
+                isDark ? "bg-neutral-800" : "bg-neutral-100",
               )}
             >
               <DocumentIcon className="w-6 h-6 mx-auto mb-2 text-koru-lime" />
               <p
                 className={cn(
                   "text-xs",
-                  isDark ? "text-neutral-400" : "text-neutral-600"
+                  isDark ? "text-neutral-400" : "text-neutral-600",
                 )}
               >
                 File sharing
@@ -266,11 +266,12 @@ export default function HowItWorksPage() {
           <p
             className={cn(
               "mb-6 text-sm md:text-base leading-relaxed",
-              isDark ? "text-neutral-300" : "text-neutral-600"
+              isDark ? "text-neutral-300" : "text-neutral-600",
             )}
           >
-            Host has 24hrs to accept. You have 48hrs to review and release or
-            dispute. Funds auto-release after the dispute window. Zero risk.
+            Host has until 24hrs after the session date to accept. You have
+            48hrs to review and release or dispute. Funds auto-release after the
+            dispute window. Zero risk.
           </p>
           <div className="space-y-3">
             <div className="flex items-center gap-3">
@@ -280,7 +281,7 @@ export default function HowItWorksPage() {
               <p
                 className={cn(
                   "text-sm",
-                  isDark ? "text-neutral-300" : "text-neutral-600"
+                  isDark ? "text-neutral-300" : "text-neutral-600",
                 )}
               >
                 Satisfied? Release funds to Host
@@ -293,10 +294,10 @@ export default function HowItWorksPage() {
               <p
                 className={cn(
                   "text-sm",
-                  isDark ? "text-neutral-300" : "text-neutral-600"
+                  isDark ? "text-neutral-300" : "text-neutral-600",
                 )}
               >
-                No accept in 24hrs? Reclaim your funds
+                No accept by 24hrs after session? Reclaim your funds
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -306,7 +307,7 @@ export default function HowItWorksPage() {
               <p
                 className={cn(
                   "text-sm",
-                  isDark ? "text-neutral-300" : "text-neutral-600"
+                  isDark ? "text-neutral-300" : "text-neutral-600",
                 )}
               >
                 Issue? Dispute within 48hrs
@@ -330,7 +331,7 @@ export default function HowItWorksPage() {
           <p
             className={cn(
               "mb-6 text-sm md:text-base leading-relaxed",
-              isDark ? "text-neutral-300" : "text-neutral-600"
+              isDark ? "text-neutral-300" : "text-neutral-600",
             )}
           >
             Define your topics, set your price and availability. Keep
@@ -342,7 +343,7 @@ export default function HowItWorksPage() {
                 "flex items-center gap-2 px-4 py-2 rounded-xl text-sm",
                 isDark
                   ? "bg-neutral-800 text-neutral-300"
-                  : "bg-neutral-100 text-neutral-600"
+                  : "bg-neutral-100 text-neutral-600",
               )}
             >
               <TagIcon className="w-4 h-4 text-koru-lime" />
@@ -353,7 +354,7 @@ export default function HowItWorksPage() {
                 "flex items-center gap-2 px-4 py-2 rounded-xl text-sm",
                 isDark
                   ? "bg-neutral-800 text-neutral-300"
-                  : "bg-neutral-100 text-neutral-600"
+                  : "bg-neutral-100 text-neutral-600",
               )}
             >
               <CalendarIcon className="w-4 h-4 text-koru-golden" />
@@ -364,7 +365,7 @@ export default function HowItWorksPage() {
                 "flex items-center gap-2 px-4 py-2 rounded-xl text-sm",
                 isDark
                   ? "bg-neutral-800 text-neutral-300"
-                  : "bg-neutral-100 text-neutral-600"
+                  : "bg-neutral-100 text-neutral-600",
               )}
             >
               <SparkleIcon className="w-4 h-4 text-koru-purple" />
@@ -384,7 +385,7 @@ export default function HowItWorksPage() {
           <p
             className={cn(
               "mb-6 text-sm md:text-base leading-relaxed",
-              isDark ? "text-neutral-300" : "text-neutral-600"
+              isDark ? "text-neutral-300" : "text-neutral-600",
             )}
           >
             Receive contextual booking requests, confirm slots, and prepare for
@@ -395,14 +396,14 @@ export default function HowItWorksPage() {
               "p-4 rounded-2xl border",
               isDark
                 ? "bg-neutral-900 border-neutral-800"
-                : "bg-neutral-50 border-neutral-200"
+                : "bg-neutral-50 border-neutral-200",
             )}
           >
             <div className="flex items-center justify-between mb-3">
               <p
                 className={cn(
                   "font-semibold text-sm",
-                  isDark ? "text-white" : "text-neutral-900"
+                  isDark ? "text-white" : "text-neutral-900",
                 )}
               >
                 New Request
@@ -414,7 +415,7 @@ export default function HowItWorksPage() {
             <p
               className={cn(
                 "text-xs mb-3",
-                isDark ? "text-neutral-400" : "text-neutral-500"
+                isDark ? "text-neutral-400" : "text-neutral-500",
               )}
             >
               "I'd love to discuss scaling strategies for my Web3 startup..."
@@ -428,7 +429,7 @@ export default function HowItWorksPage() {
                   "flex-1 py-2 px-3 text-xs rounded-xl font-medium",
                   isDark
                     ? "bg-neutral-800 text-neutral-300"
-                    : "bg-neutral-200 text-neutral-600"
+                    : "bg-neutral-200 text-neutral-600",
                 )}
               >
                 Decline
@@ -448,7 +449,7 @@ export default function HowItWorksPage() {
           <p
             className={cn(
               "mb-6 text-sm md:text-base leading-relaxed",
-              isDark ? "text-neutral-300" : "text-neutral-600"
+              isDark ? "text-neutral-300" : "text-neutral-600",
             )}
           >
             Show up and give real value. Build reputation through reviews and
@@ -462,7 +463,7 @@ export default function HowItWorksPage() {
               <p
                 className={cn(
                   "text-sm",
-                  isDark ? "text-neutral-300" : "text-neutral-600"
+                  isDark ? "text-neutral-300" : "text-neutral-600",
                 )}
               >
                 Join on time
@@ -475,7 +476,7 @@ export default function HowItWorksPage() {
               <p
                 className={cn(
                   "text-sm",
-                  isDark ? "text-neutral-300" : "text-neutral-600"
+                  isDark ? "text-neutral-300" : "text-neutral-600",
                 )}
               >
                 Share your expertise
@@ -488,7 +489,7 @@ export default function HowItWorksPage() {
               <p
                 className={cn(
                   "text-sm",
-                  isDark ? "text-neutral-300" : "text-neutral-600"
+                  isDark ? "text-neutral-300" : "text-neutral-600",
                 )}
               >
                 Earn great reviews
@@ -508,7 +509,7 @@ export default function HowItWorksPage() {
           <p
             className={cn(
               "mb-6 text-sm md:text-base leading-relaxed",
-              isDark ? "text-neutral-300" : "text-neutral-600"
+              isDark ? "text-neutral-300" : "text-neutral-600",
             )}
           >
             Payment releases automatically after successful completion. No
@@ -519,7 +520,7 @@ export default function HowItWorksPage() {
               "p-4 rounded-2xl border",
               isDark
                 ? "bg-neutral-900 border-koru-lime/30"
-                : "bg-koru-lime/10 border-koru-lime/30"
+                : "bg-koru-lime/10 border-koru-lime/30",
             )}
           >
             <div className="flex items-center justify-between">
@@ -527,7 +528,7 @@ export default function HowItWorksPage() {
                 <p
                   className={cn(
                     "text-xs",
-                    isDark ? "text-neutral-400" : "text-neutral-500"
+                    isDark ? "text-neutral-400" : "text-neutral-500",
                   )}
                 >
                   Session completed
@@ -535,7 +536,7 @@ export default function HowItWorksPage() {
                 <p
                   className={cn(
                     "text-2xl font-bold",
-                    isDark ? "text-white" : "text-neutral-900"
+                    isDark ? "text-white" : "text-neutral-900",
                   )}
                 >
                   +$150.00
@@ -568,7 +569,7 @@ export default function HowItWorksPage() {
             <h1
               className={cn(
                 "text-2xl md:text-5xl  mb-6 leading-tight",
-                isDark ? "text-white" : "text-neutral-900"
+                isDark ? "text-white" : "text-neutral-900",
               )}
             >
               How{" "}
@@ -587,14 +588,16 @@ export default function HowItWorksPage() {
             <p
               className={cn(
                 "text-md md:text-xl max-w-2xl mx-auto leading-relaxed",
-                isDark ? "text-neutral-400" : "text-neutral-600"
+                isDark ? "text-neutral-400" : "text-neutral-600",
               )}
             >
               Connect with experts already on Kōru, or{" "}
               <span className="text-koru-golden">summon anyone</span> to the
               platform.
               <br />
-              <span className="text-koru-lime">Direct access, guaranteed outcomes.</span>
+              <span className="text-koru-lime">
+                Direct access, guaranteed outcomes.
+              </span>
             </p>
           </motion.section>
 
@@ -611,7 +614,7 @@ export default function HowItWorksPage() {
                   "flex p-1.5 items-center gap-2 rounded-2xl",
                   isDark
                     ? "bg-neutral-900 border border-neutral-800"
-                    : "bg-neutral-100"
+                    : "bg-neutral-100",
                 )}
               >
                 {[
@@ -639,8 +642,8 @@ export default function HowItWorksPage() {
                         isActive
                           ? "text-white"
                           : isDark
-                          ? "text-neutral-500 hover:text-neutral-300"
-                          : "text-neutral-500 hover:text-neutral-700"
+                            ? "text-neutral-500 hover:text-neutral-300"
+                            : "text-neutral-500 hover:text-neutral-700",
                       )}
                     >
                       {isActive && (
@@ -665,8 +668,8 @@ export default function HowItWorksPage() {
                             isActive
                               ? "text-white/70"
                               : isDark
-                              ? "text-neutral-600"
-                              : "text-neutral-400"
+                                ? "text-neutral-600"
+                                : "text-neutral-400",
                           )}
                         >
                           {persona.sublabel}
@@ -712,7 +715,7 @@ export default function HowItWorksPage() {
               <h2
                 className={cn(
                   "text-3xl md:text-4xl mb-4",
-                  isDark ? "text-white" : "text-neutral-900"
+                  isDark ? "text-white" : "text-neutral-900",
                 )}
               >
                 Built-in Trust
@@ -720,7 +723,7 @@ export default function HowItWorksPage() {
               <p
                 className={cn(
                   "text-lg max-w-xl mx-auto",
-                  isDark ? "text-neutral-400" : "text-neutral-600"
+                  isDark ? "text-neutral-400" : "text-neutral-600",
                 )}
               >
                 Every transaction is protected. Fair outcomes, always.
@@ -753,13 +756,13 @@ export default function HowItWorksPage() {
                           "relative flex h-full flex-col gap-4 rounded-xl border-[0.75px] p-6 shadow-sm",
                           isDark
                             ? "bg-neutral-900 border-neutral-800 shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)]"
-                            : "bg-white border-neutral-200"
+                            : "bg-white border-neutral-200",
                         )}
                       >
                         <div
                           className={cn(
                             "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
-                            "bg-koru-lime/10"
+                            "bg-koru-lime/10",
                           )}
                         >
                           <Icon className="w-6 h-6 text-koru-lime" />
@@ -768,7 +771,7 @@ export default function HowItWorksPage() {
                           <h3
                             className={cn(
                               "text-lg font-semibold mb-2",
-                              isDark ? "text-white" : "text-neutral-900"
+                              isDark ? "text-white" : "text-neutral-900",
                             )}
                           >
                             {feature.title}
@@ -776,7 +779,7 @@ export default function HowItWorksPage() {
                           <p
                             className={cn(
                               "text-sm leading-relaxed",
-                              isDark ? "text-neutral-400" : "text-neutral-600"
+                              isDark ? "text-neutral-400" : "text-neutral-600",
                             )}
                           >
                             {feature.description}
@@ -799,13 +802,12 @@ export default function HowItWorksPage() {
             className="mb-16 cursor-pointer"
           >
             <div className="relative rounded-[1.5rem] border-[0.75px] border-neutral-200 dark:border-neutral-800 p-3">
-          
               <div
                 className={cn(
                   "relative rounded-2xl p-8 md:p-12 overflow-hidden shadow-sm",
                   isDark
                     ? "bg-neutral-900 border-[0.75px] border-neutral-800 shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)]"
-                    : "bg-white border-[0.75px] border-neutral-200"
+                    : "bg-white border-[0.75px] border-neutral-200",
                 )}
               >
                 {/* Background decoration */}
@@ -813,7 +815,7 @@ export default function HowItWorksPage() {
                   <div
                     className={cn(
                       "absolute inset-0 rounded-full",
-                      "bg-gradient-to-br from-koru-purple to-koru-lime blur-3xl"
+                      "bg-gradient-to-br from-koru-purple to-koru-lime blur-3xl",
                     )}
                   />
                 </div>
@@ -824,13 +826,13 @@ export default function HowItWorksPage() {
                       <ContractIcon
                         className={cn(
                           "w-8 h-8",
-                          isDark ? "text-neutral-300" : "text-neutral-700"
+                          isDark ? "text-neutral-300" : "text-neutral-700",
                         )}
                       />
                       <h2
                         className={cn(
                           "text-2xl md:text-3xl font-semibold",
-                          isDark ? "text-white" : "text-neutral-900"
+                          isDark ? "text-white" : "text-neutral-900",
                         )}
                       >
                         Contract & Audit
@@ -840,7 +842,7 @@ export default function HowItWorksPage() {
                     <p
                       className={cn(
                         "mb-6 leading-relaxed",
-                        isDark ? "text-neutral-400" : "text-neutral-600"
+                        isDark ? "text-neutral-400" : "text-neutral-600",
                       )}
                     >
                       Our smart contracts will be publicly audited before
@@ -852,7 +854,7 @@ export default function HowItWorksPage() {
                         "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm",
                         isDark
                           ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                          : "bg-amber-50 text-amber-700 border border-amber-200"
+                          : "bg-amber-50 text-amber-700 border border-amber-200",
                       )}
                     >
                       <div className="w-2 h-2 rounded-full bg-current animate-pulse" />
@@ -863,7 +865,7 @@ export default function HowItWorksPage() {
                   <div
                     className={cn(
                       "p-6 rounded-2xl",
-                      isDark ? "bg-neutral-800/50" : "bg-neutral-50"
+                      isDark ? "bg-neutral-800/50" : "bg-neutral-50",
                     )}
                   >
                     <div className="space-y-4">
@@ -871,7 +873,7 @@ export default function HowItWorksPage() {
                         <p
                           className={cn(
                             "text-xs uppercase tracking-wider mb-1",
-                            "text-neutral-500"
+                            "text-neutral-500",
                           )}
                         >
                           Contract Address
@@ -879,7 +881,7 @@ export default function HowItWorksPage() {
                         <p
                           className={cn(
                             "font-mono text-sm",
-                            isDark ? "text-neutral-400" : "text-neutral-600"
+                            isDark ? "text-neutral-400" : "text-neutral-600",
                           )}
                         >
                           To be announced
@@ -889,7 +891,7 @@ export default function HowItWorksPage() {
                         <p
                           className={cn(
                             "text-xs uppercase tracking-wider mb-1",
-                            "text-neutral-500"
+                            "text-neutral-500",
                           )}
                         >
                           Audit Report
@@ -897,7 +899,7 @@ export default function HowItWorksPage() {
                         <p
                           className={cn(
                             "font-mono text-sm",
-                            isDark ? "text-neutral-400" : "text-neutral-600"
+                            isDark ? "text-neutral-400" : "text-neutral-600",
                           )}
                         >
                           To be announced
@@ -912,7 +914,7 @@ export default function HowItWorksPage() {
                           "flex-1 py-3 px-4 rounded-xl text-sm font-medium cursor-not-allowed opacity-50",
                           isDark
                             ? "bg-neutral-700 text-neutral-400"
-                            : "bg-neutral-200 text-neutral-500"
+                            : "bg-neutral-200 text-neutral-500",
                         )}
                       >
                         View Audit
@@ -923,7 +925,7 @@ export default function HowItWorksPage() {
                           "flex-1 py-3 px-4 rounded-xl text-sm font-medium cursor-not-allowed opacity-50",
                           isDark
                             ? "bg-neutral-700 text-neutral-400"
-                            : "bg-neutral-200 text-neutral-500"
+                            : "bg-neutral-200 text-neutral-500",
                         )}
                       >
                         View Contract
@@ -949,13 +951,13 @@ export default function HowItWorksPage() {
                 "bg-gradient-to-br from-koru-purple/20 via-transparent to-koru-lime/10",
                 isDark
                   ? "border border-neutral-800"
-                  : "border border-neutral-200"
+                  : "border border-neutral-200",
               )}
             >
               <h2
                 className={cn(
                   "text-3xl md:text-4xl mb-4",
-                  isDark ? "text-white" : "text-neutral-900"
+                  isDark ? "text-white" : "text-neutral-900",
                 )}
               >
                 Ready to get started?
@@ -963,7 +965,7 @@ export default function HowItWorksPage() {
               <p
                 className={cn(
                   "text-lg mb-8 max-w-lg mx-auto",
-                  isDark ? "text-neutral-400" : "text-neutral-600"
+                  isDark ? "text-neutral-400" : "text-neutral-600",
                 )}
               >
                 Discover experts waiting to help, or start earning by sharing
@@ -985,7 +987,7 @@ export default function HowItWorksPage() {
                     "inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-medium",
                     isDark
                       ? "bg-neutral-800 text-white border border-neutral-700"
-                      : "bg-white text-neutral-900 border border-neutral-200"
+                      : "bg-white text-neutral-900 border border-neutral-200",
                   )}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.98 }}

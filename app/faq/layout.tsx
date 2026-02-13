@@ -59,7 +59,7 @@ const faqJsonLd = {
       name: "When am I eligible for a refund?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "You're eligible for a full refund if: (1) The Host doesn't accept within 24 hours—you can reclaim automatically, (2) You raise a valid dispute within 48 hours of acceptance, (3) The Host fails to deliver what was promised. Refunds through the smart contract are instant.",
+        text: "You're eligible for a full refund if: (1) The Host doesn't accept within 24 hours of the session date—you can reclaim automatically, (2) You raise a valid dispute within 48 hours of the session, (3) The Host fails to deliver what was promised. Refunds through the smart contract are instant.",
       },
     },
     {

@@ -515,9 +515,21 @@ export function useCreateEscrow(recipient: Address, amount: bigint) {
 
 /**
  * Simple async hook for escrow payment flow
- * Call approveAndCreateEscrow() and it handles everything
+ * Call approveAndCreateEscrow() and it handles everything.
+ *
+ * @param recipient  Address of the person providing the service
+ * @param amount     USDC amount (6 decimals)
+ * @param sessionDate  Optional unix timestamp (seconds) of the booked session.
+ *                     When sessionDate > 0: accept deadline = sessionDate + 24h,
+ *                     dispute deadline = sessionDate + 48h.
+ *                     When 0 or undefined: accept deadline = createdAt + 24h,
+ *                     dispute deadline = acceptedAt + 48h.
  */
-export function useEscrowPayment(recipient: Address, amount: bigint) {
+export function useEscrowPayment(
+  recipient: Address,
+  amount: bigint,
+  sessionDate?: number,
+) {
   const { address, isConnected } = useAccount();
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
@@ -584,27 +596,48 @@ export function useEscrowPayment(recipient: Address, amount: bigint) {
         console.log("[EscrowPayment] Already approved, skipping...");
       }
 
-      // Step 2: Create escrow
+      // Step 2: Create escrow (use session-date-aware version when sessionDate > 0)
       setCurrentStep("creating");
-      console.log("[EscrowPayment] Creating escrow...");
+      const useSessionDate = sessionDate && sessionDate > 0;
 
-      // Simulate first to get escrow ID
-      const { result: simulatedEscrowId } = await publicClient.simulateContract(
-        {
-          address: escrowAddress,
-          abi: KORU_ESCROW_ABI,
-          functionName: "createEscrow",
-          args: [recipient, amount],
-          account: address,
-        },
+      console.log(
+        `[EscrowPayment] Creating escrow via ${useSessionDate ? "createEscrowWithSession" : "createEscrow"}...`,
+        useSessionDate
+          ? `Session date: ${new Date(sessionDate * 1000).toISOString()}`
+          : "Immediate session",
       );
 
-      const createHash = await walletClient.writeContract({
-        address: escrowAddress,
-        abi: KORU_ESCROW_ABI,
-        functionName: "createEscrow",
-        args: [recipient, amount],
-      });
+      // Simulate first to get escrow ID
+      // Branch separately to preserve tuple types for wagmi's strict generics
+      const { result: simulatedEscrowId } = useSessionDate
+        ? await publicClient.simulateContract({
+            address: escrowAddress,
+            abi: KORU_ESCROW_ABI,
+            functionName: "createEscrowWithSession" as const,
+            args: [recipient, amount, sessionDate] as const,
+            account: address,
+          })
+        : await publicClient.simulateContract({
+            address: escrowAddress,
+            abi: KORU_ESCROW_ABI,
+            functionName: "createEscrow" as const,
+            args: [recipient, amount] as const,
+            account: address,
+          });
+
+      const createHash = useSessionDate
+        ? await walletClient.writeContract({
+            address: escrowAddress,
+            abi: KORU_ESCROW_ABI,
+            functionName: "createEscrowWithSession" as const,
+            args: [recipient, amount, sessionDate] as const,
+          })
+        : await walletClient.writeContract({
+            address: escrowAddress,
+            abi: KORU_ESCROW_ABI,
+            functionName: "createEscrow" as const,
+            args: [recipient, amount] as const,
+          });
 
       setTxHash(createHash);
       setCurrentStep("confirming");
@@ -631,7 +664,7 @@ export function useEscrowPayment(recipient: Address, amount: bigint) {
     } finally {
       setIsProcessing(false);
     }
-  }, [walletClient, publicClient, address, recipient, amount]);
+  }, [walletClient, publicClient, address, recipient, amount, sessionDate]);
 
   return {
     approveAndCreateEscrow,
@@ -1554,9 +1587,18 @@ export function useContractEscrows(walletAddress?: Address) {
 
       const isRecipient = escrow.recipient.toLowerCase() === normalizedWallet;
 
-      const acceptDeadline = escrow.createdAt + ACCEPT_WINDOW;
+      // Accept deadline anchors to sessionDate when set, otherwise createdAt
+      const acceptDeadline =
+        escrow.sessionDate > 0
+          ? escrow.sessionDate + ACCEPT_WINDOW
+          : escrow.createdAt + ACCEPT_WINDOW;
+      // Dispute window anchors to sessionDate when set, otherwise acceptedAt
       const disputeDeadline =
-        escrow.acceptedAt > 0 ? escrow.acceptedAt + DISPUTE_WINDOW : 0;
+        escrow.acceptedAt > 0
+          ? escrow.sessionDate > 0
+            ? escrow.sessionDate + DISPUTE_WINDOW
+            : escrow.acceptedAt + DISPUTE_WINDOW
+          : 0;
 
       items.push({
         escrowId,

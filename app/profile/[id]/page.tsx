@@ -561,6 +561,9 @@ export default function ViewProfilePage() {
     receipt: { id: string; escrowId?: number },
   ) => {
     try {
+      // Format the booked date as YYYY-MM-DD
+      const bookedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
       // Create the chat in the database
       const response = await fetch("/api/chats", {
         method: "POST",
@@ -571,6 +574,8 @@ export default function ViewProfilePage() {
           slotName: slot.name,
           slotDuration: slot.duration,
           escrowId: receipt.escrowId,
+          bookedDate,
+          bookedTime: timeSlot,
         }),
       });
 
@@ -1013,6 +1018,7 @@ export default function ViewProfilePage() {
         onOpenChange={setBookingModalOpen}
         personName={profile.name}
         personId={profile.id}
+        personHandle={profile.handle}
         recipientAddress={profile.walletAddress as `0x${string}` | undefined}
         isRecipientOnKoru={profile.isOnKoru}
         availability={availabilityData}

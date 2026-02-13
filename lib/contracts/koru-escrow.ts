@@ -45,6 +45,7 @@ export interface Escrow {
   feeBps: number;
   feeRecipient: Address;
   amount: bigint;
+  sessionDate: number; // V2: 0 = immediate (old behavior), >0 = session date unix timestamp
 }
 
 export interface Deadlines {
@@ -197,6 +198,17 @@ export const KORU_ESCROW_ABI = [
   },
   {
     type: "function",
+    name: "createEscrowWithSession",
+    inputs: [
+      { name: "recipient", type: "address", internalType: "address" },
+      { name: "amount", type: "uint256", internalType: "uint256" },
+      { name: "sessionDate", type: "uint48", internalType: "uint48" },
+    ],
+    outputs: [{ name: "escrowId", type: "uint256", internalType: "uint256" }],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
     name: "dispute",
     inputs: [{ name: "escrowId", type: "uint256", internalType: "uint256" }],
     outputs: [],
@@ -272,6 +284,7 @@ export const KORU_ESCROW_ABI = [
           { name: "feeBps", type: "uint16", internalType: "uint16" },
           { name: "feeRecipient", type: "address", internalType: "address" },
           { name: "amount", type: "uint96", internalType: "uint96" },
+          { name: "sessionDate", type: "uint48", internalType: "uint48" },
         ],
       },
     ],

@@ -15,6 +15,8 @@ interface AcceptEscrowModalProps {
   amount: number;
   payerName: string;
   slotName: string | null;
+  bookedDate: string | null; // ISO date string (YYYY-MM-DD)
+  bookedTime: string | null; // Time string (e.g., "09:00-09:30")
   deadlineAt: string | null;
   chatId: string;
   onAccepted: () => void;
@@ -26,6 +28,8 @@ export function AcceptEscrowModal({
   amount,
   payerName,
   slotName,
+  bookedDate,
+  bookedTime,
   deadlineAt,
   chatId,
   onAccepted,
@@ -180,6 +184,26 @@ export function AcceptEscrowModal({
                   </div>
                 )}
 
+                {/* Show scheduled date/time if available */}
+                {bookedDate && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                      Scheduled
+                    </span>
+                    <span className="text-sm font-medium text-neutral-900 dark:text-white">
+                      {new Date(bookedDate + "T00:00:00").toLocaleDateString(
+                        "en-US",
+                        { weekday: "short", month: "short", day: "numeric" },
+                      )}
+                      {bookedTime && (
+                        <span className="ml-1.5 font-mono text-xs text-neutral-500">
+                          {bookedTime}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
                     <DollarIcon className="w-4 h-4" />
@@ -206,6 +230,23 @@ export function AcceptEscrowModal({
                     {getTimeRemaining()}
                   </span>
                 </div>
+              </div>
+
+              {/* Timeline info */}
+              <div className="bg-koru-golden/5 rounded-xl p-3 border border-koru-golden/20">
+                <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                  <span className="font-medium text-koru-golden">
+                    How it works:
+                  </span>{" "}
+                  You have until{" "}
+                  <span className="font-medium">
+                    24 hours after the session date
+                  </span>{" "}
+                  to accept. Once accepted, the payment stays in escrow until
+                  the dispute window closes, then funds are released to your
+                  withdrawable balance. The payer can release early if
+                  satisfied, or raise a dispute within that window.
+                </p>
               </div>
 
               {/* Info text */}

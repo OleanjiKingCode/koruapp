@@ -75,7 +75,7 @@ export function ResponsiveModal({
             )}
           </DrawerHeader>
         )}
-        <div className="px-4 pb-4" data-vaul-no-drag>
+        <div className="px-4 pb-6" data-vaul-no-drag>
           {children}
         </div>
         {footer && <DrawerFooter>{footer}</DrawerFooter>}

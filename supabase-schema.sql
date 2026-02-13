@@ -324,11 +324,16 @@ CREATE TABLE IF NOT EXISTS chats (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Add new columns for booking date/time tracking (prevents double-booking)
+ALTER TABLE chats ADD COLUMN IF NOT EXISTS booked_date DATE; -- The date of the booked session (YYYY-MM-DD)
+ALTER TABLE chats ADD COLUMN IF NOT EXISTS booked_time TEXT; -- The time slot of the booked session (e.g., "09:00-09:30")
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_chats_requester_id ON chats(requester_id);
 CREATE INDEX IF NOT EXISTS idx_chats_creator_id ON chats(creator_id);
 CREATE INDEX IF NOT EXISTS idx_chats_status ON chats(status);
 CREATE INDEX IF NOT EXISTS idx_chats_created ON chats(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_chats_booked ON chats(creator_id, booked_date, booked_time) WHERE booked_date IS NOT NULL;
 
 -- Enable RLS
 ALTER TABLE chats ENABLE ROW LEVEL SECURITY;
