@@ -566,85 +566,98 @@ export default function ProfilePage() {
             {/* Connection Cards Row — Email & Wallet */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Email Card */}
-              <AnimatePresence mode="wait">
-                {!user?.email ? (
-                  <motion.div
-                    key="email-connect"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ delay: 0.1 }}
-                    className="h-full"
-                  >
-                    <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 shadow-soft overflow-hidden relative h-full">
-                      <div className="absolute -right-8 -top-8 w-24 h-24 bg-gradient-to-br from-koru-golden/20 dark:from-koru-golden/10 to-transparent rounded-full opacity-50" />
-                      <div className="absolute right-2 top-2 opacity-10">
-                        <BellIcon className="w-12 h-12 text-koru-golden" />
-                      </div>
+              {isUserLoading ? (
+                <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 shadow-soft h-full animate-pulse">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-neutral-200 dark:bg-neutral-700 shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 w-24 bg-neutral-200 dark:bg-neutral-700 rounded" />
+                      <div className="h-3 w-40 bg-neutral-200 dark:bg-neutral-700 rounded" />
+                    </div>
+                    <div className="h-8 w-14 bg-neutral-200 dark:bg-neutral-700 rounded-lg shrink-0" />
+                  </div>
+                </div>
+              ) : (
+                <AnimatePresence mode="wait">
+                  {!user?.email ? (
+                    <motion.div
+                      key="email-connect"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ delay: 0.1 }}
+                      className="h-full"
+                    >
+                      <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 shadow-soft overflow-hidden relative h-full">
+                        <div className="absolute -right-8 -top-8 w-24 h-24 bg-gradient-to-br from-koru-golden/20 dark:from-koru-golden/10 to-transparent rounded-full opacity-50" />
+                        <div className="absolute right-2 top-2 opacity-10">
+                          <BellIcon className="w-12 h-12 text-koru-golden" />
+                        </div>
 
-                      <div className="relative z-10 flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-koru-golden to-koru-golden/70 flex items-center justify-center shrink-0">
-                          <svg
-                            className="w-5 h-5 text-white"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <rect width="20" height="16" x="2" y="4" rx="2" />
-                            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                          </svg>
+                        <div className="relative z-10 flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-koru-golden to-koru-golden/70 flex items-center justify-center shrink-0">
+                            <svg
+                              className="w-5 h-5 text-white"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <rect width="20" height="16" x="2" y="4" rx="2" />
+                              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                            </svg>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
+                              Add Email
+                            </h3>
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                              Get notified about bookings &amp; escrow
+                            </p>
+                          </div>
+                          <Link href="/profile/edit">
+                            <Button
+                              size="sm"
+                              className="bg-gradient-to-r from-koru-golden to-koru-golden/80 hover:from-koru-golden/90 hover:to-koru-golden/70 text-white rounded-lg text-xs font-medium shrink-0"
+                            >
+                              Add
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="email-connected"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="h-full"
+                    >
+                      <div className="bg-gradient-to-r from-koru-golden/10 to-koru-golden/5 rounded-2xl border border-koru-golden/20 p-4 flex items-center gap-3 h-full">
+                        <div className="w-10 h-10 rounded-xl bg-koru-golden/20 flex items-center justify-center shrink-0">
+                          <CheckIcon className="w-5 h-5 text-koru-golden" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
-                            Add Email
-                          </h3>
+                          <p className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
+                            Email Connected
+                          </p>
                           <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
-                            Get notified about bookings &amp; escrow
+                            {user.email}
                           </p>
                         </div>
                         <Link href="/profile/edit">
-                          <Button
-                            size="sm"
-                            className="bg-gradient-to-r from-koru-golden to-koru-golden/80 hover:from-koru-golden/90 hover:to-koru-golden/70 text-white rounded-lg text-xs font-medium shrink-0"
-                          >
-                            Add
-                          </Button>
+                          <button className="text-xs px-3 py-1.5 rounded-lg bg-koru-golden/10 text-koru-golden hover:bg-koru-golden/20 transition-all shrink-0">
+                            Edit
+                          </button>
                         </Link>
                       </div>
-                    </div>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="email-connected"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className="h-full"
-                  >
-                    <div className="bg-gradient-to-r from-koru-golden/10 to-koru-golden/5 rounded-2xl border border-koru-golden/20 p-4 flex items-center gap-3 h-full">
-                      <div className="w-10 h-10 rounded-xl bg-koru-golden/20 flex items-center justify-center shrink-0">
-                        <CheckIcon className="w-5 h-5 text-koru-golden" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
-                          Email Connected
-                        </p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
-                          {user.email}
-                        </p>
-                      </div>
-                      <Link href="/profile/edit">
-                        <button className="text-xs px-3 py-1.5 rounded-lg bg-koru-golden/10 text-koru-golden hover:bg-koru-golden/20 transition-all shrink-0">
-                          Edit
-                        </button>
-                      </Link>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              )}
 
               {/* Wallet Card */}
               <AnimatePresence mode="wait">
@@ -819,7 +832,18 @@ export default function ProfilePage() {
                       </div>
                     )}
                   </motion.div>
-                ) : null}
+                ) : (
+                  <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 shadow-soft h-full animate-pulse">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-neutral-200 dark:bg-neutral-700 shrink-0" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 w-28 bg-neutral-200 dark:bg-neutral-700 rounded" />
+                        <div className="h-3 w-44 bg-neutral-200 dark:bg-neutral-700 rounded" />
+                      </div>
+                      <div className="h-8 w-16 bg-neutral-200 dark:bg-neutral-700 rounded-lg shrink-0" />
+                    </div>
+                  </div>
+                )}
               </AnimatePresence>
             </div>
           </div>
