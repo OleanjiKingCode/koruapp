@@ -221,6 +221,7 @@ export default function EditProfilePage() {
 
   const [isFarcasterConnected, setIsFarcasterConnected] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingEmail, setIsSavingEmail] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
@@ -230,6 +231,23 @@ export default function EditProfilePage() {
   const handleConnectFarcaster = () => {
     // Simulate Farcaster connection flow
     setIsFarcasterConnected(true);
+  };
+
+  const handleSaveEmail = async () => {
+    setIsSavingEmail(true);
+    try {
+      const result = await updateUser({
+        email: formData.email || undefined,
+      });
+      if (!result) throw new Error("Failed to save email");
+      await refresh();
+      toast.success("Email saved successfully!");
+    } catch (error) {
+      console.error("Error saving email:", error);
+      toast.error("Failed to save email. Please try again.");
+    } finally {
+      setIsSavingEmail(false);
+    }
   };
 
   const handleSave = async () => {
@@ -727,67 +745,17 @@ export default function EditProfilePage() {
                     )}
                   </div>
 
-                  {formData.email ? (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-4 p-4 rounded-2xl bg-koru-golden/5 dark:bg-koru-golden/5 border border-koru-golden/20">
-                        <div className="w-10 h-10 rounded-full bg-koru-golden/20 flex items-center justify-center">
-                          <svg
-                            className="w-5 h-5 text-koru-golden"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <rect width="20" height="16" x="2" y="4" rx="2" />
-                            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                          </svg>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">
-                            {formData.email}
-                          </p>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                            Receiving email notifications
-                          </p>
-                        </div>
-                      </div>
-                      <div className="relative">
-                        <svg
-                          className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 z-10 pointer-events-none"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <rect width="20" height="16" x="2" y="4" rx="2" />
-                          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                        </svg>
-                        <Input
-                          id="email-input"
-                          name="email"
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) =>
-                            handleInputChange("email", e.target.value)
-                          }
-                          autoComplete="email"
-                          className="pl-11 h-12 rounded-xl bg-white dark:bg-neutral-800 border-2 border-neutral-200 dark:border-neutral-700 focus:border-koru-golden focus:ring-2 focus:ring-koru-golden/30 text-neutral-900 dark:text-neutral-100"
-                          placeholder="you@example.com"
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
+                  <div className="space-y-4">
+                    {!formData.email && (
                       <p className="text-sm text-neutral-600 dark:text-neutral-400">
                         Add your email to receive notifications for new
                         bookings, summons, disputes, and escrow updates. We
                         won&apos;t spam you.
                       </p>
-                      <div className="relative">
+                    )}
+
+                    <div className="flex gap-3">
+                      <div className="relative flex-1">
                         <svg
                           className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 z-10 pointer-events-none"
                           viewBox="0 0 24 24"
@@ -813,8 +781,17 @@ export default function EditProfilePage() {
                           placeholder="you@example.com"
                         />
                       </div>
+                      {formData.email !== (user?.email || "") && (
+                        <Button
+                          onClick={handleSaveEmail}
+                          disabled={isSavingEmail}
+                          className="h-12 px-6 bg-gradient-to-r from-koru-golden to-koru-golden/80 hover:from-koru-golden/90 hover:to-koru-golden/70 text-white rounded-xl shrink-0"
+                        >
+                          {isSavingEmail ? "Saving..." : "Save"}
+                        </Button>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
 
