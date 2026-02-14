@@ -14,11 +14,15 @@ interface TwitterProfileCardProps {
   onView: () => void;
 }
 
-export function TwitterProfileCard({ profile, onView }: TwitterProfileCardProps) {
+export function TwitterProfileCard({
+  profile,
+  onView,
+}: TwitterProfileCardProps) {
   return (
     <motion.div
       whileHover={{ y: -4 }}
-      className="group relative bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft transition-all duration-300 hover:shadow-xl hover:border-koru-purple/30 dark:hover:border-koru-purple/30"
+      onClick={onView}
+      className="group relative cursor-pointer bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-soft transition-all duration-300 hover:shadow-xl hover:border-koru-purple/30 dark:hover:border-koru-purple/30"
     >
       {/* Gold shimmer on hover */}
       <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none overflow-hidden">
@@ -109,7 +113,3 @@ export function TwitterProfileCard({ profile, onView }: TwitterProfileCardProps)
     </motion.div>
   );
 }
-
-
-
-

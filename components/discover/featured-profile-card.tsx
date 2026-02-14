@@ -21,53 +21,56 @@ import { formatFollowerCount } from "@/lib/utils/format";
 import type { FeaturedProfile } from "@/lib/supabase";
 
 // Icon map for tags - matches partial strings (case-insensitive)
-const TAG_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+const TAG_ICON_MAP: Record<
+  string,
+  React.ComponentType<{ className?: string }>
+> = {
   // Tech & AI
-  "ai": SparkleIcon,
+  ai: SparkleIcon,
   "machine learning": SparkleIcon,
-  "ml": SparkleIcon,
-  "tech": ShieldIcon,
-  "software": ShieldIcon,
-  "dev": ShieldIcon,
-  "engineer": ShieldIcon,
-  "code": ShieldIcon,
+  ml: SparkleIcon,
+  tech: ShieldIcon,
+  software: ShieldIcon,
+  dev: ShieldIcon,
+  engineer: ShieldIcon,
+  code: ShieldIcon,
   // Crypto & Finance
-  "crypto": DollarIcon,
-  "defi": DollarIcon,
-  "bitcoin": DollarIcon,
-  "ethereum": DollarIcon,
-  "web3": GlobeIcon,
-  "nft": SparkleIcon,
-  "trading": DollarIcon,
-  "finance": DollarIcon,
-  "invest": DollarIcon,
-  "vc": DollarIcon,
+  crypto: DollarIcon,
+  defi: DollarIcon,
+  bitcoin: DollarIcon,
+  ethereum: DollarIcon,
+  web3: GlobeIcon,
+  nft: SparkleIcon,
+  trading: DollarIcon,
+  finance: DollarIcon,
+  invest: DollarIcon,
+  vc: DollarIcon,
   // Creator & Influencer
-  "creator": CrownIcon,
-  "influencer": CrownIcon,
-  "founder": CrownIcon,
-  "ceo": CrownIcon,
-  "entrepreneur": CrownIcon,
+  creator: CrownIcon,
+  influencer: CrownIcon,
+  founder: CrownIcon,
+  ceo: CrownIcon,
+  entrepreneur: CrownIcon,
   // Entertainment
-  "gaming": FireIcon,
-  "gamer": FireIcon,
-  "esport": FireIcon,
-  "sports": FireIcon,
-  "music": SparkleIcon,
-  "artist": SparkleIcon,
-  "entertainment": FireIcon,
-  "content": CrownIcon,
+  gaming: FireIcon,
+  gamer: FireIcon,
+  esport: FireIcon,
+  sports: FireIcon,
+  music: SparkleIcon,
+  artist: SparkleIcon,
+  entertainment: FireIcon,
+  content: CrownIcon,
   // Social & Community
-  "community": UsersIcon,
-  "social": ChatIcon,
-  "education": ChatIcon,
-  "podcast": ChatIcon,
+  community: UsersIcon,
+  social: ChatIcon,
+  education: ChatIcon,
+  podcast: ChatIcon,
   // Other
-  "news": GlobeIcon,
-  "politics": GlobeIcon,
-  "science": SparkleIcon,
-  "health": ShieldIcon,
-  "design": SparkleIcon,
+  news: GlobeIcon,
+  politics: GlobeIcon,
+  science: SparkleIcon,
+  health: ShieldIcon,
+  design: SparkleIcon,
 };
 
 interface FeaturedProfileCardProps {
@@ -91,10 +94,9 @@ export function FeaturedProfileCard({
         damping: 30,
       }}
       className="group relative cursor-pointer"
+      onClick={onView}
     >
       <div className="relative bg-white dark:bg-neutral-900 rounded-2xl p-6 border border-neutral-200 dark:border-neutral-800 shadow-soft group-hover:shadow-xl transition-shadow duration-200 overflow-hidden">
-
-
         <div className="absolute inset-0 overflow-hidden rounded-2xl">
           <motion.div
             className="absolute w-40 h-40 rounded-full bg-gradient-to-br from-koru-purple/25 to-violet-500/15 blur-3xl"
@@ -194,8 +196,8 @@ export function FeaturedProfileCard({
           <div className="flex flex-wrap gap-2">
             {tags.slice(0, 4).map((tag) => {
               const color = getTagColor(tag);
-              const iconKey = Object.keys(TAG_ICON_MAP).find(
-                (key) => tag.toLowerCase().includes(key.toLowerCase())
+              const iconKey = Object.keys(TAG_ICON_MAP).find((key) =>
+                tag.toLowerCase().includes(key.toLowerCase()),
               );
               const TagIcon = iconKey ? TAG_ICON_MAP[iconKey] : null;
 
@@ -235,5 +237,3 @@ export function FeaturedProfileCard({
     </motion.div>
   );
 }
-
-

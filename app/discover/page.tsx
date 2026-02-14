@@ -15,7 +15,6 @@ import {
 } from "@/components/shared";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import {
   TwitterProfileCard,
@@ -85,7 +84,6 @@ function DiscoverContent() {
   // Featured profiles from DB
   const {
     profiles: featuredProfiles,
-    categories,
     isLoading: isLoadingFeatured,
     hasMore,
     loadMore,
@@ -237,7 +235,7 @@ function DiscoverContent() {
           </Tabs>
         </motion.div>
 
-        {/* Filter Bar */}
+        {/* Search Bar */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -249,8 +247,8 @@ function DiscoverContent() {
             onCategoryChange={setSelectedCategories}
             onSortChange={setSortBy}
             onViewChange={setViewMode}
-            categories={["All", ...categories]}
-            selectedCategories={selectedCategories}
+            categories={[]}
+            selectedCategories={[]}
             currentSort={sortBy}
             currentView={viewMode}
             searchPlaceholder="Search X handles, names..."
@@ -471,7 +469,8 @@ function TwitterResultsTable({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: index * 0.03 }}
-                  className="border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors"
+                  onClick={() => onView(profile)}
+                  className="border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors cursor-pointer"
                 >
                   <td className="p-4">
                     <RankBadge rank={index + 1} />
@@ -641,7 +640,8 @@ function FeaturedProfilesTable({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: index * 0.03 }}
-                className="border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors"
+                onClick={() => onView(profile)}
+                className="border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors cursor-pointer"
               >
                 <td className="p-4">
                   <RankBadge rank={index + 1} />

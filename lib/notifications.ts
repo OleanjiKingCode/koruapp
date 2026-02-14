@@ -4,7 +4,6 @@ import {
   sendEmail,
   buildBookingCreatedHostEmail,
   buildBookingCreatedSeekerEmail,
-  buildSummonCreatedEmail,
   buildDisputeRaisedEmail,
   buildEscrowRefundEmail,
 } from "@/lib/email";
@@ -276,18 +275,6 @@ export async function notifySummonCreated(
     relatedUserUsername: creatorUsername,
     relatedUserImage: creatorImage || undefined,
     metadata: { summonId, totalPledged },
-  });
-
-  // Fire-and-forget email to the summon target
-  getUserEmail(targetUserId).then(({ email }) => {
-    if (email) {
-      const { subject, html } = buildSummonCreatedEmail({
-        creatorName,
-        creatorUsername,
-        totalPledged,
-      });
-      sendEmail({ to: email, subject, html });
-    }
   });
 
   return result;

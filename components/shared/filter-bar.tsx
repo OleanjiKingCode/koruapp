@@ -130,56 +130,58 @@ export function FilterBar({
       {/* Filters Row */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         {/* Category Pills */}
-        <div className="flex-1 min-w-0 relative overflow-hidden">
-          {/* Scrollable container with hidden scrollbar */}
-          <div className="overflow-x-auto pb-2 sm:pb-0 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <div className="flex items-center gap-2 pr-16">
-              {categories.map((category) => {
-                const isAll = category === "All";
-                const isSelected = isAll
-                  ? selectedCategories.length === 0
-                  : selectedCategories.includes(category);
+        {categories.length > 0 && (
+          <div className="flex-1 min-w-0 relative overflow-hidden">
+            {/* Scrollable container with hidden scrollbar */}
+            <div className="overflow-x-auto pb-2 sm:pb-0 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="flex items-center gap-2 pr-16">
+                {categories.map((category) => {
+                  const isAll = category === "All";
+                  const isSelected = isAll
+                    ? selectedCategories.length === 0
+                    : selectedCategories.includes(category);
 
-                const handleClick = () => {
-                  if (isAll) {
-                    // Clear all selections
-                    onCategoryChange?.([]);
-                  } else {
-                    // Toggle this category
-                    if (selectedCategories.includes(category)) {
-                      // Remove it
-                      onCategoryChange?.(
-                        selectedCategories.filter((c) => c !== category)
-                      );
+                  const handleClick = () => {
+                    if (isAll) {
+                      // Clear all selections
+                      onCategoryChange?.([]);
                     } else {
-                      // Add it
-                      onCategoryChange?.([...selectedCategories, category]);
+                      // Toggle this category
+                      if (selectedCategories.includes(category)) {
+                        // Remove it
+                        onCategoryChange?.(
+                          selectedCategories.filter((c) => c !== category),
+                        );
+                      } else {
+                        // Add it
+                        onCategoryChange?.([...selectedCategories, category]);
+                      }
                     }
-                  }
-                };
+                  };
 
-                return (
-                  <motion.button
-                    key={category}
-                    onClick={handleClick}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={cn(
-                      "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all",
-                      isSelected
-                        ? "bg-koru-purple text-white shadow-md shadow-koru-purple/25"
-                        : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"
-                    )}
-                  >
-                    {category}
-                  </motion.button>
-                );
-              })}
+                  return (
+                    <motion.button
+                      key={category}
+                      onClick={handleClick}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className={cn(
+                        "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all",
+                        isSelected
+                          ? "bg-koru-purple text-white shadow-md shadow-koru-purple/25"
+                          : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700",
+                      )}
+                    >
+                      {category}
+                    </motion.button>
+                  );
+                })}
+              </div>
             </div>
+            {/* Fade overlay on right to indicate more content */}
+            <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white via-white/80 dark:from-neutral-950 dark:via-neutral-950/80 to-transparent pointer-events-none" />
           </div>
-          {/* Fade overlay on right to indicate more content */}
-          <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white via-white/80 dark:from-neutral-950 dark:via-neutral-950/80 to-transparent pointer-events-none" />
-        </div>
+        )}
 
         {/* Sort & View Controls */}
         <div className="flex items-center gap-2 shrink-0">
@@ -220,7 +222,7 @@ export function FilterBar({
                 "p-2 rounded-md transition-all",
                 currentView === "grid"
                   ? "bg-white dark:bg-neutral-700 shadow-sm text-koru-purple"
-                  : "text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                  : "text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300",
               )}
             >
               <GridIcon className="w-4 h-4" />
@@ -231,7 +233,7 @@ export function FilterBar({
                 "p-2 rounded-md transition-all",
                 currentView === "list"
                   ? "bg-white dark:bg-neutral-700 shadow-sm text-koru-purple"
-                  : "text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                  : "text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300",
               )}
             >
               <ListIcon className="w-4 h-4" />
@@ -242,4 +244,3 @@ export function FilterBar({
     </div>
   );
 }
-
