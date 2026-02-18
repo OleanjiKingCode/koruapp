@@ -504,7 +504,7 @@ export function SummonDetailsModal({
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="p-0 gap-0 overflow-hidden max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="p-0 gap-0 overflow-hidden max-w-lg max-h-[90dvh] overflow-y-auto">
           <DialogTitle className="sr-only">Summon Details</DialogTitle>
           {modalBody}
         </DialogContent>
@@ -513,10 +513,10 @@ export function SummonDetailsModal({
   }
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} modal={false}>
+    <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="overflow-hidden">
         <DrawerTitle className="sr-only">Summon Details</DrawerTitle>
-        <div className="overflow-y-auto max-h-[85vh] pb-4" data-vaul-no-drag>
+        <div className="overflow-y-auto max-h-[85dvh] pb-4" data-vaul-no-drag>
           {modalBody}
         </div>
       </DrawerContent>

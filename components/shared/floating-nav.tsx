@@ -681,7 +681,7 @@ export function FloatingNav() {
             >
               <div
                 className={cn(
-                  "p-4 sm:p-5 rounded-2xl shadow-2xl max-h-[70vh] overflow-y-auto scrollbar-none",
+                  "p-4 sm:p-5 rounded-2xl shadow-2xl max-h-[70dvh] overflow-y-auto scrollbar-none",
                   "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
                   isDark
                     ? "bg-neutral-900 border border-neutral-800 shadow-black/40"

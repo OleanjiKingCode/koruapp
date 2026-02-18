@@ -180,7 +180,7 @@ export function LoginModal({
   }
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} modal={false}>
+    <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent
         className={cn(
           "overflow-hidden border-0",

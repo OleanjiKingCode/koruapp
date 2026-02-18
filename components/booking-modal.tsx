@@ -1551,7 +1551,7 @@ export function BookingModal({
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="p-0 gap-0 transition-all duration-300 w-fit min-w-[320px] max-h-[85vh] overflow-y-auto">
+        <DialogContent className="p-0 gap-0 transition-all duration-300 w-fit min-w-[320px] max-h-[85dvh] overflow-y-auto">
           <DialogTitle className="sr-only">Book a Session</DialogTitle>
           {modalBody}
         </DialogContent>
@@ -1560,11 +1560,11 @@ export function BookingModal({
   }
 
   return (
-    <Drawer open={open} onOpenChange={handleOpenChange} modal={false}>
+    <Drawer open={open} onOpenChange={handleOpenChange}>
       <DrawerContent className="overflow-hidden">
         <DrawerTitle className="sr-only">Book a Session</DrawerTitle>
         <div
-          className="overflow-y-auto max-h-[85vh] px-2 pb-4"
+          className="overflow-y-auto max-h-[85dvh] px-2 pb-4"
           data-vaul-no-drag
         >
           {modalBody}

@@ -32,6 +32,13 @@ const lemonTuesday = Caveat({
   display: "swap",
 });
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  interactiveWidget: "resizes-content",
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.koruapp.xyz"),
   title: "Koru",

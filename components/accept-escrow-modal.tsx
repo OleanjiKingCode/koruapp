@@ -290,7 +290,7 @@ export function AcceptEscrowModal({
   if (isDesktop) {
     return (
       <Dialog open={isOpen} onOpenChange={() => {}}>
-        <DialogContent className="p-0 gap-0 overflow-hidden max-w-md max-h-[85vh] overflow-y-auto [&>button]:hidden">
+        <DialogContent className="p-0 gap-0 overflow-hidden max-w-md max-h-[85dvh] overflow-y-auto [&>button]:hidden">
           <DialogTitle className="sr-only">
             Accept Paid Chat Request
           </DialogTitle>
@@ -309,7 +309,7 @@ export function AcceptEscrowModal({
     >
       <DrawerContent className="overflow-hidden">
         <DrawerTitle className="sr-only">Accept Paid Chat Request</DrawerTitle>
-        <div className="overflow-y-auto max-h-[85vh] pb-4" data-vaul-no-drag>
+        <div className="overflow-y-auto max-h-[85dvh] pb-4" data-vaul-no-drag>
           {modalBody}
         </div>
       </DrawerContent>

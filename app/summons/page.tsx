@@ -441,7 +441,7 @@ export default function SummonsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 20 }}
                     transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                    className="w-full sm:max-w-lg pointer-events-auto sm:my-8 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto"
+                    className="w-full sm:max-w-lg pointer-events-auto sm:my-8 max-h-[90dvh] sm:max-h-[85dvh] overflow-y-auto"
                   >
                     <div className="bg-white dark:bg-neutral-900 rounded-t-3xl sm:rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden">
                       <div className="relative bg-gradient-to-r from-koru-purple/20 via-koru-golden/10 to-koru-purple/20 p-4 sm:p-6 pb-6 sm:pb-8">
@@ -1018,7 +1018,7 @@ export default function SummonsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
                 transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                className="w-full sm:max-w-sm pointer-events-auto max-h-[90vh] sm:max-h-[85vh] overflow-y-auto"
+                className="w-full sm:max-w-sm pointer-events-auto max-h-[90dvh] sm:max-h-[85dvh] overflow-y-auto"
               >
                 <div className="bg-white dark:bg-neutral-900 rounded-t-2xl sm:rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden">
                   <div className="p-4 sm:p-5">

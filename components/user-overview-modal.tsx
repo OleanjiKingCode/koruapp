@@ -574,11 +574,11 @@ export function UserOverviewModal({
   }
 
   return (
-    <Drawer open={open} onOpenChange={handleOpenChange} modal={false}>
+    <Drawer open={open} onOpenChange={handleOpenChange}>
       <DrawerContent className="overflow-hidden">
         <DrawerTitle className="sr-only">Send a Request</DrawerTitle>
         <div
-          className="overflow-y-auto max-h-[85vh] px-2 pb-4"
+          className="overflow-y-auto max-h-[85dvh] px-2 pb-4"
           data-vaul-no-drag
         >
           {modalBody}

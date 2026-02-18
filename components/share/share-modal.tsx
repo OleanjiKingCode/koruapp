@@ -361,7 +361,7 @@ export function ShareModal({
 
           {/* Floating Container */}
           <div className="fixed inset-0 z-[60] pointer-events-none flex items-center justify-center p-2 sm:p-4">
-            <div className="pointer-events-auto flex flex-col items-center gap-3 sm:gap-4 max-h-[90vh] overflow-y-auto">
+            <div className="pointer-events-auto flex flex-col items-center gap-3 sm:gap-4 max-h-[90dvh] overflow-y-auto">
               {/* Style Selector Pills */}
               <motion.div
                 initial={{ opacity: 0, y: 20, scale: 0.9 }}
