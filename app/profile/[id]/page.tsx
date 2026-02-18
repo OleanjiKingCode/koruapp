@@ -13,9 +13,12 @@ import {
   OptimizedAvatar,
   BackgroundImage,
 } from "@/components/ui/optimized-image";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { BookingModal } from "@/components/booking-modal";
 import { VerifiedBadge } from "@/components/discover/verified-badge";
 import { cn } from "@/lib/utils";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { ROUTES } from "@/lib/constants";
 
 // Tag color configurations
@@ -1142,229 +1145,222 @@ function SummonModal({
     }
   };
 
-  return (
-    <AnimatePresence>
-      {open && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
-            onClick={() => onOpenChange(false)}
-          />
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none overflow-y-auto">
+  const isDesktop = useMediaQuery("(min-width: 640px)");
+
+  const modalBody = (
+    <div className="overflow-hidden">
+      <div className="relative bg-gradient-to-r from-koru-purple/20 via-koru-golden/10 to-koru-purple/20 p-4 sm:p-6 pb-6 sm:pb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-koru-purple/20 flex items-center justify-center">
+            <MegaphoneIcon className="w-5 h-5 sm:w-6 sm:h-6 text-koru-purple" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-neutral-100 truncate">
+              {step === "info"
+                ? `${personName.split(" ")[0]} isn't on Koru yet`
+                : `Create Summon`}
+            </h2>
+            <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">
+              @{personHandle}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+        <AnimatePresence mode="wait">
+          {step === "info" ? (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="w-full max-w-lg pointer-events-auto my-8 max-h-[85vh] overflow-y-auto"
+              key="info"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-4 sm:space-y-6"
             >
-              <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden">
-                <div className="relative bg-gradient-to-r from-koru-purple/20 via-koru-golden/10 to-koru-purple/20 p-6 pb-8">
-                  <button
-                    onClick={() => onOpenChange(false)}
-                    className="absolute top-4 right-4 p-2 rounded-full bg-black/10 hover:bg-black/20 text-neutral-600 dark:text-neutral-400 transition-colors"
-                  >
-                    <CloseIcon className="w-4 h-4" />
-                  </button>
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-12 h-12 rounded-2xl bg-koru-purple/20 flex items-center justify-center">
-                      <MegaphoneIcon className="w-6 h-6 text-koru-purple" />
+              <p className="text-neutral-600 dark:text-neutral-400 text-sm leading-relaxed">
+                <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                  {personName.split(" ")[0]}
+                </span>{" "}
+                hasn&apos;t joined Koru yet. Create a{" "}
+                <span className="font-semibold text-koru-purple">Summon</span>{" "}
+                to publicly request a conversation with them.
+              </p>
+              <div className="space-y-2 sm:space-y-3">
+                <h4 className="text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
+                  How Summons Work
+                </h4>
+                <div className="space-y-2">
+                  <div className="flex items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl bg-koru-purple/5 border border-koru-purple/10">
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-koru-purple/20 flex items-center justify-center text-[10px] sm:text-xs font-bold text-koru-purple shrink-0">
+                      1
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
-                        {step === "info"
-                          ? `${personName.split(" ")[0]} isn't on Koru yet`
-                          : `Create Summon`}
-                      </h2>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                        @{personHandle}
+                      <p className="text-xs sm:text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                        Create Your Summon
+                      </p>
+                      <p className="text-[10px] sm:text-xs text-neutral-500 dark:text-neutral-400">
+                        Write a message and set how much you&apos;re willing to
+                        pay for their time
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl bg-koru-golden/5 border border-koru-golden/10">
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-koru-golden/20 flex items-center justify-center text-[10px] sm:text-xs font-bold text-koru-golden shrink-0">
+                      2
+                    </div>
+                    <div>
+                      <p className="text-xs sm:text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                        Others Can Back Your Summon
+                      </p>
+                      <p className="text-[10px] sm:text-xs text-neutral-500 dark:text-neutral-400">
+                        More backers = more visibility and incentive for them to
+                        join
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl bg-koru-lime/5 border border-koru-lime/10">
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-koru-lime/20 flex items-center justify-center text-[10px] sm:text-xs font-bold text-koru-lime shrink-0">
+                      3
+                    </div>
+                    <div>
+                      <p className="text-xs sm:text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                        They Join & You Connect
+                      </p>
+                      <p className="text-[10px] sm:text-xs text-neutral-500 dark:text-neutral-400">
+                        When they accept, you&apos;ll be first in line to chat
+                        with them
                       </p>
                     </div>
                   </div>
                 </div>
-
-                <div className="p-6 space-y-6">
-                  <AnimatePresence mode="wait">
-                    {step === "info" ? (
-                      <motion.div
-                        key="info"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        className="space-y-6"
-                      >
-                        <p className="text-neutral-600 dark:text-neutral-400 text-sm leading-relaxed">
-                          <span className="font-semibold text-neutral-900 dark:text-neutral-100">
-                            {personName.split(" ")[0]}
-                          </span>{" "}
-                          hasn&apos;t joined Koru yet. Create a{" "}
-                          <span className="font-semibold text-koru-purple">
-                            Summon
-                          </span>{" "}
-                          to publicly request a conversation with them.
-                        </p>
-                        <div className="space-y-3">
-                          <h4 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
-                            How Summons Work
-                          </h4>
-                          <div className="space-y-2">
-                            <div className="flex items-start gap-3 p-3 rounded-xl bg-koru-purple/5 border border-koru-purple/10">
-                              <div className="w-6 h-6 rounded-full bg-koru-purple/20 flex items-center justify-center text-xs font-bold text-koru-purple shrink-0">
-                                1
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                                  Create Your Summon
-                                </p>
-                                <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                                  Write a message and set how much you&apos;re
-                                  willing to pay for their time
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-start gap-3 p-3 rounded-xl bg-koru-golden/5 border border-koru-golden/10">
-                              <div className="w-6 h-6 rounded-full bg-koru-golden/20 flex items-center justify-center text-xs font-bold text-koru-golden shrink-0">
-                                2
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                                  Others Can Back Your Summon
-                                </p>
-                                <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                                  More backers = more visibility and incentive
-                                  for them to join
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-start gap-3 p-3 rounded-xl bg-koru-lime/5 border border-koru-lime/10">
-                              <div className="w-6 h-6 rounded-full bg-koru-lime/20 flex items-center justify-center text-xs font-bold text-koru-lime shrink-0">
-                                3
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                                  They Join & You Connect
-                                </p>
-                                <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                                  When they accept, you&apos;ll be first in line
-                                  to chat with them
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-3 pt-2">
-                          <Button
-                            onClick={() => setStep("form")}
-                            className="w-full bg-gradient-to-r from-koru-purple to-koru-purple/80 hover:from-koru-purple/90 hover:to-koru-purple/70 text-white font-semibold"
-                          >
-                            <MegaphoneIcon className="w-4 h-4 mr-2" />
-                            Continue to Create Summon
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            onClick={() => onOpenChange(false)}
-                            className="w-full"
-                          >
-                            Maybe Later
-                          </Button>
-                        </div>
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="form"
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 20 }}
-                        className="space-y-5"
-                      >
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                            Your Message to {personName.split(" ")[0]}
-                          </label>
-                          <textarea
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            placeholder={`Why do you want to talk to ${
-                              personName.split(" ")[0]
-                            }? What would you like to discuss?`}
-                            className="w-full h-28 px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 resize-none focus:outline-none focus:ring-2 focus:ring-koru-purple/50"
-                          />
-                          <p className="text-xs text-neutral-500">
-                            This message will be visible to{" "}
-                            {personName.split(" ")[0]} and other backers
-                          </p>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                            Your Pledge Amount
-                          </label>
-                          <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 font-medium">
-                              $
-                            </span>
-                            <input
-                              type="number"
-                              min="1"
-                              step="1"
-                              value={pledgeAmount}
-                              onChange={(e) => setPledgeAmount(e.target.value)}
-                              className="w-full h-12 pl-8 pr-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-koru-purple/50"
-                            />
-                          </div>
-                          <p className="text-xs text-neutral-500">
-                            This amount will be held and only charged if{" "}
-                            {personName.split(" ")[0]} joins and accepts
-                          </p>
-                        </div>
-                        {error && (
-                          <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-                            <p className="text-sm text-red-600 dark:text-red-400">
-                              {error}
-                            </p>
-                          </div>
-                        )}
-                        <div className="flex flex-col gap-3 pt-2">
-                          <Button
-                            onClick={handleCreateSummon}
-                            disabled={isSubmitting || !session?.user}
-                            className="w-full bg-gradient-to-r from-koru-purple to-koru-purple/80 hover:from-koru-purple/90 hover:to-koru-purple/70 text-white font-semibold disabled:opacity-50"
-                          >
-                            {isSubmitting ? (
-                              <>
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                                Creating...
-                              </>
-                            ) : !session?.user ? (
-                              "Sign in to Create Summon"
-                            ) : (
-                              <>
-                                <MegaphoneIcon className="w-4 h-4 mr-2" />
-                                Create Summon (${pledgeAmount})
-                              </>
-                            )}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            onClick={() => setStep("info")}
-                            className="w-full"
-                            disabled={isSubmitting}
-                          >
-                            Back
-                          </Button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+              </div>
+              <div className="flex flex-col gap-2.5 sm:gap-3 pt-2">
+                <Button
+                  onClick={() => setStep("form")}
+                  className="w-full bg-gradient-to-r from-koru-purple to-koru-purple/80 hover:from-koru-purple/90 hover:to-koru-purple/70 text-white font-semibold text-sm"
+                >
+                  <MegaphoneIcon className="w-4 h-4 mr-2" />
+                  Continue to Create Summon
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => onOpenChange(false)}
+                  className="w-full text-sm"
+                >
+                  Maybe Later
+                </Button>
               </div>
             </motion.div>
-          </div>
-        </>
-      )}
-    </AnimatePresence>
+          ) : (
+            <motion.div
+              key="form"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="space-y-4 sm:space-y-5"
+            >
+              <div className="space-y-2">
+                <label className="text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  Your Message to {personName.split(" ")[0]}
+                </label>
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder={`Why do you want to talk to ${
+                    personName.split(" ")[0]
+                  }? What would you like to discuss?`}
+                  className="w-full h-24 sm:h-28 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 resize-none focus:outline-none focus:ring-2 focus:ring-koru-purple/50"
+                />
+                <p className="text-[10px] sm:text-xs text-neutral-500">
+                  This message will be visible to {personName.split(" ")[0]} and
+                  other backers
+                </p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  Your Pledge Amount
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-neutral-500 font-medium text-sm">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={pledgeAmount}
+                    onChange={(e) => setPledgeAmount(e.target.value)}
+                    className="w-full h-10 sm:h-12 pl-7 sm:pl-8 pr-3 sm:pr-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-koru-purple/50"
+                  />
+                </div>
+                <p className="text-[10px] sm:text-xs text-neutral-500">
+                  This amount will be held and only charged if{" "}
+                  {personName.split(" ")[0]} joins and accepts
+                </p>
+              </div>
+              {error && (
+                <div className="p-2.5 sm:p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                  <p className="text-xs sm:text-sm text-red-600 dark:text-red-400">
+                    {error}
+                  </p>
+                </div>
+              )}
+              <div className="flex flex-col gap-2.5 sm:gap-3 pt-2">
+                <Button
+                  onClick={handleCreateSummon}
+                  disabled={isSubmitting || !session?.user}
+                  className="w-full bg-gradient-to-r from-koru-purple to-koru-purple/80 hover:from-koru-purple/90 hover:to-koru-purple/70 text-white font-semibold disabled:opacity-50 text-sm"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      Creating...
+                    </>
+                  ) : !session?.user ? (
+                    "Sign in to Create Summon"
+                  ) : (
+                    <>
+                      <MegaphoneIcon className="w-4 h-4 mr-2" />
+                      Create Summon (${pledgeAmount})
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => setStep("info")}
+                  className="w-full text-sm"
+                  disabled={isSubmitting}
+                >
+                  Back
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+
+  if (isDesktop) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="p-0 gap-0 overflow-hidden max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogTitle className="sr-only">Create Summon</DialogTitle>
+          {modalBody}
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange} modal={false}>
+      <DrawerContent className="overflow-hidden">
+        <DrawerTitle className="sr-only">Create Summon</DrawerTitle>
+        <div className="overflow-y-auto max-h-[85vh] pb-4" data-vaul-no-drag>
+          {modalBody}
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }
 

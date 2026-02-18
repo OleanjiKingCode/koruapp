@@ -117,7 +117,7 @@ export function useUser() {
 
       return data.user;
     } catch (error) {
-      console.error("Error updating user:", error);
+      // Silently handled — error is re-thrown for caller to handle
       throw error;
     }
   };

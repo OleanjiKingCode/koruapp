@@ -756,39 +756,83 @@ export async function getUserSummons(userId: string): Promise<Summon[]> {
   return data.map(transformSummonRow);
 }
 
-// Get user's backed summons using summon_ids from the user record
+// Get user's backed summons by checking the backers JSONB array and summon_ids
 export async function getUserBackedSummons(userId: string): Promise<Summon[]> {
-  // 1. Get the user's summon_ids
+  // Strategy: fetch via summon_ids AND also scan backers JSONB, then merge
   const { data: user } = await supabase
     .from("users")
-    .select("summon_ids")
+    .select("summon_ids, twitter_id, username")
     .eq("id", userId)
     .single();
 
   const backedIds = user?.summon_ids?.backed_ids || [];
-  if (backedIds.length === 0) return [];
 
-  // 2. Fetch those summons by ID
-  const { data, error } = await supabase
+  // Also scan summons where the user appears in the backers JSONB array
+  const { data: allSummons, error } = await supabase
     .from("summons")
     .select("*")
-    .in("id", backedIds)
     .order("created_at", { ascending: false });
 
-  if (error || !data) {
-    if (error) captureDbError(error, "getUserBackedSummons", { userId });
-    return [];
+  if (error || !allSummons) {
+    // Fallback to just IDs
+    if (backedIds.length === 0) return [];
+    const { data: fallback } = await supabase
+      .from("summons")
+      .select("*")
+      .in("id", backedIds)
+      .order("created_at", { ascending: false });
+    return (fallback || []).map(transformSummonRow);
   }
-  return data.map(transformSummonRow);
+
+  // Filter: summon is in backedIds OR user appears in backers array
+  const matched = allSummons.filter((s: any) => {
+    if (backedIds.includes(s.id)) return true;
+    if (s.backers && Array.isArray(s.backers)) {
+      return s.backers.some(
+        (b: any) =>
+          b.id === userId ||
+          b.user_id === userId ||
+          (user?.twitter_id && b.twitter_id === user.twitter_id) ||
+          (user?.username && b.username === user.username),
+      );
+    }
+    return false;
+  });
+
+  // Exclude own created summons
+  const filtered = matched.filter((s: any) => s.creator_id !== userId);
+
+  return filtered.map(transformSummonRow);
 }
 
-// Get summons targeting this user using summon_ids from the user record
+// Get summons targeting this user by scanning the summons table directly
 export async function getUserTargetedSummons(
   twitterId: string,
   username?: string,
   dbUserId?: string,
 ): Promise<Summon[]> {
-  // If we have the DB user ID, use the fast path via summon_ids
+  // Build OR conditions to match by twitter ID, handle, or summon_ids
+  const orConditions = [`target_twitter_id.eq.${twitterId}`];
+  if (username) {
+    orConditions.push(`target_handle.eq.${username}`);
+    orConditions.push(`target_handle.ilike.${username}`);
+  }
+
+  const { data: directMatches, error: directError } = await supabase
+    .from("summons")
+    .select("*")
+    .or(orConditions.join(","))
+    .order("created_at", { ascending: false });
+
+  if (directError) {
+    captureDbError(directError, "getUserTargetedSummons", {
+      twitterId,
+      username,
+    });
+  }
+
+  // Also check summon_ids for any tracked IDs not caught by direct query
+  let idsMatches: any[] = [];
   if (dbUserId) {
     const { data: user } = await supabase
       .from("users")
@@ -797,39 +841,26 @@ export async function getUserTargetedSummons(
       .single();
 
     const targetedIds = user?.summon_ids?.targeted_ids || [];
-    if (targetedIds.length === 0) return [];
-
-    const { data, error } = await supabase
-      .from("summons")
-      .select("*")
-      .in("id", targetedIds)
-      .order("created_at", { ascending: false });
-
-    if (error || !data) {
-      if (error) captureDbError(error, "getUserTargetedSummons", { dbUserId });
-      return [];
+    if (targetedIds.length > 0) {
+      const { data: idData } = await supabase
+        .from("summons")
+        .select("*")
+        .in("id", targetedIds)
+        .order("created_at", { ascending: false });
+      idsMatches = idData || [];
     }
-    return data.map(transformSummonRow);
   }
 
-  // Fallback: scan summons table by twitter ID / handle
-  const orConditions = [`target_twitter_id.eq.${twitterId}`];
-  if (username) {
-    orConditions.push(`target_handle.eq.${username}`);
-  }
+  // Merge and deduplicate
+  const allMatches = [...(directMatches || []), ...idsMatches];
+  const seen = new Set<string>();
+  const deduped = allMatches.filter((s) => {
+    if (seen.has(s.id)) return false;
+    seen.add(s.id);
+    return true;
+  });
 
-  const { data, error } = await supabase
-    .from("summons")
-    .select("*")
-    .or(orConditions.join(","))
-    .order("created_at", { ascending: false });
-
-  if (error || !data) {
-    if (error)
-      captureDbError(error, "getUserTargetedSummons", { twitterId, username });
-    return [];
-  }
-  return data.map(transformSummonRow);
+  return deduped.map(transformSummonRow);
 }
 
 // =============================================
@@ -1188,7 +1219,7 @@ export async function addWallet(
     .single();
 
   if (error) {
-    console.error("Error adding wallet:", error);
+    captureDbError(error as any, "addUserWallet", { userId });
     return null;
   }
 

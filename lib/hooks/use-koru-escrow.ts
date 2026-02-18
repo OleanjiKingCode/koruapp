@@ -581,7 +581,7 @@ export function useEscrowPayment(
 
       // Step 1: Approve if needed
       if ((currentAllowance as bigint) < amount) {
-        console.log("[EscrowPayment] Approving USDC spend...");
+        // Approving USDC spend
         const approveHash = await walletClient.writeContract({
           address: usdcAddress,
           abi: ERC20_ABI,
@@ -589,23 +589,14 @@ export function useEscrowPayment(
           args: [escrowAddress, amount],
         });
 
-        console.log("[EscrowPayment] Waiting for approval confirmation...");
         await publicClient.waitForTransactionReceipt({ hash: approveHash });
-        console.log("[EscrowPayment] Approval confirmed!");
       } else {
-        console.log("[EscrowPayment] Already approved, skipping...");
+        // Already approved, skipping
       }
 
       // Step 2: Create escrow (use session-date-aware version when sessionDate > 0)
       setCurrentStep("creating");
       const useSessionDate = sessionDate && sessionDate > 0;
-
-      console.log(
-        `[EscrowPayment] Creating escrow via ${useSessionDate ? "createEscrowWithSession" : "createEscrow"}...`,
-        useSessionDate
-          ? `Session date: ${new Date(sessionDate * 1000).toISOString()}`
-          : "Immediate session",
-      );
 
       // Simulate first to get escrow ID
       // Branch separately to preserve tuple types for wagmi's strict generics
@@ -641,23 +632,17 @@ export function useEscrowPayment(
 
       setTxHash(createHash);
       setCurrentStep("confirming");
-      console.log("[EscrowPayment] Waiting for escrow confirmation...");
 
       await publicClient.waitForTransactionReceipt({ hash: createHash });
 
       setEscrowId(simulatedEscrowId as bigint);
       setCurrentStep("done");
-      console.log(
-        "[EscrowPayment] Escrow created! ID:",
-        (simulatedEscrowId as bigint).toString(),
-      );
 
       return {
         txHash: createHash,
         escrowId: simulatedEscrowId as bigint,
       };
     } catch (err) {
-      console.error("[EscrowPayment] Error:", err);
       setError(err as Error);
       setCurrentStep("error");
       throw err;

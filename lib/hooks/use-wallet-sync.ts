@@ -101,7 +101,7 @@ export function useWalletSync() {
         await linkWallet(connectedWalletAddress, "base");
         refresh();
       } catch (error: unknown) {
-        console.error("Failed to auto-link wallet:", error);
+        // Failed to auto-link wallet
         // Check if it's the "already linked" error
         const errorMessage =
           error instanceof Error ? error.message : String(error);
@@ -147,7 +147,7 @@ export function useWalletSync() {
       refresh();
       return true;
     } catch (error: unknown) {
-      console.error("Failed to link wallet:", error);
+      // Failed to link wallet
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       if (errorMessage.includes("already linked")) {
@@ -184,7 +184,7 @@ export function useWalletSync() {
       }
       return result;
     } catch (error) {
-      console.error("Failed to change wallet:", error);
+      // Failed to change wallet
       const errorMsg = "Failed to change wallet";
       setLinkError(errorMsg);
       return { success: false, error: errorMsg };

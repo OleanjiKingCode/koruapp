@@ -21,7 +21,7 @@ function canRefresh(): boolean {
   }
 
   if (refreshCount >= MAX_REFRESHES_PER_WINDOW) {
-    console.log("[useRefreshableImage] Rate limit reached, skipping refresh");
+    // Rate limit reached, skipping refresh
     return false;
   }
 
@@ -40,11 +40,7 @@ function wasRecentlyChecked(username: string): boolean {
   if (!lastChecked) return false;
 
   const isRecent = Date.now() - lastChecked < CACHE_DURATION_MS;
-  if (isRecent) {
-    console.log(
-      `[useRefreshableImage] ${username} was checked recently, skipping`
-    );
-  }
+  // Skip if recently checked
   return isRecent;
 }
 
@@ -133,11 +129,7 @@ export function useRefreshableImage({
       } else {
         setHasError(true);
       }
-    } catch (error) {
-      console.error(
-        `[useRefreshableImage] Failed to refresh ${username}:`,
-        error
-      );
+    } catch {
       setHasError(true);
     } finally {
       setIsRefreshing(false);

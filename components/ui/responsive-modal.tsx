@@ -64,7 +64,7 @@ export function ResponsiveModal({
   }
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} modal={false}>
+    <Drawer open={open} onOpenChange={onOpenChange}>
       {trigger && <DrawerTrigger asChild>{trigger}</DrawerTrigger>}
       <DrawerContent className={className}>
         {(title || description) && (

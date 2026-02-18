@@ -14,9 +14,7 @@ export function getSupabaseClient() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn(
-      "Supabase client-side credentials not found. Real-time features will be disabled."
-    );
+    // Supabase client-side credentials not found. Real-time features will be disabled.
     return null;
   }
 
@@ -33,6 +31,3 @@ export function getSupabaseClient() {
 
 // Export type for the client
 export type SupabaseClient = ReturnType<typeof createClient>;
-
-
-

@@ -17,7 +17,6 @@ export default function Error({ error, reset }: ErrorProps) {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-[#f8f7f4] dark:bg-[#0d0d10] px-4">
-      {/* Background orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           className="absolute top-1/3 left-1/3 w-64 h-64 rounded-full"
@@ -44,7 +43,6 @@ export default function Error({ error, reset }: ErrorProps) {
         animate={{ opacity: 1, y: 0 }}
         className="relative z-10 text-center max-w-md"
       >
-        {/* Kaya owl - dizzy state */}
         <motion.div
           initial={{ scale: 0.8 }}
           animate={{ scale: 1 }}
@@ -53,7 +51,6 @@ export default function Error({ error, reset }: ErrorProps) {
         >
           <div className="relative w-32 h-32">
             <svg viewBox="0 0 100 100" className="w-full h-full">
-              {/* Body */}
               <circle
                 cx="50"
                 cy="55"
@@ -61,8 +58,6 @@ export default function Error({ error, reset }: ErrorProps) {
                 fill="currentColor"
                 className="text-neutral-200 dark:text-neutral-800"
               />
-
-              {/* Dizzy X eyes */}
               <g className="text-koru-purple">
                 <line
                   x1="32"
@@ -103,15 +98,11 @@ export default function Error({ error, reset }: ErrorProps) {
                   strokeLinecap="round"
                 />
               </g>
-
-              {/* Beak - slightly open */}
               <path
                 d="M50 60 L46 68 L54 68 Z"
                 fill="currentColor"
                 className="text-koru-golden"
               />
-
-              {/* Stars around head */}
               <motion.g
                 animate={{ rotate: 360 }}
                 transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
@@ -143,7 +134,6 @@ export default function Error({ error, reset }: ErrorProps) {
           </div>
         </motion.div>
 
-        {/* Error Text */}
         <motion.h1
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -182,18 +172,6 @@ export default function Error({ error, reset }: ErrorProps) {
             Go Home
           </Button>
         </motion.div>
-
-        {/* Error digest for debugging */}
-        {error.digest && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mt-8 text-xs text-neutral-400 dark:text-neutral-600 font-mono"
-          >
-            Error ID: {error.digest}
-          </motion.p>
-        )}
       </motion.div>
     </main>
   );

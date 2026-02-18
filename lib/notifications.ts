@@ -106,7 +106,6 @@ export async function createNotification({
           extra: { userId, type, title },
         });
       }
-      console.error("Error creating notification:", error);
       return null;
     }
 
@@ -118,7 +117,6 @@ export async function createNotification({
         extra: { userId, type, title },
       });
     }
-    console.error("Error in createNotification:", error);
     return null;
   }
 }

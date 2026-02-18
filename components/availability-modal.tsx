@@ -961,7 +961,7 @@ export function AvailabilityModal({
                   <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2 block">
                     Quick Select
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
                     <button
                       onClick={() => handlePatternSelect("weekdays")}
                       className={cn(
@@ -1137,7 +1137,7 @@ export function AvailabilityModal({
                   </span>
                 </div>
 
-                <div className="mb-4 space-y-1.5">
+                <div className="mb-4 grid grid-cols-2 gap-1.5">
                   {availableTimeSlots.map((time) => {
                     const isSelected = configTimes.includes(time);
                     return (
@@ -1145,7 +1145,7 @@ export function AvailabilityModal({
                         key={time}
                         onClick={() => handleTimeToggle(time)}
                         className={cn(
-                          "w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-mono transition-all",
+                          "flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-xl text-xs sm:text-sm font-mono transition-all",
                           isSelected
                             ? "bg-koru-golden/20 text-koru-golden border-2 border-koru-golden"
                             : "bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-2 border-transparent hover:border-koru-golden/30",
@@ -1153,7 +1153,7 @@ export function AvailabilityModal({
                       >
                         <span>{time}</span>
                         {isSelected && (
-                          <CheckIcon className="w-4 h-4 text-koru-golden" />
+                          <CheckIcon className="w-3 h-3 text-koru-golden flex-shrink-0" />
                         )}
                       </button>
                     );

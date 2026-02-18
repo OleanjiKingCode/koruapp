@@ -38,28 +38,29 @@ function getEncryptionKey(): Buffer {
  */
 export function encrypt(plaintext: string): string {
   if (!process.env.CHAT_ENCRYPTION_KEY) {
-    // Graceful fallback — store plaintext if key is not set yet
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "CHAT_ENCRYPTION_KEY is required in production. " +
+          "Generate one with: openssl rand -hex 32",
+      );
+    }
+    // Allow plaintext in development only
     return plaintext;
   }
 
-  try {
-    const key = getEncryptionKey();
-    const iv = crypto.randomBytes(IV_LENGTH);
+  const key = getEncryptionKey();
+  const iv = crypto.randomBytes(IV_LENGTH);
 
-    const cipher = crypto.createCipheriv(ALGORITHM, key, iv, {
-      authTagLength: AUTH_TAG_LENGTH,
-    });
+  const cipher = crypto.createCipheriv(ALGORITHM, key, iv, {
+    authTagLength: AUTH_TAG_LENGTH,
+  });
 
-    let encrypted = cipher.update(plaintext, "utf8", "hex");
-    encrypted += cipher.final("hex");
+  let encrypted = cipher.update(plaintext, "utf8", "hex");
+  encrypted += cipher.final("hex");
 
-    const authTag = cipher.getAuthTag().toString("hex");
+  const authTag = cipher.getAuthTag().toString("hex");
 
-    return `${iv.toString("hex")}:${authTag}:${encrypted}`;
-  } catch (error) {
-    console.error("Encryption failed, storing plaintext:", error);
-    return plaintext;
-  }
+  return `${iv.toString("hex")}:${authTag}:${encrypted}`;
 }
 
 /**
@@ -70,7 +71,12 @@ export function encrypt(plaintext: string): string {
  */
 export function decrypt(encryptedText: string): string {
   if (!process.env.CHAT_ENCRYPTION_KEY) {
-    // No key configured — return as-is
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "CHAT_ENCRYPTION_KEY is required in production. " +
+          "Generate one with: openssl rand -hex 32",
+      );
+    }
     return encryptedText;
   }
 
@@ -106,9 +112,9 @@ export function decrypt(encryptedText: string): string {
     decrypted += decipher.final("utf8");
 
     return decrypted;
-  } catch (error) {
-    console.error("Decryption failed, returning raw content:", error);
+  } catch {
     // If decryption fails (wrong key, corrupted data), return raw
+    // for backwards compatibility with pre-encryption messages
     return encryptedText;
   }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { captureApiError } from "@/lib/sentry";
+import { validateEnum } from "@/lib/validation";
 
 // GET - Fetch user's escrows (both as recipient and depositor)
 export async function GET(request: NextRequest) {
@@ -13,7 +14,11 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const role = searchParams.get("role") || "recipient"; // 'recipient' | 'depositor' | 'all'
+    const role = validateEnum(
+      searchParams.get("role"),
+      ["recipient", "depositor", "all"] as const,
+      "recipient",
+    );
     const status = searchParams.get("status"); // Optional: 'pending', 'accepted', 'released', etc.
 
     // Build query
@@ -72,7 +77,7 @@ export async function GET(request: NextRequest) {
     const { data: escrows, error } = await query;
 
     if (error) {
-      console.error("Error fetching escrows:", error);
+      captureApiError(error, "GET /api/user/escrows:fetch");
       return NextResponse.json(
         { error: "Failed to fetch escrows" },
         { status: 500 },

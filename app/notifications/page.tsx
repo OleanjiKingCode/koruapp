@@ -287,7 +287,7 @@ export default function NotificationsPage() {
       setUnreadCount(data.unreadCount || 0);
       setError(null);
     } catch (err) {
-      console.error("Error fetching notifications:", err);
+      // Silently handled — error message shown in UI
       setError("Failed to load notifications");
     } finally {
       setIsLoading(false);
@@ -318,7 +318,7 @@ export default function NotificationsPage() {
         body: JSON.stringify({ notificationId: id }),
       });
     } catch (err) {
-      console.error("Error marking notification as read:", err);
+      // Silently handled — reverts optimistic update
       // Revert on error
       fetchNotifications();
     }
@@ -336,7 +336,7 @@ export default function NotificationsPage() {
         body: JSON.stringify({ markAllRead: true }),
       });
     } catch (err) {
-      console.error("Error marking all as read:", err);
+      // Silently handled — reverts optimistic update
       toast.error("Failed to mark notifications as read.");
       // Revert on error
       fetchNotifications();

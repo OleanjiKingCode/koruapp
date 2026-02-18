@@ -120,7 +120,7 @@ export async function PATCH(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error("Error updating user:", error);
+      captureApiError(error, "PATCH /api/user/update");
       return NextResponse.json(
         { error: "Failed to update user" },
         { status: 500 },

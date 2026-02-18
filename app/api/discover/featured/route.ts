@@ -67,11 +67,11 @@ async function fetchProfileFromTwitter(username: string): Promise<{
     };
   } catch (error) {
     clearTimeout(timeoutId);
-    // Log timeout or network errors
-    if (error instanceof Error && error.name === "AbortError") {
-      console.log(`Twitter API timeout for ${username}`);
-    } else {
-      console.error(`Error fetching profile ${username}:`, error);
+    if (!(error instanceof Error && error.name === "AbortError")) {
+      captureApiError(
+        error,
+        `GET /api/discover/featured:twitter-fetch:${username}`,
+      );
     }
     return null;
   }
@@ -123,9 +123,9 @@ async function refreshProfileWithFallback(
       .eq("id", profile.id)
       .then(({ error }) => {
         if (error) {
-          console.error(
-            `Error updating featured profile ${profile.username}:`,
+          captureApiError(
             error,
+            `GET /api/discover/featured:update-profile:${profile.username}`,
           );
         }
       });

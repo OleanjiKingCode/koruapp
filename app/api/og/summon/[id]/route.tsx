@@ -112,10 +112,10 @@ export async function GET(
     );
 
     if (!response.ok) {
-      console.error(
-        "Supabase fetch failed:",
-        response.status,
-        response.statusText,
+      Sentry.captureException(
+        new Error(
+          `Supabase fetch failed: ${response.status} ${response.statusText}`,
+        ),
       );
     } else {
       const data = await response.json();

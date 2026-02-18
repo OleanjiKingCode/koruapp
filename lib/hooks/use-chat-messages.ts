@@ -79,7 +79,7 @@ export function useChatMessages({
     const supabase = getSupabaseClient();
     if (!supabase) {
       // Fallback to polling if Supabase client is not available
-      console.warn("Real-time not available, falling back to polling");
+      // Real-time not available, falling back to polling
       const pollInterval = setInterval(fetchMessages, 3000);
       return () => clearInterval(pollInterval);
     }
@@ -220,7 +220,7 @@ export function useChatMessages({
       } catch (err) {
         // Remove optimistic message on error
         setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
-        console.error("Error sending message:", err);
+        // Error sending message — toast shown to user
         toast.error("Failed to send message. Please try again.");
         return false;
       } finally {

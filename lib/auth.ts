@@ -13,7 +13,7 @@ const RAPIDAPI_HOST = "twitter241.p.rapidapi.com";
 // Helper function to fetch Twitter profile data using search API
 async function fetchTwitterProfileData(username: string) {
   if (!RAPIDAPI_KEY) {
-    console.warn("RAPIDAPI_KEY not configured, skipping Twitter profile fetch");
+    // RAPIDAPI_KEY not configured, skipping Twitter profile fetch
     return null;
   }
 
@@ -35,7 +35,7 @@ async function fetchTwitterProfileData(username: string) {
     );
 
     if (!response.ok) {
-      console.error("Failed to fetch Twitter profile:", response.status);
+      // Failed to fetch Twitter profile
       return null;
     }
 
@@ -55,7 +55,7 @@ async function fetchTwitterProfileData(username: string) {
         extra: { username },
       });
     }
-    console.error("Error fetching Twitter profile data:", error);
+    // Error already captured by Sentry in production
     return null;
   }
 }
@@ -109,13 +109,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           // Validate we have the required data
           if (!data?.id) {
-            console.error("Twitter profile data is missing or invalid:", {
-              hasData: !!data,
-              dataKeys: data ? Object.keys(data) : [],
-              profileKeys: Object.keys(twitterProfile || {}),
-              profileType: typeof profile,
-            });
-
             return token;
           }
 
@@ -136,7 +129,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             try {
               twitterProfileData = await fetchTwitterProfileData(data.username);
             } catch (fetchError) {
-              console.warn("Failed to fetch Twitter profile data:", fetchError);
+              // Continue with OAuth data if search fails
               // Continue with OAuth data if search fails
             }
 
@@ -177,14 +170,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               // Sync summon_ids on login — catches summons created
               // before the user joined Koru, and repairs any gaps.
               // Fire-and-forget so it doesn't slow down the login.
-              syncUserSummonIds(dbUser.id, data.id, data.username).catch(
-                (err) =>
-                  console.warn("Failed to sync summon IDs on login:", err),
-              );
+              syncUserSummonIds(dbUser.id, data.id, data.username).catch(() => {
+                // Silently handled
+              });
             } else {
-              console.warn(
-                "Failed to save user to database, but continuing with login",
-              );
+              // Failed to save user to database, but continuing with login
             }
           } catch (dbError) {
             if (process.env.NODE_ENV === "production") {
@@ -193,21 +183,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 extra: { twitterId: token.twitterId },
               });
             }
-            // Log detailed error but don't fail the login
-            console.error("Error saving user to database:", dbError);
-            if (dbError instanceof Error) {
-              console.error("Database error message:", dbError.message);
-            }
             // Continue with login even if database save fails
           }
         }
       } catch (error) {
         if (process.env.NODE_ENV === "production") {
           Sentry.captureException(error, { tags: { operation: "auth:jwt" } });
-        }
-        console.error("JWT callback error:", error);
-        if (error instanceof Error) {
-          console.error("Error message:", error.message);
         }
         // Return token anyway to not break the auth flow
       }
@@ -233,7 +214,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             tags: { operation: "auth:session" },
           });
         }
-        console.error("Session callback error:", error);
+        // Error already captured by Sentry in production
       }
       return session;
     },

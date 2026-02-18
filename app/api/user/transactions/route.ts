@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { captureApiError } from "@/lib/sentry";
 import { getRecentTransactions } from "@/lib/supabase";
+import { parsePagination } from "@/lib/validation";
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +13,9 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const limit = parseInt(searchParams.get("limit") || "10");
+    const { limit } = parsePagination(null, searchParams.get("limit"), {
+      defaultLimit: 10,
+    });
 
     const transactions = await getRecentTransactions(session.user.dbId, limit);
     return NextResponse.json({ transactions });

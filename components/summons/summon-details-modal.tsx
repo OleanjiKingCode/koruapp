@@ -6,10 +6,13 @@ import { toast } from "@/lib/toast";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import { cn, formatCurrency } from "@/lib/utils";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { getTagColor, SUMMON_TAGS, API_ROUTES, ROUTES } from "@/lib/constants";
 import type { Summon, SummonBacker } from "@/lib/types";
 
@@ -256,269 +259,268 @@ export function SummonDetailsModal({
     router.push(`/summons/${summon.id}`);
   };
 
-  return (
-    <AnimatePresence>
-      {open && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
-            onClick={() => onOpenChange(false)}
-          />
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 pointer-events-none overflow-y-auto">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="w-full max-w-lg pointer-events-auto my-8 max-h-[90vh] overflow-y-auto"
+  const isDesktop = useMediaQuery("(min-width: 640px)");
+
+  const modalBody = (
+    <div className="overflow-hidden">
+      {/* Header with gradient */}
+      <div className="relative bg-gradient-to-r from-koru-purple/20 via-koru-golden/10 to-koru-lime/10 p-4 sm:p-6 pb-14 sm:pb-16">
+        <button
+          onClick={() => onOpenChange(false)}
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 rounded-full bg-black/10 hover:bg-black/20 text-neutral-600 dark:text-neutral-400 transition-colors"
+        >
+          <CloseIcon className="w-4 h-4" />
+        </button>
+
+        {/* Stats row */}
+        <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+          <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white/80 dark:bg-neutral-800/80">
+            <DollarIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-koru-golden" />
+            <span className="font-bold text-sm sm:text-base text-koru-golden">
+              {formatCurrency(summon.totalPledged, { compact: true })}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white/80 dark:bg-neutral-800/80">
+            <UsersIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-koru-purple" />
+            <span className="font-bold text-sm sm:text-base text-koru-purple">
+              {summon.backers}
+            </span>
+          </div>
+          <div
+            className={cn(
+              "flex items-center gap-1 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full",
+              summon.trend === "up"
+                ? "bg-emerald-500/10 text-emerald-500"
+                : "bg-rose-500/10 text-rose-500",
+            )}
+          >
+            {summon.trend === "up" ? (
+              <TrendUpIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            ) : (
+              <TrendDownIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            )}
+            <span className="text-xs sm:text-sm font-medium">
+              {summon.trendValue.toFixed(1)}%
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Profile Avatar - overlapping header */}
+      <div className="px-4 sm:px-6 -mt-10 sm:-mt-12 relative">
+        <div className="flex items-end gap-3 sm:gap-4">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border-4 border-white dark:border-neutral-900 shadow-xl overflow-hidden bg-white dark:bg-neutral-800 flex-shrink-0">
+            <OptimizedAvatar
+              src={summon.targetProfileImage}
+              alt={summon.targetName}
+              size={80}
+              fallbackSeed={summon.targetHandle}
+            />
+          </div>
+          <div className="pb-1 sm:pb-2 min-w-0">
+            <p className="text-[10px] sm:text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+              Summon for
+            </p>
+            <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-neutral-100 truncate">
+              {summon.targetName}
+            </h2>
+            <a
+              href={`https://twitter.com/${summon.targetHandle}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs sm:text-sm text-neutral-500 hover:text-koru-purple transition-colors"
             >
-              <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden">
-                {/* Header with gradient */}
-                <div className="relative bg-gradient-to-r from-koru-purple/20 via-koru-golden/10 to-koru-lime/10 p-6 pb-16">
-                  <button
-                    onClick={() => onOpenChange(false)}
-                    className="absolute top-4 right-4 p-2 rounded-full bg-black/10 hover:bg-black/20 text-neutral-600 dark:text-neutral-400 transition-colors"
-                  >
-                    <CloseIcon className="w-4 h-4" />
-                  </button>
+              <TwitterIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span>@{summon.targetHandle}</span>
+            </a>
+          </div>
+        </div>
+      </div>
 
-                  {/* Stats row */}
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 dark:bg-neutral-800/80">
-                      <DollarIcon className="w-4 h-4 text-koru-golden" />
-                      <span className="font-bold text-koru-golden">
-                        {formatCurrency(summon.totalPledged, { compact: true })}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 dark:bg-neutral-800/80">
-                      <UsersIcon className="w-4 h-4 text-koru-purple" />
-                      <span className="font-bold text-koru-purple">
-                        {summon.backers}
-                      </span>
-                    </div>
-                    <div
-                      className={cn(
-                        "flex items-center gap-1 px-3 py-1.5 rounded-full",
-                        summon.trend === "up"
-                          ? "bg-emerald-500/10 text-emerald-500"
-                          : "bg-rose-500/10 text-rose-500",
-                      )}
-                    >
-                      {summon.trend === "up" ? (
-                        <TrendUpIcon className="w-4 h-4" />
-                      ) : (
-                        <TrendDownIcon className="w-4 h-4" />
-                      )}
-                      <span className="text-sm font-medium">
-                        {summon.trendValue.toFixed(1)}%
-                      </span>
-                    </div>
-                  </div>
-                </div>
+      {/* Content */}
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
+        {/* Tags */}
+        {sortedTags.length > 0 && (
+          <div>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2">
+              Community Interests
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {sortedTags.map(([tag, count]) => (
+                <Badge
+                  key={tag}
+                  variant="secondary"
+                  className={cn("text-xs font-medium", getTagColor(tag))}
+                >
+                  {tag}
+                  <span className="ml-1 opacity-60">({count as number})</span>
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
 
-                {/* Profile Avatar - overlapping header */}
-                <div className="px-6 -mt-12 relative">
-                  <div className="flex items-end gap-4">
-                    <div className="w-20 h-20 rounded-2xl border-4 border-white dark:border-neutral-900 shadow-xl overflow-hidden bg-white dark:bg-neutral-800 flex-shrink-0">
+        {/* Request Message */}
+        {summon.request && (
+          <div className="p-3 sm:p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2">
+              Request
+            </p>
+            <p className="text-neutral-700 dark:text-neutral-300 text-sm whitespace-pre-wrap">
+              {summon.request}
+            </p>
+          </div>
+        )}
+
+        {/* Backers List */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+              Backers ({summon.backers})
+            </p>
+          </div>
+
+          {summon.backersData && summon.backersData.length > 0 ? (
+            <div className="space-y-2 max-h-48 sm:max-h-64 overflow-y-auto">
+              {summon.backersData.map((backer, idx) => (
+                <div
+                  key={backer.id || idx}
+                  className="p-2.5 sm:p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-700"
+                >
+                  <div className="flex items-center gap-2.5 sm:gap-3">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden flex-shrink-0">
                       <OptimizedAvatar
-                        src={summon.targetProfileImage}
-                        alt={summon.targetName}
-                        size={80}
-                        fallbackSeed={summon.targetHandle}
+                        src={backer.profileImageUrl}
+                        alt={backer.name}
+                        size={32}
+                        fallbackSeed={backer.username}
                       />
                     </div>
-                    <div className="pb-2">
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Summon for
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs sm:text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
+                        {backer.name}
                       </p>
-                      <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
-                        {summon.targetName}
-                      </h2>
-                      <a
-                        href={`https://twitter.com/${summon.targetHandle}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-koru-purple transition-colors"
-                      >
-                        <TwitterIcon className="w-3.5 h-3.5" />
-                        <span>@{summon.targetHandle}</span>
-                      </a>
+                      <p className="text-[10px] sm:text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                        @{backer.username}
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-xs sm:text-sm font-semibold text-koru-golden">
+                        {formatCurrency(backer.amount)}
+                      </p>
                     </div>
                   </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-6 space-y-5">
-                  {/* Tags */}
-                  {sortedTags.length > 0 && (
-                    <div>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2">
-                        Community Interests
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {sortedTags.map(([tag, count]) => (
-                          <Badge
-                            key={tag}
-                            variant="secondary"
-                            className={cn(
-                              "text-xs font-medium",
-                              getTagColor(tag),
-                            )}
-                          >
-                            {tag}
-                            <span className="ml-1 opacity-60">
-                              ({count as number})
-                            </span>
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Request Message */}
-                  {summon.request && (
-                    <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700">
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2">
-                        Request
-                      </p>
-                      <p className="text-neutral-700 dark:text-neutral-300 text-sm whitespace-pre-wrap">
-                        {summon.request}
+                  {backer.reason && (
+                    <div className="mt-2 pt-2 border-t border-neutral-200 dark:border-neutral-700">
+                      <p className="text-[10px] sm:text-xs text-neutral-600 dark:text-neutral-400 italic">
+                        &ldquo;{backer.reason}&rdquo;
                       </p>
                     </div>
                   )}
-
-                  {/* Backers List */}
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Backers ({summon.backers})
-                      </p>
-                    </div>
-
-                    {summon.backersData && summon.backersData.length > 0 ? (
-                      <div className="space-y-2 max-h-64 overflow-y-auto">
-                        {summon.backersData.map((backer, idx) => (
-                          <div
-                            key={backer.id || idx}
-                            className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-700"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-                                <OptimizedAvatar
-                                  src={backer.profileImageUrl}
-                                  alt={backer.name}
-                                  size={32}
-                                  fallbackSeed={backer.username}
-                                />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
-                                  {backer.name}
-                                </p>
-                                <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
-                                  @{backer.username}
-                                </p>
-                              </div>
-                              <div className="text-right flex-shrink-0">
-                                <p className="text-sm font-semibold text-koru-golden">
-                                  {formatCurrency(backer.amount)}
-                                </p>
-                              </div>
-                            </div>
-                            {backer.reason && (
-                              <div className="mt-2 pt-2 border-t border-neutral-200 dark:border-neutral-700">
-                                <p className="text-xs text-neutral-600 dark:text-neutral-400 italic">
-                                  "{backer.reason}"
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center gap-2 py-6 text-center">
-                        <UsersIcon className="w-8 h-8 text-neutral-300 dark:text-neutral-600" />
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                          No backers yet
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Meta Info */}
-                  <div className="flex items-center gap-4 text-xs text-neutral-500 dark:text-neutral-400 pt-2 border-t border-neutral-100 dark:border-neutral-800">
-                    <span>Created {formatTimeAgo(summon.createdAt)}</span>
-                    {summon.creatorUsername && (
-                      <>
-                        <span>·</span>
-                        <span>by @{summon.creatorUsername}</span>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-3 pt-2">
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "flex-1 transition-all",
-                        linkCopied &&
-                          "!bg-koru-lime/20 !text-koru-lime !border-koru-lime/30",
-                      )}
-                      onClick={handleCopyLink}
-                    >
-                      {linkCopied ? (
-                        <>
-                          <CheckIcon className="w-4 h-4 mr-2" />
-                          Copied!
-                        </>
-                      ) : (
-                        <>
-                          <LinkIcon className="w-4 h-4 mr-2" />
-                          Copy Link
-                        </>
-                      )}
-                    </Button>
-                    {!hasUserBacked() ? (
-                      <Button
-                        className="flex-1 bg-koru-purple hover:bg-koru-purple/90"
-                        onClick={() => {
-                          onOpenChange(false);
-                          onBack(summon);
-                        }}
-                      >
-                        <MegaphoneIcon className="w-4 h-4 mr-2" />
-                        Back
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        className="flex-1 border-koru-lime/30 text-koru-lime"
-                        disabled
-                      >
-                        Already Backed
-                      </Button>
-                    )}
-                  </div>
-
-                  {/* View Full Page Link */}
-                  <button
-                    onClick={handleViewFullPage}
-                    className="w-full flex items-center justify-center gap-2 py-2 text-sm text-neutral-500 hover:text-koru-purple transition-colors"
-                  >
-                    <ExternalLinkIcon className="w-4 h-4" />
-                    View full page
-                  </button>
                 </div>
-              </div>
-            </motion.div>
-          </div>
-        </>
-      )}
-    </AnimatePresence>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2 py-4 sm:py-6 text-center">
+              <UsersIcon className="w-7 h-7 sm:w-8 sm:h-8 text-neutral-300 dark:text-neutral-600" />
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                No backers yet
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Meta Info */}
+        <div className="flex items-center gap-3 sm:gap-4 text-[10px] sm:text-xs text-neutral-500 dark:text-neutral-400 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+          <span>Created {formatTimeAgo(summon.createdAt)}</span>
+          {summon.creatorUsername && (
+            <>
+              <span>·</span>
+              <span>by @{summon.creatorUsername}</span>
+            </>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2 sm:gap-3 pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className={cn(
+              "flex-1 transition-all text-xs sm:text-sm",
+              linkCopied &&
+                "!bg-koru-lime/20 !text-koru-lime !border-koru-lime/30",
+            )}
+            onClick={handleCopyLink}
+          >
+            {linkCopied ? (
+              <>
+                <CheckIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <LinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" />
+                Copy Link
+              </>
+            )}
+          </Button>
+          {!hasUserBacked() ? (
+            <Button
+              size="sm"
+              className="flex-1 bg-koru-purple hover:bg-koru-purple/90 text-xs sm:text-sm"
+              onClick={() => {
+                onOpenChange(false);
+                onBack(summon);
+              }}
+            >
+              <MegaphoneIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5" />
+              Back
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 border-koru-lime/30 text-koru-lime text-xs sm:text-sm"
+              disabled
+            >
+              Already Backed
+            </Button>
+          )}
+        </div>
+
+        {/* View Full Page Link */}
+        <button
+          onClick={handleViewFullPage}
+          className="w-full flex items-center justify-center gap-2 py-2 text-xs sm:text-sm text-neutral-500 hover:text-koru-purple transition-colors"
+        >
+          <ExternalLinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          View full page
+        </button>
+      </div>
+    </div>
+  );
+
+  if (isDesktop) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="p-0 gap-0 overflow-hidden max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogTitle className="sr-only">Summon Details</DialogTitle>
+          {modalBody}
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange} modal={false}>
+      <DrawerContent className="overflow-hidden">
+        <DrawerTitle className="sr-only">Summon Details</DrawerTitle>
+        <div className="overflow-y-auto max-h-[85vh] pb-4" data-vaul-no-drag>
+          {modalBody}
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }
 

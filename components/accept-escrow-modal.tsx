@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "motion/react";
 import { toast } from "@/lib/toast";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { useAcceptEscrow } from "@/lib/hooks/use-koru-escrow";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { CheckIcon, ClockIcon, DollarIcon } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
@@ -136,178 +138,181 @@ export function AcceptEscrowModal({
       hasError.message?.toLowerCase().includes("denied") ||
       hasError.message?.toLowerCase().includes("cancelled"));
 
+  const isDesktop = useMediaQuery("(min-width: 640px)");
+
   if (!isOpen) return null;
 
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-        >
-          {/* Backdrop - no click to close */}
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+  const modalBody = (
+    <>
+      {/* Header gradient */}
+      <div className="h-2 bg-gradient-to-r from-koru-purple via-koru-golden to-koru-lime" />
 
-          {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-md max-h-[85vh] overflow-y-auto bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl"
-          >
-            {/* Header gradient */}
-            <div className="h-2 bg-gradient-to-r from-koru-purple via-koru-golden to-koru-lime" />
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+        {/* Title */}
+        <div className="text-center">
+          <h2 className="text-lg sm:text-xl font-semibold text-neutral-900 dark:text-white">
+            Accept Paid Chat Request
+          </h2>
+          <p className="mt-1.5 sm:mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+            {payerName} wants to chat with you
+          </p>
+        </div>
 
-            <div className="p-6 space-y-6">
-              {/* Title */}
-              <div className="text-center">
-                <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
-                  Accept Paid Chat Request
-                </h2>
-                <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-                  {payerName} wants to chat with you
-                </p>
-              </div>
-
-              {/* Details card */}
-              <div className="bg-neutral-50 dark:bg-neutral-800 rounded-xl p-4 space-y-3">
-                {slotName && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                      Session
-                    </span>
-                    <span className="text-sm font-medium text-neutral-900 dark:text-white">
-                      {slotName}
-                    </span>
-                  </div>
-                )}
-
-                {/* Show scheduled date/time if available */}
-                {bookedDate && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                      Scheduled
-                    </span>
-                    <span className="text-sm font-medium text-neutral-900 dark:text-white">
-                      {new Date(bookedDate + "T00:00:00").toLocaleDateString(
-                        "en-US",
-                        { weekday: "short", month: "short", day: "numeric" },
-                      )}
-                      {bookedTime && (
-                        <span className="ml-1.5 font-mono text-xs text-neutral-500">
-                          {bookedTime}
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
-                    <DollarIcon className="w-4 h-4" />
-                    Payment
-                  </span>
-                  <span className="text-sm font-semibold text-koru-lime">
-                    ${amount.toFixed(2)} USDC
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
-                    <ClockIcon className="w-4 h-4" />
-                    Time to accept
-                  </span>
-                  <span
-                    className={cn(
-                      "text-sm font-medium",
-                      getTimeRemaining() === "Expired"
-                        ? "text-red-500"
-                        : "text-koru-golden",
-                    )}
-                  >
-                    {getTimeRemaining()}
-                  </span>
-                </div>
-              </div>
-
-              {/* Timeline info */}
-              <div className="bg-koru-golden/5 rounded-xl p-3 border border-koru-golden/20">
-                <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                  <span className="font-medium text-koru-golden">
-                    How it works:
-                  </span>{" "}
-                  You have until{" "}
-                  <span className="font-medium">
-                    24 hours after the session date
-                  </span>{" "}
-                  to accept. Once accepted, the payment stays in escrow until
-                  the dispute window closes, then funds are released to your
-                  withdrawable balance. The payer can release early if
-                  satisfied, or raise a dispute within that window.
-                </p>
-              </div>
-
-              {/* Info text */}
-              <p className="text-xs text-center text-neutral-500 dark:text-neutral-400">
-                By accepting, you agree to respond to this chat. The payment
-                will be held in escrow until the chat is completed.
-              </p>
-
-              {/* Error display */}
-              {hasError && !isRejectionError && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                  <p className="text-sm text-red-600 dark:text-red-400">
-                    {simError?.message ||
-                      writeError?.message ||
-                      "Transaction failed"}
-                  </p>
-                </div>
-              )}
-
-              {/* Success state */}
-              {isConfirmed && (
-                <div className="bg-koru-lime/10 border border-koru-lime/20 rounded-lg p-3 flex items-center gap-2">
-                  <CheckIcon className="w-5 h-5 text-koru-lime" />
-                  <p className="text-sm text-koru-lime font-medium">
-                    Accepted! Redirecting to chat...
-                  </p>
-                </div>
-              )}
-
-              {/* Buttons */}
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={handleDecline}
-                  disabled={isLoading}
-                >
-                  Decline
-                </Button>
-                <Button
-                  className="flex-1 bg-koru-purple hover:bg-koru-purple/90 text-white"
-                  onClick={handleAccept}
-                  disabled={isLoading || isConfirmed}
-                >
-                  {isSimulating
-                    ? "Preparing..."
-                    : isPending
-                      ? "Confirm in Wallet..."
-                      : isConfirming
-                        ? "Confirming..."
-                        : isUpdatingDb
-                          ? "Finalizing..."
-                          : isConfirmed
-                            ? "Accepted!"
-                            : "Accept & Start Chat"}
-                </Button>
-              </div>
+        {/* Details card */}
+        <div className="bg-neutral-50 dark:bg-neutral-800 rounded-xl p-3 sm:p-4 space-y-3">
+          {slotName && (
+            <div className="flex items-center justify-between">
+              <span className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">
+                Session
+              </span>
+              <span className="text-xs sm:text-sm font-medium text-neutral-900 dark:text-white">
+                {slotName}
+              </span>
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          )}
+
+          {bookedDate && (
+            <div className="flex items-center justify-between">
+              <span className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">
+                Scheduled
+              </span>
+              <span className="text-xs sm:text-sm font-medium text-neutral-900 dark:text-white">
+                {new Date(bookedDate + "T00:00:00").toLocaleDateString(
+                  "en-US",
+                  { weekday: "short", month: "short", day: "numeric" },
+                )}
+                {bookedTime && (
+                  <span className="ml-1.5 font-mono text-[10px] sm:text-xs text-neutral-500">
+                    {bookedTime}
+                  </span>
+                )}
+              </span>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between">
+            <span className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
+              <DollarIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              Payment
+            </span>
+            <span className="text-xs sm:text-sm font-semibold text-koru-lime">
+              ${amount.toFixed(2)} USDC
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <span className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
+              <ClockIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              Time to accept
+            </span>
+            <span
+              className={cn(
+                "text-xs sm:text-sm font-medium",
+                getTimeRemaining() === "Expired"
+                  ? "text-red-500"
+                  : "text-koru-golden",
+              )}
+            >
+              {getTimeRemaining()}
+            </span>
+          </div>
+        </div>
+
+        {/* Timeline info */}
+        <div className="bg-koru-golden/5 rounded-xl p-3 border border-koru-golden/20">
+          <p className="text-[10px] sm:text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+            <span className="font-medium text-koru-golden">How it works:</span>{" "}
+            You have until{" "}
+            <span className="font-medium">24 hours after the session date</span>{" "}
+            to accept. Once accepted, the payment stays in escrow until the
+            dispute window closes, then funds are released to your withdrawable
+            balance.
+          </p>
+        </div>
+
+        {/* Info text */}
+        <p className="text-[10px] sm:text-xs text-center text-neutral-500 dark:text-neutral-400">
+          By accepting, you agree to respond to this chat. The payment will be
+          held in escrow until the chat is completed.
+        </p>
+
+        {/* Error display */}
+        {hasError && !isRejectionError && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+            <p className="text-xs sm:text-sm text-red-600 dark:text-red-400">
+              {simError?.message || writeError?.message || "Transaction failed"}
+            </p>
+          </div>
+        )}
+
+        {/* Success state */}
+        {isConfirmed && (
+          <div className="bg-koru-lime/10 border border-koru-lime/20 rounded-lg p-3 flex items-center gap-2">
+            <CheckIcon className="w-4 h-4 sm:w-5 sm:h-5 text-koru-lime" />
+            <p className="text-xs sm:text-sm text-koru-lime font-medium">
+              Accepted! Redirecting to chat...
+            </p>
+          </div>
+        )}
+
+        {/* Buttons */}
+        <div className="flex gap-2 sm:gap-3">
+          <Button
+            variant="outline"
+            className="flex-1 text-xs sm:text-sm"
+            onClick={handleDecline}
+            disabled={isLoading}
+          >
+            Decline
+          </Button>
+          <Button
+            className="flex-1 bg-koru-purple hover:bg-koru-purple/90 text-white text-xs sm:text-sm"
+            onClick={handleAccept}
+            disabled={isLoading || isConfirmed}
+          >
+            {isSimulating
+              ? "Preparing..."
+              : isPending
+                ? "Confirm in Wallet..."
+                : isConfirming
+                  ? "Confirming..."
+                  : isUpdatingDb
+                    ? "Finalizing..."
+                    : isConfirmed
+                      ? "Accepted!"
+                      : "Accept & Start Chat"}
+          </Button>
+        </div>
+      </div>
+    </>
+  );
+
+  if (isDesktop) {
+    return (
+      <Dialog open={isOpen} onOpenChange={() => {}}>
+        <DialogContent className="p-0 gap-0 overflow-hidden max-w-md max-h-[85vh] overflow-y-auto [&>button]:hidden">
+          <DialogTitle className="sr-only">
+            Accept Paid Chat Request
+          </DialogTitle>
+          {modalBody}
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Drawer
+      open={isOpen}
+      onOpenChange={() => {}}
+      modal={true}
+      dismissible={false}
+    >
+      <DrawerContent className="overflow-hidden">
+        <DrawerTitle className="sr-only">Accept Paid Chat Request</DrawerTitle>
+        <div className="overflow-y-auto max-h-[85vh] pb-4" data-vaul-no-drag>
+          {modalBody}
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }

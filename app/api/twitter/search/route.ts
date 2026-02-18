@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("RapidAPI error:", errorText);
+      captureApiError(new Error(errorText), "GET /api/twitter/search:rapidapi");
       return NextResponse.json(
         { error: "Failed to fetch from Twitter API" },
         { status: response.status },

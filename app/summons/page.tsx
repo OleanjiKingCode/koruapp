@@ -435,35 +435,35 @@ export default function SummonsPage() {
                   className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
                   onClick={() => setIsModalOpen(false)}
                 />
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none overflow-y-auto">
+                <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 pointer-events-none overflow-y-auto">
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
                     transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                    className="w-full max-w-lg pointer-events-auto my-8 max-h-[85vh] overflow-y-auto"
+                    className="w-full sm:max-w-lg pointer-events-auto sm:my-8 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto"
                   >
-                    <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden">
-                      <div className="relative bg-gradient-to-r from-koru-purple/20 via-koru-golden/10 to-koru-purple/20 p-6 pb-8">
+                    <div className="bg-white dark:bg-neutral-900 rounded-t-3xl sm:rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden">
+                      <div className="relative bg-gradient-to-r from-koru-purple/20 via-koru-golden/10 to-koru-purple/20 p-4 sm:p-6 pb-6 sm:pb-8">
                         <button
                           onClick={() => setIsModalOpen(false)}
-                          className="absolute top-4 right-4 p-2 rounded-full bg-black/10 hover:bg-black/20 text-neutral-600 dark:text-neutral-400 transition-colors"
+                          className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 rounded-full bg-black/10 hover:bg-black/20 text-neutral-600 dark:text-neutral-400 transition-colors"
                         >
                           <CloseIcon className="w-4 h-4" />
                         </button>
                         <div className="flex items-center gap-3 mb-2">
-                          <div className="w-12 h-12 rounded-2xl bg-koru-purple/20 flex items-center justify-center">
-                            <MegaphoneIcon className="w-6 h-6 text-koru-purple" />
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-koru-purple/20 flex items-center justify-center">
+                            <MegaphoneIcon className="w-5 h-5 sm:w-6 sm:h-6 text-koru-purple" />
                           </div>
-                          <div>
-                            <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+                          <div className="min-w-0">
+                            <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-neutral-100 truncate">
                               {step === "info"
                                 ? "Create a Summon"
                                 : selectedProfile
                                   ? `Summon ${selectedProfile.name.split(" ")[0]}`
                                   : "Create Summon"}
                             </h2>
-                            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                            <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">
                               {selectedProfile
                                 ? `@${selectedProfile.username}`
                                 : "Rally others to get someone's attention"}
@@ -472,7 +472,7 @@ export default function SummonsPage() {
                         </div>
                       </div>
 
-                      <div className="p-6 space-y-6">
+                      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                         <AnimatePresence mode="wait">
                           {step === "info" ? (
                             <motion.div
@@ -1012,16 +1012,16 @@ export default function SummonsPage() {
               className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
               onClick={() => setBackModalOpen(false)}
             />
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none">
+            <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 pointer-events-none">
               <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
                 transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                className="w-full max-w-sm pointer-events-auto max-h-[85vh] overflow-y-auto"
+                className="w-full sm:max-w-sm pointer-events-auto max-h-[90vh] sm:max-h-[85vh] overflow-y-auto"
               >
-                <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden">
-                  <div className="p-5">
+                <div className="bg-white dark:bg-neutral-900 rounded-t-2xl sm:rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden">
+                  <div className="p-4 sm:p-5">
                     <div className="flex items-center gap-3 mb-4">
                       <OptimizedAvatar
                         src={summonToBack.targetProfileImage}

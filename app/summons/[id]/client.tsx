@@ -735,16 +735,16 @@ export function SummonDetailClient({
               className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
               onClick={() => setBackModalOpen(false)}
             />
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none">
+            <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 pointer-events-none">
               <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
                 transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                className="w-full max-w-sm pointer-events-auto"
+                className="w-full sm:max-w-sm pointer-events-auto max-h-[90vh] sm:max-h-[85vh] overflow-y-auto"
               >
-                <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden">
-                  <div className="p-5">
+                <div className="bg-white dark:bg-neutral-900 rounded-t-2xl sm:rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden">
+                  <div className="p-4 sm:p-5">
                     <div className="flex items-center gap-3 mb-4">
                       <OptimizedAvatar
                         src={summon.targetProfileImage}

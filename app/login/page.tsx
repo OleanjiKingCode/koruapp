@@ -64,7 +64,7 @@ function LoginContent() {
     try {
       await signIn("twitter", { callbackUrl });
     } catch (err) {
-      console.error("Login error:", err);
+      // Silently handled
       setIsLoading(false);
     }
   };

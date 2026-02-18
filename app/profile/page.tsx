@@ -282,7 +282,7 @@ export default function ProfilePage() {
     isLoading: isLoadingSummons,
   } = useUserSummons();
   const [summonFilter, setSummonFilter] = useState<
-    "all" | "backed" | "targeted"
+    "all" | "created" | "backed" | "targeted"
   >("all");
   const { stats, isLoading: isLoadingStats } = useUserStats();
 
@@ -1060,7 +1060,11 @@ export default function ProfilePage() {
                 className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700 data-[state=active]:shadow-sm flex items-center gap-1.5"
               >
                 <BellIcon className="w-4 h-4" />
-                Summons ({backedSummons.length + targetedSummons.length})
+                Summons (
+                {createdSummons.length +
+                  backedSummons.length +
+                  targetedSummons.length}
+                )
               </TabsTrigger>
               <TabsTrigger
                 value="transactions"
@@ -1158,7 +1162,15 @@ export default function ProfilePage() {
                   {
                     key: "all" as const,
                     label: "All",
-                    count: backedSummons.length + targetedSummons.length,
+                    count:
+                      createdSummons.length +
+                      backedSummons.length +
+                      targetedSummons.length,
+                  },
+                  {
+                    key: "created" as const,
+                    label: "Created",
+                    count: createdSummons.length,
                   },
                   {
                     key: "backed" as const,
@@ -1197,11 +1209,14 @@ export default function ProfilePage() {
                 </>
               ) : (
                 (() => {
+                  const showCreated =
+                    summonFilter === "all" || summonFilter === "created";
                   const showBacked =
                     summonFilter === "all" || summonFilter === "backed";
                   const showTargeted =
                     summonFilter === "all" || summonFilter === "targeted";
                   const hasAny =
+                    (showCreated && createdSummons.length > 0) ||
                     (showBacked && backedSummons.length > 0) ||
                     (showTargeted && targetedSummons.length > 0);
 
@@ -1214,12 +1229,16 @@ export default function ProfilePage() {
                             ? "No one summoned you yet"
                             : summonFilter === "backed"
                               ? "You haven't backed any summons"
-                              : "No summons yet"
+                              : summonFilter === "created"
+                                ? "You haven't created any summons"
+                                : "No summons yet"
                         }
                         description={
                           summonFilter === "targeted"
                             ? "When someone creates a summon for you, it will appear here."
-                            : "Back a summon or get summoned to see activity here."
+                            : summonFilter === "created"
+                              ? "Create a summon to get someone's attention on Koru."
+                              : "Back a summon or get summoned to see activity here."
                         }
                       />
                     );
@@ -1323,6 +1342,60 @@ export default function ProfilePage() {
                                         <StatusPill status={summon.status} />
                                         <Badge className="bg-koru-purple/10 text-koru-purple border-0 text-xs">
                                           Backed
+                                        </Badge>
+                                      </div>
+                                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                        {summon.target_name}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right shrink-0">
+                                    <p className="font-semibold text-koru-golden">
+                                      ${summon.pledged_amount.toFixed(2)}
+                                    </p>
+                                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                      {summon.backers_count} backers
+                                    </p>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            ),
+                          )}
+                        </>
+                      )}
+
+                      {/* Created Summons */}
+                      {showCreated && createdSummons.length > 0 && (
+                        <>
+                          {summonFilter === "all" && (
+                            <div className="pt-4 pb-1">
+                              <h4 className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                                Summons You Created
+                              </h4>
+                            </div>
+                          )}
+                          {createdSummons.map(
+                            (summon: Summon, index: number) => (
+                              <motion.div
+                                key={`created-${summon.id}`}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                                className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-5 hover:border-koru-golden/30 dark:hover:border-koru-golden/30 transition-all group hover:shadow-lg"
+                              >
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-koru-golden/20 to-koru-purple/20 flex items-center justify-center">
+                                      <BeaconIcon className="w-5 h-5 text-koru-golden" />
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-koru-golden transition-colors">
+                                          @{summon.target_username}
+                                        </h3>
+                                        <StatusPill status={summon.status} />
+                                        <Badge className="bg-koru-golden/10 text-koru-golden border-0 text-xs">
+                                          Created
                                         </Badge>
                                       </div>
                                       <p className="text-sm text-neutral-500 dark:text-neutral-400">

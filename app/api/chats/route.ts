@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         .eq("id", creator.id);
 
       if (balanceError) {
-        console.error("Failed to update pending balance:", balanceError);
+        captureApiError(balanceError, "POST /api/chats:update-balance");
         // Don't fail the request, chat was created successfully
       }
     }
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
         .eq("escrow_id", escrowId);
 
       if (escrowError) {
-        console.error("Failed to link escrow to chat:", escrowError);
+        captureApiError(escrowError, "POST /api/chats:link-escrow");
         // Don't fail the request, chat was created successfully
       }
     }
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
         chat.id,
       );
     } catch (notifyError) {
-      console.error("Failed to send notification:", notifyError);
+      captureApiError(notifyError, "POST /api/chats:notification");
       // Don't fail the request, chat was created successfully
     }
 

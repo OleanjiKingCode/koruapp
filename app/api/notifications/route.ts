@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { captureApiError } from "@/lib/sentry";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { parsePagination } from "@/lib/validation";
 
 // Lazy initialization to avoid build-time errors
 let supabaseInstance: SupabaseClient | null = null;
@@ -11,10 +12,6 @@ function getSupabase(): SupabaseClient | null {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) {
-      console.error("Missing Supabase environment variables:", {
-        hasUrl: !!url,
-        hasKey: !!key,
-      });
       return null;
     }
     supabaseInstance = createClient(url, key);
@@ -68,7 +65,6 @@ export async function GET(request: NextRequest) {
     // Use the database user ID (UUID), not the Twitter ID
     const userId = session.user.dbId;
     if (!userId) {
-      console.error("User dbId not found in session");
       // Return empty notifications if user doesn't have a database record yet
       return NextResponse.json({
         notifications: [],
@@ -78,9 +74,6 @@ export async function GET(request: NextRequest) {
 
     const supabase = getSupabase();
     if (!supabase) {
-      console.error(
-        "Supabase client not initialized - missing environment variables",
-      );
       return NextResponse.json({
         notifications: [],
         unreadCount: 0,
@@ -88,7 +81,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get("limit") || "50");
+    const { limit } = parsePagination(null, searchParams.get("limit"));
     const unreadOnly = searchParams.get("unread") === "true";
 
     let query = supabase
@@ -105,7 +98,7 @@ export async function GET(request: NextRequest) {
     const { data: notifications, error } = await query;
 
     if (error) {
-      console.error("Error fetching notifications:", error);
+      captureApiError(error, "GET /api/notifications:fetch");
       // Return empty instead of 500 if table doesn't exist or other DB issues
       return NextResponse.json({
         notifications: [],
@@ -166,9 +159,6 @@ export async function PATCH(request: NextRequest) {
 
     const supabase = getSupabase();
     if (!supabase) {
-      console.error(
-        "Supabase client not initialized - missing environment variables",
-      );
       return NextResponse.json(
         { error: "Service unavailable" },
         { status: 503 },
@@ -187,7 +177,7 @@ export async function PATCH(request: NextRequest) {
         .eq("read", false);
 
       if (error) {
-        console.error("Error marking all as read:", error);
+        captureApiError(error, "PATCH /api/notifications:mark-all-read");
         return NextResponse.json(
           { error: "Failed to mark notifications as read" },
           { status: 500 },
@@ -206,7 +196,7 @@ export async function PATCH(request: NextRequest) {
         .eq("user_id", userId);
 
       if (error) {
-        console.error("Error marking notification as read:", error);
+        captureApiError(error, "PATCH /api/notifications:mark-one-read");
         return NextResponse.json(
           { error: "Failed to mark notification as read" },
           { status: 500 },

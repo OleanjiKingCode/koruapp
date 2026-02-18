@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { captureApiError } from "@/lib/sentry";
 import { supabase, addSummonIdToUser } from "@/lib/supabase";
 import { notifySummonBacked } from "@/lib/notifications";
+import { parseAmount, validateTags } from "@/lib/validation";
 
 interface BackerInfo {
   user_id: string;
@@ -32,16 +33,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const pledgeAmount = parseFloat(amount);
-    if (isNaN(pledgeAmount) || pledgeAmount < 1) {
+    const pledgeAmount = parseAmount(amount);
+    if (pledgeAmount === null) {
       return NextResponse.json(
-        { error: "Amount must be at least $1" },
+        {
+          error:
+            "Amount must be between $1 and $1,000,000 with up to 2 decimal places",
+        },
         { status: 400 },
       );
     }
 
     // Tags selected by this backer (array of strings)
-    const selectedTags: string[] = backerTags || [];
+    const selectedTags: string[] = validateTags(backerTags) || [];
 
     // Get the summon with current backers array, tags, and creator info
     const { data: summon, error: fetchError } = await supabase
@@ -53,7 +57,8 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (fetchError || !summon) {
-      console.error("Error fetching summon:", fetchError);
+      if (fetchError)
+        captureApiError(fetchError, "POST /api/summons/back:fetch-summon");
       return NextResponse.json({ error: "Summon not found" }, { status: 404 });
     }
 
@@ -115,9 +120,9 @@ export async function POST(request: NextRequest) {
       .eq("id", summon_id);
 
     if (updateError) {
-      console.error("Error updating summon:", updateError);
+      captureApiError(updateError, "POST /api/summons/back:update");
       return NextResponse.json(
-        { error: "Failed to back summon", details: updateError.message },
+        { error: "Failed to back summon" },
         { status: 500 },
       );
     }

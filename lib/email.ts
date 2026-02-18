@@ -51,7 +51,7 @@ export async function sendEmail({ to, subject, html }: SendEmailParams) {
         extra: { to, subject },
       });
     }
-    console.error("Email send failed:", error);
+    // Error already captured by Sentry in production
   }
 }
 

@@ -22,7 +22,7 @@ export function useLocalStorage<T>(
         setStoredValue(JSON.parse(item));
       }
     } catch (error) {
-      console.warn(`Error reading localStorage key "${key}":`, error);
+      // Silently handled
     }
   }, [key]);
 
@@ -36,7 +36,7 @@ export function useLocalStorage<T>(
           return valueToStore;
         });
       } catch (error) {
-        console.warn(`Error setting localStorage key "${key}":`, error);
+        // Silently handled
       }
     },
     [key],
@@ -220,7 +220,7 @@ export function useAvailability() {
           }
         }
       } catch (error) {
-        console.error("Error fetching availability:", error);
+        // Silently handled
       } finally {
         setIsLoading(false);
       }
@@ -253,11 +253,10 @@ export function useAvailability() {
         });
 
         if (!response.ok) {
-          console.error("Failed to save availability");
           // Optionally revert on error
         }
       } catch (error) {
-        console.error("Error saving availability:", error);
+        // Silently handled
       } finally {
         setIsSaving(false);
       }

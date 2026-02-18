@@ -58,7 +58,10 @@ export async function POST(
       .eq("id", chatId);
 
     if (updateChatError) {
-      console.error("Error updating chat:", updateChatError);
+      captureApiError(
+        updateChatError,
+        "POST /api/chat/[id]/accept:update-chat",
+      );
       return NextResponse.json(
         { error: "Failed to update chat status" },
         { status: 500 },
@@ -77,7 +80,10 @@ export async function POST(
         .eq("escrow_id", escrowId);
 
       if (updateEscrowError) {
-        console.error("Error updating escrow:", updateEscrowError);
+        captureApiError(
+          updateEscrowError,
+          "POST /api/chat/[id]/accept:update-escrow",
+        );
         // Don't fail the request, chat status was updated
       }
     }
@@ -101,7 +107,7 @@ export async function POST(
         );
       }
     } catch (notifyError) {
-      console.error("Failed to send notification:", notifyError);
+      captureApiError(notifyError, "POST /api/chat/[id]/accept:notification");
       // Don't fail the request, chat was accepted successfully
     }
 

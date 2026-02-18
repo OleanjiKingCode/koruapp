@@ -158,7 +158,7 @@ function ContactForm() {
       setSubmitted(true);
       toast.success("Message sent! We'll get back to you soon.");
     } catch (error) {
-      console.error("Contact form error:", error);
+      // Silently handled — error shown to user via toast
       const msg = error instanceof Error
         ? error.message
         : "Failed to send message. Please try again.";

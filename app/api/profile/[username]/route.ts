@@ -95,15 +95,14 @@ async function fetchProfileFromTwitter(username: string): Promise<{
       name: user.core.name,
     };
 
-    console.log(`[Twitter API] Fresh data for @${username}:`, result);
-
     return result;
   } catch (error) {
     clearTimeout(timeoutId);
-    if (error instanceof Error && error.name === "AbortError") {
-      console.log(`Twitter API timeout for ${username}`);
-    } else {
-      console.error(`Error fetching profile ${username}:`, error);
+    if (!(error instanceof Error && error.name === "AbortError")) {
+      captureApiError(
+        error,
+        `GET /api/profile/[username]:twitter-fetch:${username}`,
+      );
     }
     return null;
   }
@@ -161,9 +160,9 @@ async function updateCachedProfile(
     .eq("id", profile.id)
     .then(({ error }) => {
       if (error) {
-        console.error(
-          `Error updating ${tableName} for ${profile.username}:`,
+        captureApiError(
           error,
+          `GET /api/profile/[username]:update-cache:${profile.username}`,
         );
       }
     });
@@ -221,7 +220,10 @@ async function updateKoruUser(
     .eq("id", userId)
     .then(({ error }) => {
       if (error) {
-        console.error(`Error updating Koru user ${userId}:`, error);
+        captureApiError(
+          error,
+          `GET /api/profile/[username]:update-koru-user:${userId}`,
+        );
       }
     });
 }

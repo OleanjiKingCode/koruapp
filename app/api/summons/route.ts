@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { supabase, getActiveSummons, addSummonIdToUser } from "@/lib/supabase";
 import { captureApiError } from "@/lib/sentry";
 import { notifySummonCreated, notifySummonBacked } from "@/lib/notifications";
+import { parseAmount, parsePagination } from "@/lib/validation";
 
 interface BackerInfo {
   user_id: string;
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const category = searchParams.get("category");
     const searchQuery = searchParams.get("search");
-    const limit = parseInt(searchParams.get("limit") || "50");
+    const { limit } = parsePagination(null, searchParams.get("limit"));
 
     // Get all active summons (now includes backers array)
     let summons = await getActiveSummons(limit);
@@ -171,7 +172,13 @@ export async function POST(request: NextRequest) {
       .eq("id", session.user.dbId)
       .single();
 
-    const pledgeAmountNum = parseFloat(pledged_amount);
+    const pledgeAmountNum = parseAmount(pledged_amount);
+    if (pledgeAmountNum === null) {
+      return NextResponse.json(
+        { error: "Invalid pledge amount" },
+        { status: 400 },
+      );
+    }
 
     // --- Check if an active summon already exists for this target ---
     const { data: existingSummons } = await supabase
@@ -236,12 +243,9 @@ export async function POST(request: NextRequest) {
         .eq("id", existingSummon.id);
 
       if (updateError) {
-        console.error("Error backing existing summon:", updateError);
+        captureApiError(updateError, "POST /api/summons:back-existing");
         return NextResponse.json(
-          {
-            error: "Failed to back existing summon",
-            details: updateError.message,
-          },
+          { error: "Failed to back existing summon" },
           { status: 500 },
         );
       }
@@ -279,7 +283,10 @@ export async function POST(request: NextRequest) {
             existingSummon.id,
           );
         } catch (notifyError) {
-          console.error("Failed to send backing notification:", notifyError);
+          captureApiError(
+            notifyError,
+            "POST /api/summons:backing-notification",
+          );
         }
       }
 
@@ -326,12 +333,9 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (summonError) {
-      console.error("Error creating summon:", summonError);
+      captureApiError(summonError, "POST /api/summons:create");
       return NextResponse.json(
-        {
-          error: "Failed to create summon",
-          details: summonError.message,
-        },
+        { error: "Failed to create summon" },
         { status: 500 },
       );
     }
@@ -354,7 +358,6 @@ export async function POST(request: NextRequest) {
 
     if (rpcError) {
       // If RPC doesn't exist, fetch current value and increment manually
-      console.warn("RPC function not available, updating manually:", rpcError);
       if (creatorData) {
         await supabase
           .from("users")
@@ -396,7 +399,7 @@ export async function POST(request: NextRequest) {
         }
       }
     } catch (notifyError) {
-      console.error("Failed to send summon notification:", notifyError);
+      captureApiError(notifyError, "POST /api/summons:summon-notification");
       // Don't fail the request, summon was created successfully
     }
 
