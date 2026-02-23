@@ -122,7 +122,7 @@ function LoginContent() {
             <motion.div
               animate={{ scale: [1, 1.1, 1] }}
               transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute inset-0 w-24 h-24 rounded-full bg-gradient-to-br from-koru-purple to-koru-golden opacity-50 blur-xl"
+              className="absolute inset-0 w-24 h-24 rounded-full opacity-50"
             />
             <Image
               src="/logo.png"
