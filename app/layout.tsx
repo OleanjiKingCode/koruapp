@@ -49,30 +49,32 @@ export const metadata: Metadata = {
     apple: "/favicon.ico",
   },
   openGraph: {
-    title: "Koru",
-    description: "Pay for access. Earn for time.",
+    title: "Koru — Access shouldn't depend on luck",
+    description:
+      "A marketplace for high-intent conversations with experts and creators. Pay for access. Earn for time.",
     url: "https://www.koruapp.xyz",
     siteName: "Koru",
     images: [
       {
-        url: "https://beta.koruapp.xyz/banner.png",
+        url: "https://beta.koruapp.xyz/og-banner.png",
         width: 1200,
-        height: 630,
-        alt: "Koru - Pay for access. Earn for time.",
+        height: 487,
+        alt: "Koru — Access shouldn't depend on luck. Koru makes it predictable.",
       },
     ],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Koru",
-    description: "Pay for access. Earn for time.",
+    title: "Koru — Access shouldn't depend on luck",
+    description:
+      "A marketplace for high-intent conversations with experts and creators. Pay for access. Earn for time.",
     images: [
       {
-        url: "https://beta.koruapp.xyz/banner.png",
+        url: "https://beta.koruapp.xyz/og-banner.png",
         width: 1200,
-        height: 630,
-        alt: "Koru - Pay for access. Earn for time.",
+        height: 487,
+        alt: "Koru — Access shouldn't depend on luck. Koru makes it predictable.",
       },
     ],
     creator: "@koruapp",
