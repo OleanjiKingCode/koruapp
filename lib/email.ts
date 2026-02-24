@@ -72,7 +72,7 @@ function wrapInBrandedTemplate(body: string): string {
           <!-- Logo -->
           <tr>
             <td style="padding-bottom:18px" align="center">
-              <img alt="Koru" style="display:block;border:0;max-width:190px;height:auto" width="190" src="https://files.catbox.moe/5kphfa.png" />
+              <img alt="Koru" style="display:block;border:0;max-width:190px;height:auto" width="190" src="https://files.catbox.moe/bumdze.png" />
             </td>
           </tr>
           <!-- Card -->
