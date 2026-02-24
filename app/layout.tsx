@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     siteName: "Koru",
     images: [
       {
-        url: "https://www.koruapp.xyz/banner.png",
+        url: "https://beta.koruapp.xyz/banner.png",
         width: 1200,
         height: 630,
         alt: "Koru - Pay for access. Earn for time.",
@@ -69,7 +69,7 @@ export const metadata: Metadata = {
     description: "Pay for access. Earn for time.",
     images: [
       {
-        url: "https://www.koruapp.xyz/banner.png",
+        url: "https://beta.koruapp.xyz/banner.png",
         width: 1200,
         height: 630,
         alt: "Koru - Pay for access. Earn for time.",
