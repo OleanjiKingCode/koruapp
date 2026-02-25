@@ -48,3 +48,13 @@ next-env.d.ts
 # Turbopack
 .turbo
 
+
+
+
+
+
+
+
+
+# Sentry Config File
+.env.sentry-build-plugin

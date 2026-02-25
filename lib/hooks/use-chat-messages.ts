@@ -1,0 +1,241 @@
+"use client";
+
+import { useState, useEffect, useCallback, useRef } from "react";
+import { toast } from "@/lib/toast";
+import { getSupabaseClient } from "@/lib/supabase-client";
+import { API_ROUTES } from "@/lib/constants";
+import type { RealtimeChannel } from "@supabase/supabase-js";
+
+export interface ChatMessage {
+  id: string;
+  chat_id: string;
+  sender_id: string;
+  content: string;
+  is_read: boolean;
+  created_at: string;
+  sender?: {
+    id: string;
+    name: string;
+    username: string;
+    profile_image_url: string | null;
+  };
+}
+
+interface UseChatMessagesOptions {
+  chatId: string;
+  userId: string | null;
+  enabled?: boolean;
+}
+
+interface UseChatMessagesReturn {
+  messages: ChatMessage[];
+  isLoading: boolean;
+  error: Error | null;
+  sendMessage: (content: string) => Promise<boolean>;
+  isSending: boolean;
+  isConnected: boolean;
+}
+
+export function useChatMessages({
+  chatId,
+  userId,
+  enabled = true,
+}: UseChatMessagesOptions): UseChatMessagesReturn {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [isSending, setIsSending] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const optimisticIdCounter = useRef(0);
+
+  // Fetch initial messages
+  const fetchMessages = useCallback(async () => {
+    if (!chatId || !userId || !enabled) return;
+
+    try {
+      setIsLoading(true);
+      const res = await fetch(API_ROUTES.CHAT_MESSAGES(chatId));
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch messages");
+      }
+
+      const data = await res.json();
+      setMessages(data.messages || []);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error("Unknown error"));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [chatId, userId, enabled]);
+
+  // Subscribe to real-time messages
+  useEffect(() => {
+    if (!chatId || !userId || !enabled) return;
+
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      // Fallback to polling if Supabase client is not available
+      // Real-time not available, falling back to polling
+      const pollInterval = setInterval(fetchMessages, 3000);
+      return () => clearInterval(pollInterval);
+    }
+
+    // Fetch initial messages
+    fetchMessages();
+
+    // Subscribe to new messages for this chat.
+    // Messages are encrypted at rest in the database, so real-time payloads
+    // arrive with encrypted content. Instead of decrypting client-side
+    // (which would expose the key), we re-fetch from the API which
+    // decrypts server-side and returns plaintext.
+    const channel = supabase
+      .channel(`chat:${chatId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `chat_id=eq.${chatId}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as ChatMessage;
+
+          // For our own messages: the optimistic message already has
+          // plaintext content. Replace it using the real message ID
+          // but keep our plaintext content.
+          if (newMessage.sender_id === userId) {
+            setMessages((prev) => {
+              // Find the optimistic message for this sender
+              const optimisticIdx = prev.findIndex(
+                (m) =>
+                  m.id.startsWith("optimistic-") &&
+                  m.sender_id === newMessage.sender_id,
+              );
+
+              if (optimisticIdx !== -1) {
+                // Replace optimistic with real message, keeping plaintext content
+                const optimistic = prev[optimisticIdx];
+                const updated = [...prev];
+                updated[optimisticIdx] = {
+                  ...newMessage,
+                  content: optimistic.content, // Keep the plaintext from optimistic
+                  sender: optimistic.sender,
+                };
+                return updated;
+              }
+
+              // Already exists as real message
+              if (prev.some((m) => m.id === newMessage.id)) {
+                return prev;
+              }
+
+              // Shouldn't happen for own messages, but re-fetch to be safe
+              fetchMessages();
+              return prev;
+            });
+          } else {
+            // For other users' messages: content is encrypted.
+            // Re-fetch all messages from the API to get decrypted content.
+            fetchMessages();
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+          filter: `chat_id=eq.${chatId}`,
+        },
+        (payload) => {
+          const updatedMessage = payload.new as ChatMessage;
+          // For UPDATE events (e.g. read receipts), update metadata
+          // but preserve the existing decrypted content
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === updatedMessage.id
+                ? { ...updatedMessage, content: m.content, sender: m.sender }
+                : m,
+            ),
+          );
+        },
+      )
+      .subscribe((status) => {
+        setIsConnected(status === "SUBSCRIBED");
+      });
+
+    channelRef.current = channel;
+
+    // Cleanup
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  }, [chatId, userId, enabled, fetchMessages]);
+
+  // Send message function
+  const sendMessage = useCallback(
+    async (content: string): Promise<boolean> => {
+      if (!chatId || !userId || !content.trim()) return false;
+
+      const trimmedContent = content.trim();
+      setIsSending(true);
+
+      // Create optimistic message
+      const optimisticId = `optimistic-${Date.now()}-${optimisticIdCounter.current++}`;
+      const optimisticMessage: ChatMessage = {
+        id: optimisticId,
+        chat_id: chatId,
+        sender_id: userId,
+        content: trimmedContent,
+        is_read: false,
+        created_at: new Date().toISOString(),
+      };
+
+      // Add optimistic message immediately
+      setMessages((prev) => [...prev, optimisticMessage]);
+
+      try {
+        const res = await fetch(API_ROUTES.CHAT_MESSAGES(chatId), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: trimmedContent }),
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to send message");
+        }
+
+        // The real message will come through the real-time subscription
+        // and replace the optimistic one
+        return true;
+      } catch (err) {
+        // Remove optimistic message on error
+        setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+        // Error sending message — toast shown to user
+        toast.error("Failed to send message. Please try again.");
+        return false;
+      } finally {
+        setIsSending(false);
+      }
+    },
+    [chatId, userId],
+  );
+
+  return {
+    messages,
+    isLoading,
+    error,
+    sendMessage,
+    isSending,
+    isConnected,
+  };
+}

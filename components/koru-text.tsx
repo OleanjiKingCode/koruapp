@@ -98,7 +98,7 @@ export function KoruText() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8, duration: 0.5 }}
               onAnimationComplete={handleWordComplete}
-              className="text-lg sm:text-xl md:text-2xl text-neutral-600 dark:text-neutral-400 text-center max-w-xl font-quicksand"
+              className="text-lg sm:text-xl md:text-2xl text-neutral-600 dark:text-neutral-400 text-center max-w-xl  "
             >
               {currentSlide.subtitle}
             </motion.p>
@@ -113,7 +113,7 @@ export function KoruText() {
             className="flex flex-col items-center"
           >
             <TypingAnimation
-              className="text-3xl sm:text-4xl md:text-5xl font-quicksand text-neutral-700 dark:text-neutral-300 text-center"
+              className="text-3xl sm:text-4xl md:text-5xl   text-neutral-700 dark:text-neutral-300 text-center"
               typeSpeed={80}
               deleteSpeed={60}
               pauseDelay={1000}

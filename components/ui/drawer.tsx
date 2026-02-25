@@ -2,37 +2,49 @@
 
 import * as React from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
+
 import { cn } from "@/lib/utils";
 
 const Drawer = ({
   shouldScaleBackground = true,
+  handleOnly = true,
+  repositionInputs = false,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) => (
   <DrawerPrimitive.Root
     shouldScaleBackground={shouldScaleBackground}
+    handleOnly={handleOnly}
+    repositionInputs={repositionInputs}
     {...props}
   />
 );
 Drawer.displayName = "Drawer";
 
 const DrawerTrigger = DrawerPrimitive.Trigger;
+
 const DrawerPortal = DrawerPrimitive.Portal;
+
 const DrawerClose = DrawerPrimitive.Close;
 
+const DrawerHandle = DrawerPrimitive.Handle;
+
 const DrawerOverlay = React.forwardRef<
-  React.ComponentRef<typeof DrawerPrimitive.Overlay>,
+  React.ElementRef<typeof DrawerPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Overlay>
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Overlay
     ref={ref}
-    className={cn("fixed inset-0 z-50 bg-black/80", className)}
+    className={cn(
+      "fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm",
+      className,
+    )}
     {...props}
   />
 ));
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 
 const DrawerContent = React.forwardRef<
-  React.ComponentRef<typeof DrawerPrimitive.Content>,
+  React.ElementRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
 >(({ className, children, ...props }, ref) => (
   <DrawerPortal>
@@ -40,12 +52,15 @@ const DrawerContent = React.forwardRef<
     <DrawerPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background",
-        className
+        "fixed inset-x-0 bottom-0 z-[61] mt-24 flex h-auto flex-col rounded-t-[24px] border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 pointer-events-auto",
+        className,
       )}
       {...props}
     >
-      <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
+      {/* Drag handle — taller touch area for dragging, snaps back to bottom */}
+      <div className="flex items-center justify-center pt-4 pb-3 cursor-grab active:cursor-grabbing shrink-0">
+        <DrawerHandle className="!bg-neutral-300 dark:!bg-neutral-700 !w-12 !h-1.5" />
+      </div>
       {children}
     </DrawerPrimitive.Content>
   </DrawerPortal>
@@ -57,7 +72,7 @@ const DrawerHeader = ({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn("grid gap-1.5 p-4 text-center sm:text-left", className)}
+    className={cn("grid gap-1.5 px-4 pb-2 text-center sm:text-left", className)}
     {...props}
   />
 );
@@ -68,21 +83,21 @@ const DrawerFooter = ({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn("mt-auto flex flex-col gap-2 p-4", className)}
+    className={cn("mt-auto flex flex-col gap-2 p-4 pb-8", className)}
     {...props}
   />
 );
 DrawerFooter.displayName = "DrawerFooter";
 
 const DrawerTitle = React.forwardRef<
-  React.ComponentRef<typeof DrawerPrimitive.Title>,
+  React.ElementRef<typeof DrawerPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Title>
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Title
     ref={ref}
     className={cn(
-      "text-lg font-semibold leading-none tracking-tight",
-      className
+      "text-lg font-semibold leading-none tracking-tight text-neutral-900 dark:text-neutral-100",
+      className,
     )}
     {...props}
   />
@@ -90,12 +105,12 @@ const DrawerTitle = React.forwardRef<
 DrawerTitle.displayName = DrawerPrimitive.Title.displayName;
 
 const DrawerDescription = React.forwardRef<
-  React.ComponentRef<typeof DrawerPrimitive.Description>,
+  React.ElementRef<typeof DrawerPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Description>
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Description
     ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
+    className={cn("text-sm text-neutral-500 dark:text-neutral-400", className)}
     {...props}
   />
 ));
@@ -105,8 +120,9 @@ export {
   Drawer,
   DrawerPortal,
   DrawerOverlay,
-  DrawerClose,
   DrawerTrigger,
+  DrawerClose,
+  DrawerHandle,
   DrawerContent,
   DrawerHeader,
   DrawerFooter,

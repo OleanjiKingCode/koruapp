@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
@@ -220,8 +220,9 @@ export function getCalendarBounds(weeks: number = 8): {
   maxDate: Date;
 } {
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
   const minDate = new Date(today);
-  minDate.setDate(minDate.getDate() + 1); // Tomorrow
+  minDate.setDate(minDate.getDate() + 1); // Start from tomorrow
   const maxDate = new Date(today);
   maxDate.setDate(maxDate.getDate() + weeks * 7);
   return { minDate, maxDate };
@@ -250,8 +251,9 @@ export function generateDatesFromPattern(
 ): string[] {
   const dates: string[] = [];
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
   const startDate = new Date(today);
-  startDate.setDate(startDate.getDate() + 1); // Tomorrow
+  startDate.setDate(startDate.getDate() + 1); // Start from tomorrow
 
   let endDate: Date;
   if (pattern === "next_1_month") {
@@ -829,7 +831,9 @@ export function AvailabilityModal({
                 </label>
                 <Input
                   value={configName}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfigName(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setConfigName(e.target.value)
+                  }
                   placeholder="e.g., Morning Sessions, Evening Calls..."
                   className="mb-4"
                   autoFocus
@@ -957,7 +961,7 @@ export function AvailabilityModal({
                   <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2 block">
                     Quick Select
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
                     <button
                       onClick={() => handlePatternSelect("weekdays")}
                       className={cn(
@@ -1133,7 +1137,7 @@ export function AvailabilityModal({
                   </span>
                 </div>
 
-                <div className="mb-4 space-y-1.5">
+                <div className="mb-4 grid grid-cols-2 gap-1.5">
                   {availableTimeSlots.map((time) => {
                     const isSelected = configTimes.includes(time);
                     return (
@@ -1141,7 +1145,7 @@ export function AvailabilityModal({
                         key={time}
                         onClick={() => handleTimeToggle(time)}
                         className={cn(
-                          "w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-mono transition-all",
+                          "flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-xl text-xs sm:text-sm font-mono transition-all",
                           isSelected
                             ? "bg-koru-golden/20 text-koru-golden border-2 border-koru-golden"
                             : "bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-2 border-transparent hover:border-koru-golden/30",
@@ -1149,7 +1153,7 @@ export function AvailabilityModal({
                       >
                         <span>{time}</span>
                         {isSelected && (
-                          <CheckIcon className="w-4 h-4 text-koru-golden" />
+                          <CheckIcon className="w-3 h-3 text-koru-golden flex-shrink-0" />
                         )}
                       </button>
                     );
@@ -1191,7 +1195,7 @@ export function AvailabilityModal({
           )}
         >
           <DialogTitle className="sr-only">Set Your Availability</DialogTitle>
-          <div className="overflow-y-auto scrollbar-none max-h-[80vh] overscroll-contain">
+          <div className="overflow-y-auto scrollbar-none max-h-[80dvh] overscroll-contain">
             {modalBody}
           </div>
         </DialogContent>
@@ -1200,11 +1204,11 @@ export function AvailabilityModal({
   }
 
   return (
-    <Drawer open={open} onOpenChange={handleOpenChange} modal={false}>
+    <Drawer open={open} onOpenChange={handleOpenChange}>
       <DrawerContent className="overflow-hidden">
         <DrawerTitle className="sr-only">Set Your Availability</DrawerTitle>
         <div
-          className="overflow-y-auto scrollbar-none max-h-[80vh] overscroll-contain"
+          className="overflow-y-auto scrollbar-none max-h-[80dvh] overscroll-contain px-2 pb-4"
           data-vaul-no-drag
         >
           {modalBody}
