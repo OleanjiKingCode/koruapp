@@ -756,51 +756,89 @@ export async function getUserSummons(userId: string): Promise<Summon[]> {
   return data.map(transformSummonRow);
 }
 
-// Get user's backed summons by checking the backers JSONB array and summon_ids
+// Get user's backed summons by checking multiple sources and merging results
 export async function getUserBackedSummons(userId: string): Promise<Summon[]> {
-  // Strategy: fetch via summon_ids AND also scan backers JSONB, then merge
   const { data: user } = await supabase
     .from("users")
     .select("summon_ids, twitter_id, username")
     .eq("id", userId)
     .single();
 
-  const backedIds = user?.summon_ids?.backed_ids || [];
+  const backedIds: string[] = user?.summon_ids?.backed_ids || [];
 
-  // Also scan summons where the user appears in the backers JSONB array
-  const { data: allSummons, error } = await supabase
-    .from("summons")
-    .select("*")
-    .order("created_at", { ascending: false });
+  // Run all queries in parallel for speed
+  const [jsonbResult, backerTableResult, idResult, usernameResult] =
+    await Promise.all([
+      // Query 1: JSONB containment on backers array
+      supabase
+        .from("summons")
+        .select("*")
+        .contains("backers", [{ user_id: userId }])
+        .order("created_at", { ascending: false }),
 
-  if (error || !allSummons) {
-    // Fallback to just IDs
-    if (backedIds.length === 0) return [];
-    const { data: fallback } = await supabase
+      // Query 2: summon_backers join table (most reliable relational source)
+      supabase.from("summon_backers").select("summon_id").eq("user_id", userId),
+
+      // Query 3: backed_ids from user's summon_ids field
+      backedIds.length > 0
+        ? supabase
+            .from("summons")
+            .select("*")
+            .in("id", backedIds)
+            .order("created_at", { ascending: false })
+        : Promise.resolve({ data: [] as any[], error: null }),
+
+      // Query 4: Username match in backers (for summons backed before dbId tracking)
+      user?.username
+        ? supabase
+            .from("summons")
+            .select("*")
+            .contains("backers", [{ username: user.username }])
+            .order("created_at", { ascending: false })
+        : Promise.resolve({ data: [] as any[], error: null }),
+    ]);
+
+  // Collect summon IDs from the backer join table to fetch full summon data
+  const backerTableIds = (backerTableResult.data || []).map(
+    (r: any) => r.summon_id,
+  );
+
+  // Fetch full summon rows for IDs found in summon_backers but not already fetched
+  const existingIds = new Set([
+    ...(jsonbResult.data || []).map((s: any) => s.id),
+    ...(idResult.data || []).map((s: any) => s.id),
+    ...(usernameResult.data || []).map((s: any) => s.id),
+  ]);
+  const missingIds = backerTableIds.filter(
+    (id: string) => !existingIds.has(id),
+  );
+
+  let backerTableSummons: any[] = [];
+  if (missingIds.length > 0) {
+    const { data } = await supabase
       .from("summons")
       .select("*")
-      .in("id", backedIds)
+      .in("id", missingIds)
       .order("created_at", { ascending: false });
-    return (fallback || []).map(transformSummonRow);
+    backerTableSummons = data || [];
   }
 
-  // Filter: summon is in backedIds OR user appears in backers array
-  const matched = allSummons.filter((s: any) => {
-    if (backedIds.includes(s.id)) return true;
-    if (s.backers && Array.isArray(s.backers)) {
-      return s.backers.some(
-        (b: any) =>
-          b.id === userId ||
-          b.user_id === userId ||
-          (user?.twitter_id && b.twitter_id === user.twitter_id) ||
-          (user?.username && b.username === user.username),
-      );
-    }
-    return false;
+  // Merge and deduplicate all results
+  const allMatches = [
+    ...(jsonbResult.data || []),
+    ...(idResult.data || []),
+    ...(usernameResult.data || []),
+    ...backerTableSummons,
+  ];
+  const seen = new Set<string>();
+  const deduped = allMatches.filter((s) => {
+    if (seen.has(s.id)) return false;
+    seen.add(s.id);
+    return true;
   });
 
-  // Exclude own created summons
-  const filtered = matched.filter((s: any) => s.creator_id !== userId);
+  // Exclude own created summons (they show under "Created" tab)
+  const filtered = deduped.filter((s: any) => s.creator_id !== userId);
 
   return filtered.map(transformSummonRow);
 }
@@ -906,13 +944,18 @@ export async function syncUserSummonIds(
   twitterId: string,
   username: string,
 ): Promise<UserSummonIds> {
-  // 1. Find all summons this user backed (via backers JSONB array)
-  const { data: backedSummons } = await supabase
-    .from("summons")
-    .select("id")
-    .contains("backers", [{ user_id: userId }]);
+  // 1. Find all summons this user backed (via JSONB array + summon_backers table)
+  const [jsonbResult, backerTableResult] = await Promise.all([
+    supabase
+      .from("summons")
+      .select("id")
+      .contains("backers", [{ user_id: userId }]),
+    supabase.from("summon_backers").select("summon_id").eq("user_id", userId),
+  ]);
 
-  const backedIds = (backedSummons || []).map((s) => s.id);
+  const jsonbIds = (jsonbResult.data || []).map((s) => s.id);
+  const tableIds = (backerTableResult.data || []).map((r: any) => r.summon_id);
+  const backedIds = [...new Set([...jsonbIds, ...tableIds])];
 
   // 2. Find all summons targeting this user (by twitter ID or username)
   const { data: targetedSummons } = await supabase
