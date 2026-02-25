@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import NextAuth from "next-auth";
 import Twitter from "next-auth/providers/twitter";
-import { upsertUser, syncUserSummonIds } from "./supabase";
+import { upsertUser, syncUserSummonIds, getUserByTwitterId } from "./supabase";
 import {
   parseTwitterSearchResponse,
   type TwitterSearchResponse,
@@ -184,6 +184,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               });
             }
             // Continue with login even if database save fails
+          }
+        }
+
+        // Fallback: if dbUserId is missing but we have a twitterId,
+        // look up the user in the database. This handles cases where
+        // upsertUser failed during initial login or the token lost dbUserId.
+        if (!token.dbUserId && token.twitterId) {
+          try {
+            const existingUser = await getUserByTwitterId(
+              token.twitterId as string,
+            );
+            if (existingUser) {
+              token.dbUserId = existingUser.id;
+            }
+          } catch {
+            // Don't block auth if lookup fails
           }
         }
       } catch (error) {
