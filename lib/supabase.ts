@@ -756,91 +756,39 @@ export async function getUserSummons(userId: string): Promise<Summon[]> {
   return data.map(transformSummonRow);
 }
 
-// Get user's backed summons by checking multiple sources and merging results
+// Get user's backed summons by scanning all summons and filtering by backers array.
+// Previous approach used Supabase JSONB containment queries (.contains()) which
+// silently returned empty results. This approach is reliable and matches how the
+// /summons page works.
 export async function getUserBackedSummons(userId: string): Promise<Summon[]> {
   const { data: user } = await supabase
     .from("users")
-    .select("summon_ids, twitter_id, username")
+    .select("username")
     .eq("id", userId)
     .single();
 
-  const backedIds: string[] = user?.summon_ids?.backed_ids || [];
+  const username = user?.username;
 
-  // Run all queries in parallel for speed
-  const [jsonbResult, backerTableResult, idResult, usernameResult] =
-    await Promise.all([
-      // Query 1: JSONB containment on backers array
-      supabase
-        .from("summons")
-        .select("*")
-        .contains("backers", [{ user_id: userId }])
-        .order("created_at", { ascending: false }),
+  // Fetch all summons (same approach as getActiveSummons which works on /summons page)
+  const { data, error } = await supabase
+    .from("summons")
+    .select("*")
+    .order("created_at", { ascending: false });
 
-      // Query 2: summon_backers join table (most reliable relational source)
-      supabase.from("summon_backers").select("summon_id").eq("user_id", userId),
+  if (error || !data) return [];
 
-      // Query 3: backed_ids from user's summon_ids field
-      backedIds.length > 0
-        ? supabase
-            .from("summons")
-            .select("*")
-            .in("id", backedIds)
-            .order("created_at", { ascending: false })
-        : Promise.resolve({ data: [] as any[], error: null }),
+  // Filter in application code: find summons where this user is in the backers array
+  const backed = data.filter((s: any) => {
+    // Skip summons the user created (those show under "Created" tab)
+    if (s.creator_id === userId) return false;
 
-      // Query 4: Username match in backers (for summons backed before dbId tracking)
-      user?.username
-        ? supabase
-            .from("summons")
-            .select("*")
-            .contains("backers", [{ username: user.username }])
-            .order("created_at", { ascending: false })
-        : Promise.resolve({ data: [] as any[], error: null }),
-    ]);
-
-  // Collect summon IDs from the backer join table to fetch full summon data
-  const backerTableIds = (backerTableResult.data || []).map(
-    (r: any) => r.summon_id,
-  );
-
-  // Fetch full summon rows for IDs found in summon_backers but not already fetched
-  const existingIds = new Set([
-    ...(jsonbResult.data || []).map((s: any) => s.id),
-    ...(idResult.data || []).map((s: any) => s.id),
-    ...(usernameResult.data || []).map((s: any) => s.id),
-  ]);
-  const missingIds = backerTableIds.filter(
-    (id: string) => !existingIds.has(id),
-  );
-
-  let backerTableSummons: any[] = [];
-  if (missingIds.length > 0) {
-    const { data } = await supabase
-      .from("summons")
-      .select("*")
-      .in("id", missingIds)
-      .order("created_at", { ascending: false });
-    backerTableSummons = data || [];
-  }
-
-  // Merge and deduplicate all results
-  const allMatches = [
-    ...(jsonbResult.data || []),
-    ...(idResult.data || []),
-    ...(usernameResult.data || []),
-    ...backerTableSummons,
-  ];
-  const seen = new Set<string>();
-  const deduped = allMatches.filter((s) => {
-    if (seen.has(s.id)) return false;
-    seen.add(s.id);
-    return true;
+    const backers: any[] = s.backers || [];
+    return backers.some(
+      (b: any) => b.user_id === userId || (username && b.username === username),
+    );
   });
 
-  // Exclude own created summons (they show under "Created" tab)
-  const filtered = deduped.filter((s: any) => s.creator_id !== userId);
-
-  return filtered.map(transformSummonRow);
+  return backed.map(transformSummonRow);
 }
 
 // Get summons targeting this user by scanning the summons table directly
@@ -944,33 +892,35 @@ export async function syncUserSummonIds(
   twitterId: string,
   username: string,
 ): Promise<UserSummonIds> {
-  // 1. Find all summons this user backed (via JSONB array + summon_backers table)
-  const [jsonbResult, backerTableResult] = await Promise.all([
-    supabase
-      .from("summons")
-      .select("id")
-      .contains("backers", [{ user_id: userId }]),
-    supabase.from("summon_backers").select("summon_id").eq("user_id", userId),
-  ]);
-
-  const jsonbIds = (jsonbResult.data || []).map((s) => s.id);
-  const tableIds = (backerTableResult.data || []).map((r: any) => r.summon_id);
-  const backedIds = [...new Set([...jsonbIds, ...tableIds])];
-
-  // 2. Find all summons targeting this user (by twitter ID or username)
-  const { data: targetedSummons } = await supabase
+  // 1. Fetch all summons and find ones this user backed by scanning backers array
+  const { data: allSummons } = await supabase
     .from("summons")
-    .select("id")
-    .or(`target_twitter_id.eq.${twitterId},target_handle.eq.${username}`);
+    .select("id, backers, target_twitter_id, target_handle");
 
-  const targetedIds = (targetedSummons || []).map((s) => s.id);
+  const backedIds: string[] = [];
+  const targetedIds: string[] = [];
+
+  for (const s of allSummons || []) {
+    // Check if user is a backer
+    const backers: any[] = s.backers || [];
+    if (
+      backers.some((b: any) => b.user_id === userId || b.username === username)
+    ) {
+      backedIds.push(s.id);
+    }
+
+    // Check if user is the target
+    if (s.target_twitter_id === twitterId || s.target_handle === username) {
+      targetedIds.push(s.id);
+    }
+  }
 
   const summonIds: UserSummonIds = {
     backed_ids: backedIds,
     targeted_ids: targetedIds,
   };
 
-  // 3. Write back to user record
+  // Write back to user record
   await supabase
     .from("users")
     .update({ summon_ids: summonIds })
