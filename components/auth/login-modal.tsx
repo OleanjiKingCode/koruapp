@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { useTheme } from "next-themes";
 import Image from "next/image";
+import Link from "next/link";
 
 interface LoginModalProps {
   open: boolean;
@@ -157,7 +158,21 @@ export function LoginModal({
             isDark ? "text-neutral-500" : "text-neutral-500",
           )}
         >
-          By continuing, you agree to our terms and conditions.
+          By continuing, you agree to our{" "}
+          <Link
+            href="/terms"
+            className="underline hover:text-foreground transition-colors"
+          >
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link
+            href="/privacy"
+            className="underline hover:text-foreground transition-colors"
+          >
+            Privacy Policy
+          </Link>
+          .
         </motion.p>
       </div>
     </div>
