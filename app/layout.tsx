@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Quicksand, Tenor_Sans, Caveat } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const quicksand = Quicksand({
@@ -99,6 +100,16 @@ export default function RootLayout({
           disableTransitionOnChange={false}
         >
           {children}
+          <Toaster
+            position="top-center"
+            toastOptions={{
+              style: {
+                background: "#1a1a2e",
+                border: "1px solid #2a2a3e",
+                color: "#fff",
+              },
+            }}
+          />
         </ThemeProvider>
       </body>
     </html>

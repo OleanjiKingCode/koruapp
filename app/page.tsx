@@ -6,6 +6,7 @@ import { motion } from "motion/react";
 import { KoruText } from "@/components/koru-text";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AboutModal } from "@/components/about-modal";
+import { WaitlistModal } from "@/components/waitlist-modal";
 
 const floatingOrbs = [
   // Golden orbs - #dab079
@@ -26,6 +27,7 @@ export default function Home() {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -88,18 +90,32 @@ export default function Home() {
         <div className="relative z-10 flex flex-col items-center gap-12">
           <KoruText />
 
-          {/* Know More button */}
-          <motion.button
-            onClick={() => setIsAboutOpen(true)}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1, duration: 0.5 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="px-8 py-3 rounded-full border-2 border-neutral-400 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 font-quicksand text-lg hover:border-neutral-600 dark:hover:border-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors duration-300"
-          >
-            Know more →
-          </motion.button>
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
+            <motion.button
+              onClick={() => setIsWaitlistOpen(true)}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1, duration: 0.5 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-8 py-3 rounded-full bg-gradient-to-r from-[#c385ee] to-[#dab079] text-white font-quicksand text-base sm:text-lg font-semibold hover:opacity-90 transition-opacity duration-300"
+            >
+              Join the Waitlist
+            </motion.button>
+
+            <motion.button
+              onClick={() => setIsAboutOpen(true)}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.1, duration: 0.5 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-8 py-3 rounded-full border-2 border-neutral-400 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 font-quicksand text-base sm:text-lg hover:border-neutral-600 dark:hover:border-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors duration-300"
+            >
+              Know more →
+            </motion.button>
+          </div>
 
           {/* Social Links */}
           <motion.div
@@ -136,6 +152,12 @@ export default function Home() {
 
       {/* About Modal */}
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
+
+      {/* Waitlist Modal */}
+      <WaitlistModal
+        open={isWaitlistOpen}
+        onOpenChange={setIsWaitlistOpen}
+      />
     </>
   );
 }
