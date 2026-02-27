@@ -64,14 +64,30 @@ export async function joinWaitlist(entry: {
   const handle = entry.twitter_handle.toLowerCase().replace(/^@/, "");
   const email = entry.email.toLowerCase().trim();
 
-  // Check for existing entry by email or twitter handle
-  const { data: existing } = await supabase
+  // Check for existing entry by email
+  const { data: byEmail, error: emailCheckError } = await supabase
     .from("waitlist")
     .select("id")
-    .or(`email.eq.${email},twitter_handle.ilike.${handle}`)
+    .eq("email", email)
     .limit(1);
 
-  if (existing && existing.length > 0) {
+  if (emailCheckError) {
+    console.error("joinWaitlist email check error:", emailCheckError);
+    throw new Error(emailCheckError.message);
+  }
+
+  if (byEmail && byEmail.length > 0) {
+    return { data: null, duplicate: true };
+  }
+
+  // Check for existing entry by twitter handle
+  const { data: byHandle } = await supabase
+    .from("waitlist")
+    .select("id")
+    .ilike("twitter_handle", handle)
+    .limit(1);
+
+  if (byHandle && byHandle.length > 0) {
     return { data: null, duplicate: true };
   }
 
@@ -89,8 +105,12 @@ export async function joinWaitlist(entry: {
     .single();
 
   if (error) {
-    console.error("joinWaitlist error:", error);
-    return { data: null, duplicate: false };
+    // Unique constraint violation = duplicate that slipped through race condition
+    if (error.code === "23505") {
+      return { data: null, duplicate: true };
+    }
+    console.error("joinWaitlist insert error:", error);
+    throw new Error(error.message);
   }
 
   return { data, duplicate: false };

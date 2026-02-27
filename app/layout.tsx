@@ -100,16 +100,7 @@ export default function RootLayout({
           disableTransitionOnChange={false}
         >
           {children}
-          <Toaster
-            position="top-center"
-            toastOptions={{
-              style: {
-                background: "#1a1a2e",
-                border: "1px solid #2a2a3e",
-                color: "#fff",
-              },
-            }}
-          />
+          <Toaster position="top-center" />
         </ThemeProvider>
       </body>
     </html>

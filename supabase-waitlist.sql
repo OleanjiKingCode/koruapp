@@ -24,6 +24,10 @@ CREATE INDEX IF NOT EXISTS idx_waitlist_heard_from ON waitlist(heard_from);
 -- Enable RLS
 ALTER TABLE waitlist ENABLE ROW LEVEL SECURITY;
 
--- Allow public insert only, no public read/update/delete
+-- Allow public insert (for signups)
 CREATE POLICY "Allow public waitlist insert" ON waitlist
   FOR INSERT WITH CHECK (true);
+
+-- Allow public select (needed for duplicate checking via anon key)
+CREATE POLICY "Allow public waitlist select" ON waitlist
+  FOR SELECT USING (true);
