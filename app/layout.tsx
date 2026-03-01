@@ -39,10 +39,10 @@ export const metadata: Metadata = {
     siteName: "Koru",
     images: [
       {
-        url: "https://www.koruapp.xyz/koruBanner.png",
-        width: 1200,
-        height: 630,
-        alt: "Koru - Pay for access. Earn for time.",
+        url: "https://www.koruapp.xyz/banner.jpg",
+        width: 1500,
+        height: 609,
+        alt: "Koru — Access shouldn't depend on luck. Koru makes it predictable.",
       },
     ],
     type: "website",
@@ -53,10 +53,10 @@ export const metadata: Metadata = {
     description: "Pay for access. Earn for time.",
     images: [
       {
-        url: "https://www.koruapp.xyz/koruBanner.png",
-        width: 1200,
-        height: 630,
-        alt: "Koru - Pay for access. Earn for time.",
+        url: "https://www.koruapp.xyz/banner.jpg",
+        width: 1500,
+        height: 609,
+        alt: "Koru — Access shouldn't depend on luck. Koru makes it predictable.",
       },
     ],
     creator: "@koruapp",
@@ -81,11 +81,11 @@ export default function RootLayout({
         />
         <meta
           property="twitter:image"
-          content="https://www.koruapp.xyz/koruBanner.png"
+          content="https://www.koruapp.xyz/banner.jpg"
         />
         <meta
           name="twitter:image:src"
-          content="https://www.koruapp.xyz/koruBanner.png"
+          content="https://www.koruapp.xyz/banner.jpg"
         />
         <meta property="twitter:url" content="https://www.koruapp.xyz" />
         <meta name="twitter:domain" content="www.koruapp.xyz" />
