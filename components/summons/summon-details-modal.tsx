@@ -199,6 +199,7 @@ export function SummonDetailsModal({
 }: SummonDetailsModalProps) {
   const router = useRouter();
   const [linkCopied, setLinkCopied] = useState(false);
+  const isDesktop = useMediaQuery("(min-width: 640px)");
 
   const handleCopyLink = async () => {
     if (!summon) return;
@@ -258,8 +259,6 @@ export function SummonDetailsModal({
     onOpenChange(false);
     router.push(`/summons/${summon.id}`);
   };
-
-  const isDesktop = useMediaQuery("(min-width: 640px)");
 
   const modalBody = (
     <div className="overflow-hidden">
