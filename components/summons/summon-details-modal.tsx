@@ -263,7 +263,7 @@ export function SummonDetailsModal({
   const modalBody = (
     <div className="overflow-hidden">
       {/* Header with gradient */}
-      <div className="relative bg-gradient-to-r from-koru-purple/20 via-koru-golden/10 to-koru-lime/10 p-4 sm:p-6 pb-14 sm:pb-16">
+      <div className="relative rounded-2xl bg-gradient-to-r from-koru-purple/20 via-koru-golden/10 to-koru-lime/10 p-4 sm:p-6 pb-14 sm:pb-16">
         <button
           onClick={() => onOpenChange(false)}
           className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 rounded-full bg-black/10 hover:bg-black/20 text-neutral-600 dark:text-neutral-400 transition-colors"

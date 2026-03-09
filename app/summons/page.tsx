@@ -26,7 +26,6 @@ import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import { cn, calculateTreemapLayout, formatCurrency } from "@/lib/utils";
 import {
-  CATEGORIES,
   TIME_FILTERS,
   API_ROUTES,
   SUMMON_TAGS,
@@ -54,7 +53,6 @@ type ViewMode = "treemap" | "list";
 
 export default function SummonsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedTime, setSelectedTime] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -80,14 +78,10 @@ export default function SummonsPage() {
     mutate,
   } = useSWR<{
     summons: Summon[];
-  }>(
-    `/api/summons?category=${selectedCategory}&search=${searchQuery}`,
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-    },
-  );
+  }>(`/api/summons?search=${searchQuery}`, fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  });
 
   const allSummons = data?.summons || [];
 
@@ -244,7 +238,6 @@ export default function SummonsPage() {
     }
   };
 
-  // Helper function to get time filter cutoff date
   const getTimeFilterCutoff = (timeFilter: string): Date | null => {
     const now = new Date();
     switch (timeFilter) {
@@ -264,12 +257,11 @@ export default function SummonsPage() {
         return new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
       case "All":
       default:
-        return null; // No filter
+        return null;
     }
   };
 
   const filteredSummons = useMemo(() => {
-    // Filter by time first
     const cutoffDate = getTimeFilterCutoff(selectedTime);
     let filtered = allSummons;
 
@@ -280,7 +272,6 @@ export default function SummonsPage() {
       });
     }
 
-    // Then sort
     const sorted = [...filtered].sort((a, b) => {
       let aVal: number, bVal: number;
       switch (sortBy) {
@@ -798,40 +789,12 @@ export default function SummonsPage() {
           </AnimatePresence>
         </div>
 
-        {/* Filters Row */}
+        {/* Controls Row */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-wrap items-center gap-3 mb-6"
         >
-          {/* Category Tabs */}
-          <div className="flex items-center gap-1 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-xl">
-            {CATEGORIES.slice(0, 4).map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
-                  selectedCategory === cat
-                    ? "bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm"
-                    : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300",
-                )}
-              >
-                {cat}
-              </button>
-            ))}
-            {/* Clear filter button */}
-            {selectedCategory !== "All" && (
-              <button
-                onClick={() => setSelectedCategory("All")}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-all"
-                title="Clear category filter"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
           {/* Time Filters */}
           <div className="flex items-center gap-1">
             {TIME_FILTERS.map((time) => (
@@ -850,19 +813,8 @@ export default function SummonsPage() {
             ))}
           </div>
 
-          {/* Clear search button */}
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-all bg-neutral-100 dark:bg-neutral-800 shrink-0"
-              title="Clear search"
-            >
-              Clear Search
-            </button>
-          )}
-
-          {/* View Toggle - pushed right */}
-          <div className="flex items-center gap-1 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-xl ml-auto shrink-0">
+          {/* View Toggle */}
+          <div className="flex items-center gap-1 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-xl ml-auto">
             <button
               onClick={() => setViewMode("treemap")}
               className={cn(
