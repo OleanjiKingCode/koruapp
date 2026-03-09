@@ -48,6 +48,7 @@ import { Button } from "@/components/ui/button";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import { cn } from "@/lib/utils";
+import { signOut } from "next-auth/react";
 import {
   CheckIcon,
   ShareIcon,
@@ -62,6 +63,7 @@ import {
   BellIcon,
   CreditCardIcon,
   ClockIcon,
+  LogoutIcon,
 } from "@/components/icons";
 
 // Tag color configurations
@@ -309,6 +311,12 @@ export default function ProfilePage() {
     setShareModalOpen(true);
   };
 
+  const handleSignOut = async () => {
+    await privyLogout();
+    await signOut({ redirect: false });
+    window.location.href = "/";
+  };
+
   const handleShareSummon = (summon: typeof selectedSummon) => {
     setSelectedSummon(summon);
     setShareType("summon");
@@ -525,6 +533,15 @@ export default function ProfilePage() {
                               Edit Profile
                             </Button>
                           </Link>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleSignOut}
+                            className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+                          >
+                            <LogoutIcon className="w-4 h-4 mr-2" />
+                            Sign Out
+                          </Button>
                         </div>
                         {/* Response Time & Active Chats */}
                         <div className="flex items-center gap-4 text-sm">
@@ -558,6 +575,14 @@ export default function ProfilePage() {
                         <EditIcon className="w-4 h-4" />
                       </Button>
                     </Link>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleSignOut}
+                      className="h-9 w-9 bg-white/80 dark:bg-neutral-800/80 backdrop-blur-sm text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+                    >
+                      <LogoutIcon className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               </motion.div>

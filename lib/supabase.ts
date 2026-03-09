@@ -13,15 +13,19 @@ function getSupabaseClient(): SupabaseClient {
   // Only create client on server side
   if (typeof window === "undefined") {
     const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
-    if (!supabaseUrl || !supabaseAnonKey) {
+    // Prefer service role key for server-side operations (bypasses RLS)
+    const key = supabaseServiceRoleKey || supabaseAnonKey;
+
+    if (!supabaseUrl || !key) {
       throw new Error(
-        "Supabase URL and key must be provided. Make sure SUPABASE_URL and SUPABASE_ANON_KEY are set in your environment variables.",
+        "Supabase URL and key must be provided. Make sure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_ANON_KEY) are set in your environment variables.",
       );
     }
 
-    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
+    supabaseInstance = createClient(supabaseUrl, key);
     return supabaseInstance;
   }
 

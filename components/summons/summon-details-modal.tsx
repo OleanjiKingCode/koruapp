@@ -503,7 +503,7 @@ export function SummonDetailsModal({
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="p-0 gap-0 overflow-hidden max-w-lg max-h-[90dvh] overflow-y-auto">
+        <DialogContent className="p-0 gap-0 overflow-hidden max-w-lg max-h-[90dvh] overflow-y-auto [&>button:last-child]:hidden">
           <DialogTitle className="sr-only">Summon Details</DialogTitle>
           {modalBody}
         </DialogContent>
