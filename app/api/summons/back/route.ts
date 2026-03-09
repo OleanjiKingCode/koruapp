@@ -108,19 +108,24 @@ export async function POST(request: NextRequest) {
     });
 
     // Update the summon with new backer in array and updated tags
-    const { error: updateError } = await supabase
+    const { data: updatedSummon, error: updateError } = await supabase
       .from("summons")
       .update({
         backers: updatedBackers,
         tags: updatedTags,
-        total_backed: (summon.total_backed || 0) + pledgeAmount,
+        total_backed: Number(summon.total_backed || 0) + pledgeAmount,
         backers_count: updatedBackers.length,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", summon_id);
+      .eq("id", summon_id)
+      .select("id")
+      .single();
 
-    if (updateError) {
-      captureApiError(updateError, "POST /api/summons/back:update");
+    if (updateError || !updatedSummon) {
+      captureApiError(
+        updateError || new Error("Update matched 0 rows"),
+        "POST /api/summons/back:update",
+      );
       return NextResponse.json(
         { error: "Failed to back summon" },
         { status: 500 },

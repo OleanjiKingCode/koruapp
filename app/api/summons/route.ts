@@ -231,19 +231,25 @@ export async function POST(request: NextRequest) {
         updatedTags[tag] = (updatedTags[tag] || 0) + (summonTags[tag] || 1);
       });
 
-      const { error: updateError } = await supabase
+      const { data: updatedSummon, error: updateError } = await supabase
         .from("summons")
         .update({
           backers: updatedBackers,
           tags: updatedTags,
-          total_backed: (existingSummon.total_backed || 0) + pledgeAmountNum,
+          total_backed:
+            Number(existingSummon.total_backed || 0) + pledgeAmountNum,
           backers_count: updatedBackers.length,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", existingSummon.id);
+        .eq("id", existingSummon.id)
+        .select("id")
+        .single();
 
-      if (updateError) {
-        captureApiError(updateError, "POST /api/summons:back-existing");
+      if (updateError || !updatedSummon) {
+        captureApiError(
+          updateError || new Error("Update matched 0 rows"),
+          "POST /api/summons:back-existing",
+        );
         return NextResponse.json(
           { error: "Failed to back existing summon" },
           { status: 500 },
