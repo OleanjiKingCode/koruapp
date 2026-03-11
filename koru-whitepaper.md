@@ -538,4 +538,4 @@ Kōru turns "DMs" from a lottery into a system. A system where attention has val
 
 _For more information, visit [koruapp.xyz](https://koruapp.xyz) or follow [@koruapp](https://x.com/koruapp) on X._
 
-_Contact: pingkoru@gmail.com_
+_Contact: hello@koruapp.com_
