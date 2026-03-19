@@ -21,6 +21,25 @@ import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { ROUTES } from "@/lib/constants";
 
+// Share Icon
+function ShareIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+      <polyline points="16 6 12 2 8 6" />
+      <line x1="12" x2="12" y1="2" y2="15" />
+    </svg>
+  );
+}
+
 // Tag color configurations
 const TAG_COLORS = [
   {
@@ -776,8 +795,27 @@ export default function ViewProfilePage() {
                   </a>
                 </div>
 
-                {/* Action Button - Only Talk to button */}
-                <div className="hidden items-center gap-3 md:flex">
+                {/* Action Buttons - Talk to + Share */}
+                <div className="hidden items-center gap-2 md:flex">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      const url = `${window.location.origin}/${profile.handle}`;
+                      navigator.clipboard
+                        .writeText(url)
+                        .then(() => {
+                          toast.success("Profile link copied!");
+                        })
+                        .catch(() => {
+                          toast.error("Failed to copy link");
+                        });
+                    }}
+                    className="h-10 w-10"
+                    aria-label="Share profile"
+                  >
+                    <ShareIcon className="w-4 h-4" />
+                  </Button>
                   <Button
                     onClick={() => {
                       if (profile.isOnKoru && hasAvailability) {
@@ -823,7 +861,26 @@ export default function ViewProfilePage() {
                 })}
               </div>
 
-              <div className="flex items-center gap-3 md:hidden mt-4 justify-end">
+              <div className="flex items-center gap-2 md:hidden mt-4 justify-end">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    const url = `${window.location.origin}/${profile.handle}`;
+                    navigator.clipboard
+                      .writeText(url)
+                      .then(() => {
+                        toast.success("Profile link copied!");
+                      })
+                      .catch(() => {
+                        toast.error("Failed to copy link");
+                      });
+                  }}
+                  className="h-10 w-10"
+                  aria-label="Share profile"
+                >
+                  <ShareIcon className="w-4 h-4" />
+                </Button>
                 <Button
                   onClick={() => {
                     if (profile.isOnKoru && hasAvailability) {

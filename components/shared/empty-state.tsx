@@ -55,7 +55,7 @@ export function EmptyState({
         animate={{ opacity: 1, y: 0 }}
         className={cn(
           "flex flex-col items-center justify-center py-8 px-4 text-center",
-          className
+          className,
         )}
       >
         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-koru-purple/20 to-koru-golden/20 flex items-center justify-center mb-3">
@@ -81,7 +81,7 @@ export function EmptyState({
         animate={{ opacity: 1, y: 0 }}
         className={cn(
           "bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-8",
-          className
+          className,
         )}
       >
         <div className="flex flex-col items-center text-center">
@@ -128,7 +128,7 @@ export function EmptyState({
       animate={{ opacity: 1, y: 0 }}
       className={cn(
         "flex flex-col items-center justify-center py-16 px-8 text-center",
-        className
+        className,
       )}
     >
       {/* Kaya Mascot / Icon */}
@@ -197,7 +197,7 @@ export function EmptyState({
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4 + index * 0.1 }}
               >
-                <Link href={`/profile/${profile.handle}`}>
+                <Link href={`/${profile.handle}`}>
                   <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer group">
                     <div className="w-10 h-10 rounded-full overflow-hidden">
                       <OptimizedAvatar

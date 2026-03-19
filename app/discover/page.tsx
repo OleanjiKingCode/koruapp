@@ -184,11 +184,11 @@ function DiscoverContent() {
 
   // Handlers
   const handleViewFeaturedProfile = (profile: FeaturedProfile) => {
-    router.push(`/profile/${profile.username}`);
+    router.push(`/${profile.username}`);
   };
 
   const handleViewTwitterProfile = (profile: TwitterProfile) => {
-    router.push(`/profile/${profile.username}`);
+    router.push(`/${profile.username}`);
   };
 
   return (
@@ -298,9 +298,7 @@ function DiscoverContent() {
                 isLoading={isLoadingFeatured}
                 hasMore={hasMore}
                 sentinelRef={sentinelRef}
-                onView={(profile) =>
-                  router.push(`/profile/${profile.username}`)
-                }
+                onView={(profile) => router.push(`/${profile.username}`)}
               />
             ) : (
               <FeaturedProfilesTable

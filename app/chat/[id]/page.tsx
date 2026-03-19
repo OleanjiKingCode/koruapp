@@ -338,7 +338,7 @@ export default function ChatPage() {
                 <BackIcon className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
               </Link>
               <Link
-                href={`/profile/${otherParty.username}`}
+                href={`/${otherParty.username}`}
                 className="flex items-center gap-3 hover:opacity-80 transition-opacity"
               >
                 <div className="relative">

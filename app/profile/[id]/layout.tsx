@@ -29,7 +29,7 @@ export async function generateMetadata({
         openGraph: {
           title,
           description,
-          url: `${baseUrl}/profile/${profile.username}`,
+          url: `${baseUrl}/${profile.username}`,
           ...(profile.profile_image_url && {
             images: [
               {

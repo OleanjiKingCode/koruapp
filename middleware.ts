@@ -1,7 +1,10 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
-const protectedRoutes = ["/profile", "/chats", "/chat", "/notifications"];
+const protectedRoutes = ["/chats", "/chat", "/notifications"];
+// Exact-match protected paths (own profile & edit, not public /profile/:username)
+const protectedExactPrefixes = ["/profile/edit"];
+const protectedExact = ["/profile"];
 const authRoutes = ["/login", "/sign-in"];
 
 export default auth((req) => {
@@ -12,7 +15,12 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/discover", req.url));
   }
 
-  if (!isLoggedIn && protectedRoutes.some((r) => path.startsWith(r))) {
+  const isProtected =
+    protectedRoutes.some((r) => path.startsWith(r)) ||
+    protectedExact.includes(path) ||
+    protectedExactPrefixes.some((r) => path.startsWith(r));
+
+  if (!isLoggedIn && isProtected) {
     const callbackUrl = encodeURIComponent(path);
     return NextResponse.redirect(
       new URL(`/login?callbackUrl=${callbackUrl}`, req.url),

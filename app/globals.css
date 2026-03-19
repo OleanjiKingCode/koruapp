@@ -59,10 +59,14 @@
 
 html {
   scroll-behavior: smooth;
+  /* Fluid base font: 14px at 320px viewport → 16px at 768px+ */
+  font-size: clamp(0.875rem, 0.8rem + 0.25vw, 1rem);
 }
 
 body {
   font-family: var(--font-quicksand), system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
   transition:
     background-color 0.3s ease,
     color 0.3s ease,

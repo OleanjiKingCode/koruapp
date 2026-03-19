@@ -61,7 +61,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const { profiles } = await getFeaturedProfiles();
     profilePages = profiles.map((profile) => ({
-      url: `${baseUrl}/profile/${profile.username}`,
+      url: `${baseUrl}/${profile.username}`,
       lastModified: new Date(),
       changeFrequency: "weekly" as const,
       priority: 0.8,

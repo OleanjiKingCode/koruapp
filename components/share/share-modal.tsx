@@ -266,7 +266,7 @@ export function ShareModal({
     // Use the specific summon page URL when sharing a summon
     const url =
       type === "profile"
-        ? `${baseUrl}/profile`
+        ? `${baseUrl}/${userData?.username || userData?.twitterHandle || ""}`
         : `${baseUrl}/summons/${activeSummon?.id}`;
 
     const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
@@ -280,7 +280,7 @@ export function ShareModal({
     const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
     const url =
       type === "profile"
-        ? `${baseUrl}/profile`
+        ? `${baseUrl}/${userData?.username || userData?.twitterHandle || ""}`
         : `${baseUrl}/summons/${activeSummon?.id}`;
 
     try {

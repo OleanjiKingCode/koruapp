@@ -70,6 +70,27 @@ const nextConfig = {
     ];
   },
   poweredByHeader: false,
+  async redirects() {
+    return [
+      {
+        // Redirect old /profile/:username links to /:username (exclude "edit")
+        source: "/profile/:username((?!edit$)[^/]+)",
+        destination: "/:username",
+        permanent: true,
+      },
+    ];
+  },
+  async rewrites() {
+    return {
+      afterFiles: [
+        {
+          // After all filesystem routes are checked, treat /:username as /profile/:username
+          source: "/:username",
+          destination: "/profile/:username",
+        },
+      ],
+    };
+  },
 };
 
 module.exports = nextConfig;
