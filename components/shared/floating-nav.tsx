@@ -26,7 +26,6 @@ import { LoginModal } from "@/components/auth";
 import { AvatarGenerator } from "@/components/ui/avatar-generator";
 import { OptimizedAvatar } from "@/components/ui/optimized-image";
 import {
-  HomeIcon,
   DiscoverIcon,
   SummonsIcon,
   ProfileIcon,
@@ -45,6 +44,7 @@ import {
   SparkleIcon,
   SearchIcon,
 } from "@/components/icons";
+import { ThemeToggle } from "../theme-toggle";
 
 // Protected routes that require authentication
 const PROTECTED_ROUTES = ["/profile", "/chats", "/chat", "/notifications"];
@@ -54,7 +54,6 @@ const HIDDEN_WHEN_UNAUTHENTICATED = ["chats"];
 
 // Map icon names to components
 const iconMap = {
-  home: HomeIcon,
   discover: DiscoverIcon,
   chats: ChatIcon,
   summons: SummonsIcon,
@@ -64,7 +63,7 @@ const iconMap = {
 // Map "other" pages to contextual icons
 const contextualPageIcons: Record<
   string,
-  { icon: typeof HomeIcon; label: string; color: string }
+  { icon: typeof HelpCircleIcon; label: string; color: string }
 > = {
   "/how-it-works": {
     icon: HelpCircleIcon,
@@ -192,22 +191,13 @@ export function FloatingNav() {
   // Handle logout
   const handleLogout = async () => {
     await signOut({ redirect: false });
-    router.push("/");
+    router.push("/discover");
     setIsSettingsOpen(false);
   };
 
   // Apply font based on route
   useEffect(() => {
     if (!mounted) return;
-
-    if (pathname === "/") {
-      document.body.classList.remove(
-        "font-quicksand",
-        "font-tenor",
-        "font-lemon",
-      );
-      return;
-    }
 
     const savedFont =
       JSON.parse(
@@ -470,14 +460,16 @@ export function FloatingNav() {
               )}
             >
               {/* Kōru Logo */}
-              <div
-                className={cn(
-                  "flex items-center justify-center px-4 py-2 rounded-xl text-lg font-bold",
-                  isDark ? " text-white" : " text-neutral-900",
-                )}
-              >
-                Kōru
-              </div>
+              <Link href="/discover">
+                <div
+                  className={cn(
+                    "flex items-center justify-center px-4 py-2 rounded-xl text-lg font-bold cursor-pointer",
+                    isDark ? " text-white" : " text-neutral-900",
+                  )}
+                >
+                  Kōru
+                </div>
+              </Link>
 
               {/* Nav Items */}
               {visibleNavItems.map((item) => {
@@ -697,24 +689,7 @@ export function FloatingNav() {
                   >
                     Settings
                   </h3>
-                  <button
-                    onClick={() => setTheme(isDark ? "light" : "dark")}
-                    aria-label={
-                      isDark ? "Switch to light mode" : "Switch to dark mode"
-                    }
-                    className={cn(
-                      "p-2 rounded-xl transition-all",
-                      isDark
-                        ? "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
-                        : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200",
-                    )}
-                  >
-                    {isDark ? (
-                      <SunIcon className="w-4 h-4" />
-                    ) : (
-                      <MoonIcon className="w-4 h-4" />
-                    )}
-                  </button>
+                  <ThemeToggle size="sm" />
                 </div>
 
                 {/* Font Selector */}

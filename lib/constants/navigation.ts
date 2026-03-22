@@ -1,6 +1,5 @@
 // Navigation constants
 export const NAV_ITEMS = [
-  { name: "Home", href: "/", iconName: "home" },
   { name: "Discover", href: "/discover", iconName: "discover" },
   { name: "Chats", href: "/chats", iconName: "chats" },
   { name: "Summons", href: "/summons", iconName: "summons" },
