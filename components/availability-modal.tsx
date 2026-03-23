@@ -497,8 +497,8 @@ const SUB_STEPS: ConfigSubStep[] = [
 
 function generateTimeSlots(duration: number): string[] {
   const slots: string[] = [];
-  const startHour = 8;
-  const endHour = 22;
+  const startHour = 0;
+  const endHour = 24;
 
   let currentMinutes = startHour * 60;
   const endMinutes = endHour * 60;
@@ -751,7 +751,7 @@ export function AvailabilityModal({
       case "name":
         return configName.trim().length > 0;
       case "duration":
-        return configDuration >= 5 && configDuration <= 480;
+        return configDuration >= 5 && configDuration <= 1439;
       case "price":
         return configPrice >= 0;
       case "dates":
@@ -774,16 +774,35 @@ export function AvailabilityModal({
 
   const currentStepIndex = SUB_STEPS.indexOf(configSubStep);
 
-  // Build flexible schedule description
+  // Build flexible schedule description with smart labels
   const flexibleDescription = useMemo(() => {
     if (flexibleDays.length === 0) return "";
-    const dayNames = flexibleDays
-      .sort((a, b) => a - b)
-      .map((d) => DAY_LABELS[d]);
-    const lastDay = dayNames.pop();
-    const dayStr =
-      dayNames.length > 0 ? `${dayNames.join(", ")} & ${lastDay}` : lastDay;
-    return `Every ${dayStr} for the next ${flexibleAmount} ${flexibleUnit}`;
+    const sorted = [...flexibleDays].sort((a, b) => a - b);
+
+    // Detect common patterns
+    const isWeekends =
+      sorted.length === 2 && sorted[0] === 0 && sorted[1] === 6;
+    const isWeekdays =
+      sorted.length === 5 && sorted.every((d, i) => d === i + 1); // [1,2,3,4,5]
+    const isEveryday = sorted.length === 7;
+
+    let dayStr: string;
+    if (isEveryday) {
+      dayStr = "Everyday";
+    } else if (isWeekends) {
+      dayStr = "Weekends";
+    } else if (isWeekdays) {
+      dayStr = "Weekdays";
+    } else {
+      const dayNames = sorted.map((d) => DAY_LABELS[d]);
+      const lastDay = dayNames.pop();
+      dayStr =
+        dayNames.length > 0
+          ? `Every ${dayNames.join(", ")} & ${lastDay}`
+          : `Every ${lastDay}`;
+    }
+
+    return `${dayStr} for the next ${flexibleAmount} ${flexibleUnit}`;
   }, [flexibleDays, flexibleAmount, flexibleUnit]);
 
   const modalBody = (
@@ -1061,7 +1080,7 @@ export function AvailabilityModal({
                   <SpinnerDigit
                     value={configDurationHours}
                     min={0}
-                    max={8}
+                    max={23}
                     onChange={setConfigDurationHours}
                     label="Hours"
                   />
@@ -1094,9 +1113,9 @@ export function AvailabilityModal({
                       Minimum duration is 5 minutes
                     </p>
                   )}
-                  {configDuration > 480 && (
+                  {configDuration > 1439 && (
                     <p className="text-xs text-red-500 mt-1">
-                      Maximum duration is 8 hours
+                      Maximum duration is 23 hours 59 minutes
                     </p>
                   )}
                 </div>
@@ -1153,26 +1172,43 @@ export function AvailabilityModal({
                   Price (USD)
                 </label>
                 <div className="relative mb-4">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 font-medium">
-                    $
-                  </span>
+                  {configPrice > 0 && (
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 font-medium">
+                      $
+                    </span>
+                  )}
                   <Input
-                    type="number"
+                    type={configPrice === 0 ? "text" : "number"}
                     min={0}
-                    value={configPrice}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setConfigPrice(Number(e.target.value) || 0)
-                    }
-                    className="pl-8 text-lg font-semibold"
+                    value={configPrice === 0 ? "Free" : configPrice}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      const val = e.target.value;
+                      if (val === "" || val === "Free") {
+                        setConfigPrice(0);
+                      } else {
+                        setConfigPrice(Number(val) || 0);
+                      }
+                    }}
+                    onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
+                      if (configPrice === 0) {
+                        setConfigPrice(0);
+                        // Switch to number input on next render
+                        setTimeout(() => e.target.select(), 0);
+                      }
+                    }}
+                    className={cn(
+                      "text-lg font-semibold",
+                      configPrice > 0 ? "pl-8" : "pl-4",
+                    )}
                     autoFocus
                   />
                 </div>
                 {configPrice === 0 && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-koru-lime/10 border border-koru-lime/30 mb-4">
-                    <div className="w-6 h-6 rounded-full bg-koru-lime/20 flex items-center justify-center flex-shrink-0">
-                      <CheckIcon className="w-3.5 h-3.5 text-koru-lime" />
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 mb-4">
+                    <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-800/50 flex items-center justify-center flex-shrink-0">
+                      <CheckIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                     </div>
-                    <p className="text-sm text-koru-lime font-medium">
+                    <p className="text-sm text-emerald-700 dark:text-emerald-300 font-medium">
                       This slot will be free for users to book
                     </p>
                   </div>
@@ -1388,7 +1424,7 @@ export function AvailabilityModal({
                   </span>
                 </div>
 
-                <div className="mb-4 grid grid-cols-2 gap-1.5">
+                <div className="mb-4 grid grid-cols-3 gap-1.5 max-h-64 overflow-y-auto scrollbar-none">
                   {availableTimeSlots.map((time) => {
                     const isSelected = configTimes.includes(time);
                     return (
