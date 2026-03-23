@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "@/lib/toast";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -20,13 +20,119 @@ import {
   ChevronRightIcon,
 } from "@/components/icons";
 
-// Calendar Picker Component
+// ─── Spinner Digit Component (alarm-style up/down) ───────────────────────────
+
+function SpinnerDigit({
+  value,
+  min,
+  max,
+  onChange,
+  label,
+  padWidth = 2,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  onChange: (v: number) => void;
+  label: string;
+  padWidth?: number;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const increment = () => {
+    onChange(value >= max ? min : value + 1);
+  };
+
+  const decrement = () => {
+    onChange(value <= min ? max : value - 1);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, "");
+    if (raw === "") {
+      onChange(min);
+      return;
+    }
+    let num = parseInt(raw, 10);
+    if (num > max) num = max;
+    if (num < min) num = min;
+    onChange(num);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      increment();
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      decrement();
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <span className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider">
+        {label}
+      </span>
+      <button
+        onClick={increment}
+        className="w-full flex items-center justify-center p-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group"
+        type="button"
+      >
+        <svg
+          className="w-5 h-5 text-neutral-400 group-hover:text-koru-purple transition-colors"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2.5}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M5 15l7-7 7 7"
+          />
+        </svg>
+      </button>
+      <input
+        ref={inputRef}
+        type="text"
+        inputMode="numeric"
+        value={String(value).padStart(padWidth, "0")}
+        onChange={handleInputChange}
+        onKeyDown={handleKeyDown}
+        className="w-20 h-16 text-center text-3xl font-bold bg-neutral-50 dark:bg-neutral-800 border-2 border-neutral-200 dark:border-neutral-700 rounded-2xl focus:border-koru-purple focus:outline-none transition-colors text-neutral-900 dark:text-neutral-100 tabular-nums"
+      />
+      <button
+        onClick={decrement}
+        className="w-full flex items-center justify-center p-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group"
+        type="button"
+      >
+        <svg
+          className="w-5 h-5 text-neutral-400 group-hover:text-koru-purple transition-colors"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2.5}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+// ─── Calendar Picker Component ───────────────────────────────────────────────
+
 function CalendarPicker({
   selectedDates,
   onDateToggle,
   currentMonth,
   onMonthChange,
-  maxWeeks = 52, // Default to 1 year
+  maxWeeks = 52,
 }: {
   selectedDates: string[];
   onDateToggle: (date: string) => void;
@@ -51,11 +157,9 @@ function CalendarPicker({
   ).getDay();
 
   const days: (number | null)[] = [];
-  // Add empty cells for days before the first day of the month
   for (let i = 0; i < firstDayOfMonth; i++) {
     days.push(null);
   }
-  // Add days of the month
   for (let i = 1; i <= daysInMonth; i++) {
     days.push(i);
   }
@@ -149,7 +253,6 @@ function CalendarPicker({
             currentMonth.getMonth(),
             day,
           );
-          // Use local date formatting to avoid timezone issues
           const year = date.getFullYear();
           const month = String(date.getMonth() + 1).padStart(2, "0");
           const dayStr = String(date.getDate()).padStart(2, "0");
@@ -181,7 +284,8 @@ function CalendarPicker({
   );
 }
 
-// Common timezones
+// ─── Constants ───────────────────────────────────────────────────────────────
+
 export const TIMEZONES = [
   { value: "America/New_York", label: "Eastern Time (ET)", offset: "UTC-5" },
   { value: "America/Chicago", label: "Central Time (CT)", offset: "UTC-6" },
@@ -195,7 +299,6 @@ export const TIMEZONES = [
   { value: "Australia/Sydney", label: "Sydney (AEST)", offset: "UTC+11" },
 ];
 
-// Duration options in minutes
 export const DURATION_OPTIONS = [
   { value: 20, label: "20 min" },
   { value: 30, label: "30 min" },
@@ -210,11 +313,10 @@ export interface AvailabilitySlot {
   name: string;
   duration: number; // in minutes
   times: string[]; // Selected time slots like "08:00-08:20"
-  price: number; // Price in USD
-  selectedDates: string[]; // Array of ISO date strings
+  price: number;
+  selectedDates: string[];
 }
 
-// Helper to get calendar bounds (tomorrow to specified weeks)
 export function getCalendarBounds(weeks: number = 8): {
   minDate: Date;
   maxDate: Date;
@@ -222,13 +324,12 @@ export function getCalendarBounds(weeks: number = 8): {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const minDate = new Date(today);
-  minDate.setDate(minDate.getDate() + 1); // Start from tomorrow
+  minDate.setDate(minDate.getDate() + 1);
   const maxDate = new Date(today);
   maxDate.setDate(maxDate.getDate() + weeks * 7);
   return { minDate, maxDate };
 }
 
-// Quick selection types for date patterns
 export type DateSelectionPattern =
   | "custom"
   | "weekdays"
@@ -244,7 +345,6 @@ export type DateSelectionPattern =
   | "next_3_months"
   | "all_available";
 
-// Helper to generate dates based on a pattern
 export function generateDatesFromPattern(
   pattern: DateSelectionPattern,
   weeksAhead: number = 8,
@@ -253,7 +353,7 @@ export function generateDatesFromPattern(
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const startDate = new Date(today);
-  startDate.setDate(startDate.getDate() + 1); // Start from tomorrow
+  startDate.setDate(startDate.getDate() + 1);
 
   let endDate: Date;
   if (pattern === "next_1_month") {
@@ -272,7 +372,7 @@ export function generateDatesFromPattern(
 
   const current = new Date(startDate);
   while (current <= endDate) {
-    const dayOfWeek = current.getDay(); // 0 = Sunday, 6 = Saturday
+    const dayOfWeek = current.getDay();
     let shouldInclude = false;
 
     switch (pattern) {
@@ -306,7 +406,7 @@ export function generateDatesFromPattern(
       case "next_1_month":
       case "next_3_months":
       case "all_available":
-        shouldInclude = dayOfWeek >= 1 && dayOfWeek <= 5; // Default to weekdays
+        shouldInclude = dayOfWeek >= 1 && dayOfWeek <= 5;
         break;
       default:
         shouldInclude = false;
@@ -325,7 +425,41 @@ export function generateDatesFromPattern(
   return dates;
 }
 
-// Format date for display
+// Generate dates from flexible selection (days of week + duration + unit)
+function generateFlexibleDates(
+  selectedDays: number[], // 0=Sun, 1=Mon, ... 6=Sat
+  amount: number,
+  unit: "days" | "weeks" | "months",
+): string[] {
+  const dates: string[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const startDate = new Date(today);
+  startDate.setDate(startDate.getDate() + 1);
+
+  const endDate = new Date(today);
+  if (unit === "days") {
+    endDate.setDate(endDate.getDate() + amount);
+  } else if (unit === "weeks") {
+    endDate.setDate(endDate.getDate() + amount * 7);
+  } else {
+    endDate.setMonth(endDate.getMonth() + amount);
+  }
+
+  const current = new Date(startDate);
+  while (current <= endDate) {
+    if (selectedDays.includes(current.getDay())) {
+      const year = current.getFullYear();
+      const month = String(current.getMonth() + 1).padStart(2, "0");
+      const day = String(current.getDate()).padStart(2, "0");
+      dates.push(`${year}-${month}-${day}`);
+    }
+    current.setDate(current.getDate() + 1);
+  }
+
+  return dates;
+}
+
 export function formatDateShort(dateStr: string): string {
   const date = new Date(dateStr);
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -344,12 +478,27 @@ interface AvailabilityModalProps {
 }
 
 type Step = "slots" | "configure";
+type ConfigSubStep =
+  | "name"
+  | "duration"
+  | "price"
+  | "dates"
+  | "times"
+  | "summary";
 
-// Generate time slots based on duration
+const SUB_STEPS: ConfigSubStep[] = [
+  "name",
+  "duration",
+  "price",
+  "dates",
+  "times",
+  "summary",
+];
+
 function generateTimeSlots(duration: number): string[] {
   const slots: string[] = [];
-  const startHour = 8; // Start at 8 AM
-  const endHour = 22; // End at 10 PM
+  const startHour = 8;
+  const endHour = 22;
 
   let currentMinutes = startHour * 60;
   const endMinutes = endHour * 60;
@@ -372,6 +521,14 @@ function formatMinutesToTime(minutes: number): string {
     .padStart(2, "0")}`;
 }
 
+function formatDuration(totalMinutes: number): string {
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h === 0) return `${m} min`;
+  if (m === 0) return `${h} hr${h > 1 ? "s" : ""}`;
+  return `${h} hr${h > 1 ? "s" : ""} ${m} min`;
+}
+
 function createDefaultSlots(): AvailabilitySlot[] {
   return [
     { id: 1, name: "", duration: 30, times: [], price: 50, selectedDates: [] },
@@ -379,6 +536,8 @@ function createDefaultSlots(): AvailabilitySlot[] {
     { id: 3, name: "", duration: 30, times: [], price: 50, selectedDates: [] },
   ];
 }
+
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function AvailabilityModal({
   open,
@@ -398,7 +557,8 @@ export function AvailabilityModal({
 
   // Configuration step state
   const [configName, setConfigName] = useState("");
-  const [configDuration, setConfigDuration] = useState(30);
+  const [configDurationHours, setConfigDurationHours] = useState(0);
+  const [configDurationMinutes, setConfigDurationMinutes] = useState(30);
   const [configTimes, setConfigTimes] = useState<string[]>([]);
   const [configPrice, setConfigPrice] = useState(50);
   const [configSelectedDates, setConfigSelectedDates] = useState<string[]>([]);
@@ -406,14 +566,17 @@ export function AvailabilityModal({
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), 1);
   });
-  const [configSubStep, setConfigSubStep] = useState<
-    "name" | "duration" | "price" | "dates" | "times"
-  >("name");
-  const [dateSelectionPattern, setDateSelectionPattern] =
-    useState<DateSelectionPattern>("custom");
-  const [selectedDayPatterns, setSelectedDayPatterns] = useState<
-    DateSelectionPattern[]
-  >([]);
+  const [configSubStep, setConfigSubStep] = useState<ConfigSubStep>("name");
+
+  // Date selection mode
+  const [dateMode, setDateMode] = useState<"calendar" | "flexible">("calendar");
+  const [flexibleDays, setFlexibleDays] = useState<number[]>([]); // 0-6
+  const [flexibleAmount, setFlexibleAmount] = useState(30);
+  const [flexibleUnit, setFlexibleUnit] = useState<"days" | "weeks" | "months">(
+    "days",
+  );
+
+  const configDuration = configDurationHours * 60 + configDurationMinutes;
 
   const activeSlot = useMemo(() => {
     return slots.find((s) => s.id === activeSlotId) || null;
@@ -424,92 +587,90 @@ export function AvailabilityModal({
   }, [timezone]);
 
   const availableTimeSlots = useMemo(() => {
+    if (configDuration < 5) return [];
     return generateTimeSlots(configDuration);
   }, [configDuration]);
+
+  // Navigate between sub-steps
+  const goToPrevSubStep = useCallback(() => {
+    const idx = SUB_STEPS.indexOf(configSubStep);
+    if (idx <= 0) {
+      // Go back to slots overview
+      setStep("slots");
+      setActiveSlotId(null);
+      setConfigSubStep("name");
+    } else {
+      setConfigSubStep(SUB_STEPS[idx - 1]);
+    }
+  }, [configSubStep]);
+
+  const goToNextSubStep = useCallback(() => {
+    const idx = SUB_STEPS.indexOf(configSubStep);
+    if (idx < SUB_STEPS.length - 1) {
+      if (configSubStep === "dates") {
+        setConfigTimes([]); // Reset times when moving to times step
+      }
+      setConfigSubStep(SUB_STEPS[idx + 1]);
+    }
+  }, [configSubStep]);
 
   const handleSlotClick = (slotId: number) => {
     const slot = slots.find((s) => s.id === slotId);
     if (slot) {
       setActiveSlotId(slotId);
       setConfigName(slot.name);
-      setConfigDuration(slot.duration);
+      const h = Math.floor(slot.duration / 60);
+      const m = slot.duration % 60;
+      setConfigDurationHours(h);
+      setConfigDurationMinutes(m);
       setConfigTimes(slot.times);
       setConfigPrice(slot.price || 50);
       setConfigSelectedDates(slot.selectedDates || []);
-      setDateSelectionPattern("custom");
-      setSelectedDayPatterns([]);
+      setDateMode("calendar");
+      setFlexibleDays([]);
+      setFlexibleAmount(30);
+      setFlexibleUnit("days");
       setConfigSubStep("name");
       setStep("configure");
     }
   };
 
-  const handlePatternSelect = (pattern: DateSelectionPattern) => {
-    const dayPatterns: DateSelectionPattern[] = [
-      "every_monday",
-      "every_tuesday",
-      "every_wednesday",
-      "every_thursday",
-      "every_friday",
-      "every_saturday",
-      "every_sunday",
-    ];
-
-    if (dayPatterns.includes(pattern)) {
-      // Toggle day in multi-select array
-      const isSelected = selectedDayPatterns.includes(pattern);
-      const newDays = isSelected
-        ? selectedDayPatterns.filter((d) => d !== pattern)
-        : [...selectedDayPatterns, pattern];
-      setSelectedDayPatterns(newDays);
-      setDateSelectionPattern(newDays.length > 0 ? newDays[0] : "custom");
-
-      // Merge dates from all selected days
-      if (newDays.length === 0) {
-        setConfigSelectedDates([]);
+  // Flexible date generation
+  const handleFlexibleUpdate = useCallback(
+    (days: number[], amount: number, unit: "days" | "weeks" | "months") => {
+      if (days.length > 0 && amount > 0) {
+        const dates = generateFlexibleDates(days, amount, unit);
+        setConfigSelectedDates(dates);
       } else {
-        const allDates = new Set<string>();
-        for (const day of newDays) {
-          const dates = generateDatesFromPattern(day);
-          dates.forEach((d) => allDates.add(d));
-        }
-        setConfigSelectedDates(Array.from(allDates).sort());
+        setConfigSelectedDates([]);
       }
-      return;
-    }
+    },
+    [],
+  );
 
-    // Non-day patterns: single select, clear day selection
-    setSelectedDayPatterns([]);
-    setDateSelectionPattern(pattern);
-    if (pattern === "custom") {
-      return;
-    }
-    const generatedDates = generateDatesFromPattern(pattern);
-    setConfigSelectedDates(generatedDates);
+  const toggleFlexibleDay = (day: number) => {
+    const newDays = flexibleDays.includes(day)
+      ? flexibleDays.filter((d) => d !== day)
+      : [...flexibleDays, day];
+    setFlexibleDays(newDays);
+    handleFlexibleUpdate(newDays, flexibleAmount, flexibleUnit);
+  };
+
+  const handleFlexibleAmountChange = (val: number) => {
+    const clamped = Math.max(1, Math.min(365, val));
+    setFlexibleAmount(clamped);
+    handleFlexibleUpdate(flexibleDays, clamped, flexibleUnit);
+  };
+
+  const handleFlexibleUnitChange = (unit: "days" | "weeks" | "months") => {
+    setFlexibleUnit(unit);
+    handleFlexibleUpdate(flexibleDays, flexibleAmount, unit);
   };
 
   const handleBackToSlots = () => {
     setStep("slots");
     setActiveSlotId(null);
     setConfigSubStep("name");
-  };
-
-  const handleNameNext = () => {
-    if (configName.trim()) {
-      setConfigSubStep("duration");
-    }
-  };
-
-  const handleDurationNext = () => {
-    setConfigSubStep("price");
-  };
-
-  const handlePriceNext = () => {
-    setConfigSubStep("dates");
-  };
-
-  const handleDatesNext = () => {
-    setConfigTimes([]); // Reset times when moving to times step
-    setConfigSubStep("times");
   };
 
   const handleTimeToggle = (time: string) => {
@@ -553,14 +714,17 @@ export function AvailabilityModal({
     setActiveSlotId(null);
     setConfigSubStep("name");
     setConfigName("");
-    setConfigDuration(30);
+    setConfigDurationHours(0);
+    setConfigDurationMinutes(30);
     setConfigTimes([]);
     setConfigPrice(50);
     setConfigSelectedDates([]);
-    setDateSelectionPattern("custom");
+    setDateMode("calendar");
+    setFlexibleDays([]);
+    setFlexibleAmount(30);
+    setFlexibleUnit("days");
   };
 
-  // Reset when modal closes
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
       resetModal();
@@ -568,7 +732,6 @@ export function AvailabilityModal({
     onOpenChange(isOpen);
   };
 
-  // Sync with initial data when modal opens
   useEffect(() => {
     if (open && initialData) {
       setTimezone(initialData.timezone);
@@ -582,6 +745,47 @@ export function AvailabilityModal({
 
   const isDesktop = useMediaQuery("(min-width: 640px)");
 
+  // Validation for each step
+  const canProceed = useMemo(() => {
+    switch (configSubStep) {
+      case "name":
+        return configName.trim().length > 0;
+      case "duration":
+        return configDuration >= 5 && configDuration <= 480;
+      case "price":
+        return configPrice >= 0;
+      case "dates":
+        return configSelectedDates.length > 0;
+      case "times":
+        return configTimes.length > 0;
+      case "summary":
+        return true;
+      default:
+        return false;
+    }
+  }, [
+    configSubStep,
+    configName,
+    configDuration,
+    configPrice,
+    configSelectedDates,
+    configTimes,
+  ]);
+
+  const currentStepIndex = SUB_STEPS.indexOf(configSubStep);
+
+  // Build flexible schedule description
+  const flexibleDescription = useMemo(() => {
+    if (flexibleDays.length === 0) return "";
+    const dayNames = flexibleDays
+      .sort((a, b) => a - b)
+      .map((d) => DAY_LABELS[d]);
+    const lastDay = dayNames.pop();
+    const dayStr =
+      dayNames.length > 0 ? `${dayNames.join(", ")} & ${lastDay}` : lastDay;
+    return `Every ${dayStr} for the next ${flexibleAmount} ${flexibleUnit}`;
+  }, [flexibleDays, flexibleAmount, flexibleUnit]);
+
   const modalBody = (
     <AnimatePresence mode="wait" initial={false}>
       {step === "slots" && (
@@ -591,7 +795,7 @@ export function AvailabilityModal({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.2 }}
-          className="p-2"
+          className="p-4"
         >
           {/* Header */}
           <div className="mb-6">
@@ -711,12 +915,8 @@ export function AvailabilityModal({
                           </span>
                         </div>
                         <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                          {
-                            DURATION_OPTIONS.find(
-                              (d) => d.value === slot.duration,
-                            )?.label
-                          }{" "}
-                          · {slot.times?.length || 0} time
+                          {formatDuration(slot.duration)} ·{" "}
+                          {slot.times?.length || 0} time
                           {(slot.times?.length || 0) !== 1 ? "s" : ""}{" "}
                           {(slot.selectedDates?.length || 0) > 0 && (
                             <>
@@ -774,12 +974,12 @@ export function AvailabilityModal({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 20 }}
           transition={{ duration: 0.2 }}
-          className="p-3"
+          className="p-4"
         >
-          {/* Header with Back */}
-          <div className="flex items-center gap-3 mb-6">
+          {/* Header with Back — goes to previous sub-step */}
+          <div className="flex items-center gap-3 mb-5">
             <button
-              onClick={handleBackToSlots}
+              onClick={goToPrevSubStep}
               className="p-2 -ml-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
               <ChevronLeftIcon className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
@@ -789,27 +989,24 @@ export function AvailabilityModal({
                 Configure Slot
               </h2>
               <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                {configSubStep === "name" && "Step 1 of 5 · Name your slot"}
-                {configSubStep === "duration" && "Step 2 of 5 · Set duration"}
-                {configSubStep === "price" && "Step 3 of 5 · Set price"}
-                {configSubStep === "dates" && "Step 4 of 5 · Pick dates"}
-                {configSubStep === "times" && "Step 5 of 5 · Pick times"}
+                {configSubStep === "name" && "Step 1 of 6 · Name your slot"}
+                {configSubStep === "duration" && "Step 2 of 6 · Set duration"}
+                {configSubStep === "price" && "Step 3 of 6 · Set price"}
+                {configSubStep === "dates" && "Step 4 of 6 · Pick dates"}
+                {configSubStep === "times" && "Step 5 of 6 · Pick times"}
+                {configSubStep === "summary" && "Step 6 of 6 · Review & save"}
               </p>
             </div>
           </div>
 
           {/* Progress Indicator */}
           <div className="flex gap-1.5 mb-6">
-            {["name", "duration", "price", "dates", "times"].map((s, i) => (
+            {SUB_STEPS.map((s, i) => (
               <div
                 key={s}
                 className={cn(
                   "h-1 flex-1 rounded-full transition-colors",
-                  (configSubStep === "name" && i === 0) ||
-                    (configSubStep === "duration" && i <= 1) ||
-                    (configSubStep === "price" && i <= 2) ||
-                    (configSubStep === "dates" && i <= 3) ||
-                    (configSubStep === "times" && i <= 4)
+                  i <= currentStepIndex
                     ? "bg-koru-purple"
                     : "bg-neutral-200 dark:bg-neutral-700",
                 )}
@@ -839,8 +1036,8 @@ export function AvailabilityModal({
                   autoFocus
                 />
                 <Button
-                  onClick={handleNameNext}
-                  disabled={!configName.trim()}
+                  onClick={goToNextSubStep}
+                  disabled={!canProceed}
                   className="w-full bg-koru-purple hover:bg-koru-purple/90"
                 >
                   Continue
@@ -848,7 +1045,7 @@ export function AvailabilityModal({
               </motion.div>
             )}
 
-            {/* Step 2: Duration */}
+            {/* Step 2: Duration — Dial-style picker */}
             {configSubStep === "duration" && (
               <motion.div
                 key="duration"
@@ -856,35 +1053,86 @@ export function AvailabilityModal({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
               >
-                <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-3 block">
+                <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-4 block">
                   Session Duration
                 </label>
-                <div className="grid grid-cols-3 gap-2 mb-4">
+
+                <div className="flex items-center justify-center gap-4 mb-4">
+                  <SpinnerDigit
+                    value={configDurationHours}
+                    min={0}
+                    max={8}
+                    onChange={setConfigDurationHours}
+                    label="Hours"
+                  />
+
+                  <div className="flex flex-col items-center justify-center pt-5">
+                    <span className="text-3xl font-bold text-neutral-300 dark:text-neutral-600">
+                      :
+                    </span>
+                  </div>
+
+                  <SpinnerDigit
+                    value={configDurationMinutes}
+                    min={0}
+                    max={59}
+                    onChange={setConfigDurationMinutes}
+                    label="Minutes"
+                  />
+                </div>
+
+                {/* Duration display */}
+                <div className="text-center mb-4">
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Total:{" "}
+                    <span className="font-semibold text-koru-purple">
+                      {formatDuration(configDuration)}
+                    </span>
+                  </p>
+                  {configDuration < 5 && (
+                    <p className="text-xs text-red-500 mt-1">
+                      Minimum duration is 5 minutes
+                    </p>
+                  )}
+                  {configDuration > 480 && (
+                    <p className="text-xs text-red-500 mt-1">
+                      Maximum duration is 8 hours
+                    </p>
+                  )}
+                </div>
+
+                {/* Quick presets */}
+                <div className="flex flex-wrap gap-2 justify-center mb-5">
                   {DURATION_OPTIONS.map((opt) => (
                     <button
                       key={opt.value}
-                      onClick={() => setConfigDuration(opt.value)}
+                      onClick={() => {
+                        setConfigDurationHours(Math.floor(opt.value / 60));
+                        setConfigDurationMinutes(opt.value % 60);
+                      }}
                       className={cn(
-                        "px-3 py-3 rounded-xl text-sm font-medium transition-all",
+                        "px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
                         configDuration === opt.value
-                          ? "bg-koru-purple text-white shadow-lg shadow-koru-purple/30"
-                          : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-koru-purple/10",
+                          ? "bg-koru-purple/10 border-koru-purple text-koru-purple"
+                          : "border-neutral-200 dark:border-neutral-700 text-neutral-500 hover:border-koru-purple/50",
                       )}
                     >
                       {opt.label}
                     </button>
                   ))}
                 </div>
+
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    onClick={() => setConfigSubStep("name")}
+                    onClick={goToPrevSubStep}
                     className="flex-1"
                   >
                     Back
                   </Button>
                   <Button
-                    onClick={handleDurationNext}
+                    onClick={goToNextSubStep}
+                    disabled={!canProceed}
                     className="flex-1 bg-koru-purple hover:bg-koru-purple/90"
                   >
                     Continue
@@ -932,14 +1180,14 @@ export function AvailabilityModal({
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    onClick={() => setConfigSubStep("duration")}
+                    onClick={goToPrevSubStep}
                     className="flex-1"
                   >
                     Back
                   </Button>
                   <Button
-                    onClick={handlePriceNext}
-                    disabled={configPrice < 0}
+                    onClick={goToNextSubStep}
+                    disabled={!canProceed}
                     className="flex-1 bg-koru-purple hover:bg-koru-purple/90"
                   >
                     Continue
@@ -948,7 +1196,7 @@ export function AvailabilityModal({
               </motion.div>
             )}
 
-            {/* Step 4: Dates */}
+            {/* Step 4: Dates — Two modes */}
             {configSubStep === "dates" && (
               <motion.div
                 key="dates"
@@ -956,162 +1204,165 @@ export function AvailabilityModal({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
               >
-                {/* Quick Selection Patterns */}
-                <div className="mb-4">
-                  <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2 block">
-                    Quick Select
-                  </label>
-                  <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-                    <button
-                      onClick={() => handlePatternSelect("weekdays")}
-                      className={cn(
-                        "px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left",
-                        dateSelectionPattern === "weekdays"
-                          ? "bg-koru-purple text-white shadow-lg shadow-koru-purple/30"
-                          : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-koru-purple/10",
-                      )}
-                    >
-                      <span className="block">Weekdays</span>
-                      <span className="text-xs opacity-70">
-                        Mon - Fri · Next 8 weeks
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => handlePatternSelect("weekends")}
-                      className={cn(
-                        "px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left",
-                        dateSelectionPattern === "weekends"
-                          ? "bg-koru-purple text-white shadow-lg shadow-koru-purple/30"
-                          : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-koru-purple/10",
-                      )}
-                    >
-                      <span className="block">Weekends</span>
-                      <span className="text-xs opacity-70">
-                        Sat & Sun · Next 8 weeks
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => handlePatternSelect("next_1_month")}
-                      className={cn(
-                        "px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left",
-                        dateSelectionPattern === "next_1_month"
-                          ? "bg-koru-purple text-white shadow-lg shadow-koru-purple/30"
-                          : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-koru-purple/10",
-                      )}
-                    >
-                      <span className="block">Next Month</span>
-                      <span className="text-xs opacity-70">
-                        Weekdays · ~30 days
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => handlePatternSelect("next_3_months")}
-                      className={cn(
-                        "px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left",
-                        dateSelectionPattern === "next_3_months"
-                          ? "bg-koru-purple text-white shadow-lg shadow-koru-purple/30"
-                          : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-koru-purple/10",
-                      )}
-                    >
-                      <span className="block">Next 3 Months</span>
-                      <span className="text-xs opacity-70">
-                        Weekdays · ~90 days
-                      </span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Day of Week Selection */}
-                <div className="mb-4">
-                  <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2 block">
-                    Or select by day
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {[
-                      { pattern: "every_monday" as const, label: "Mon" },
-                      { pattern: "every_tuesday" as const, label: "Tue" },
-                      { pattern: "every_wednesday" as const, label: "Wed" },
-                      { pattern: "every_thursday" as const, label: "Thu" },
-                      { pattern: "every_friday" as const, label: "Fri" },
-                      { pattern: "every_saturday" as const, label: "Sat" },
-                      { pattern: "every_sunday" as const, label: "Sun" },
-                    ].map(({ pattern, label }) => (
-                      <button
-                        key={pattern}
-                        onClick={() => handlePatternSelect(pattern)}
-                        className={cn(
-                          "px-3 py-2 rounded-lg text-xs font-medium transition-all",
-                          selectedDayPatterns.includes(pattern)
-                            ? "bg-koru-golden text-neutral-900 shadow-lg shadow-koru-golden/30"
-                            : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-koru-golden/10",
-                        )}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Divider */}
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-700" />
-                  <span className="text-xs text-neutral-400">
-                    or pick custom dates
-                  </span>
-                  <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-700" />
-                </div>
-
-                {/* Calendar */}
-                <div className="mb-3">
-                  <CalendarPicker
-                    selectedDates={configSelectedDates}
-                    onDateToggle={(date) => {
-                      setDateSelectionPattern("custom");
-                      setConfigSelectedDates((prev) =>
-                        prev.includes(date)
-                          ? prev.filter((d) => d !== date)
-                          : [...prev, date].sort(),
-                      );
+                {/* Mode Tabs */}
+                <div className="flex gap-1 p-1 rounded-xl bg-neutral-100 dark:bg-neutral-800 mb-4">
+                  <button
+                    onClick={() => {
+                      setDateMode("calendar");
+                      setConfigSelectedDates([]);
+                      setFlexibleDays([]);
                     }}
-                    currentMonth={calendarMonth}
-                    onMonthChange={setCalendarMonth}
-                    maxWeeks={52}
-                  />
+                    className={cn(
+                      "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all",
+                      dateMode === "calendar"
+                        ? "bg-white dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-neutral-100"
+                        : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300",
+                    )}
+                  >
+                    Pick Dates
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDateMode("flexible");
+                      setConfigSelectedDates([]);
+                    }}
+                    className={cn(
+                      "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all",
+                      dateMode === "flexible"
+                        ? "bg-white dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-neutral-100"
+                        : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300",
+                    )}
+                  >
+                    Flexible
+                  </button>
                 </div>
 
-                {/* Selection Summary */}
-                <div className="flex items-center justify-between mb-4 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
-                  <div className="flex items-center gap-2">
-                    <CalendarIcon className="w-4 h-4 text-koru-purple" />
-                    <span className="text-sm text-neutral-700 dark:text-neutral-300">
-                      {configSelectedDates.length} day
-                      {configSelectedDates.length !== 1 ? "s" : ""} selected
-                    </span>
+                {dateMode === "calendar" && (
+                  <div>
+                    <div className="mb-3">
+                      <CalendarPicker
+                        selectedDates={configSelectedDates}
+                        onDateToggle={(date) => {
+                          setConfigSelectedDates((prev) =>
+                            prev.includes(date)
+                              ? prev.filter((d) => d !== date)
+                              : [...prev, date].sort(),
+                          );
+                        }}
+                        currentMonth={calendarMonth}
+                        onMonthChange={setCalendarMonth}
+                        maxWeeks={52}
+                      />
+                    </div>
+
+                    {/* Selection Summary */}
+                    <div className="flex items-center justify-between mb-4 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
+                      <div className="flex items-center gap-2">
+                        <CalendarIcon className="w-4 h-4 text-koru-purple" />
+                        <span className="text-sm text-neutral-700 dark:text-neutral-300">
+                          {configSelectedDates.length} day
+                          {configSelectedDates.length !== 1 ? "s" : ""} selected
+                        </span>
+                      </div>
+                      {configSelectedDates.length > 0 && (
+                        <button
+                          onClick={() => setConfigSelectedDates([])}
+                          className="text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
+                        >
+                          Clear all
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {configSelectedDates.length > 0 && (
-                    <button
-                      onClick={() => {
-                        setConfigSelectedDates([]);
-                        setDateSelectionPattern("custom");
-                      }}
-                      className="text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
-                    >
-                      Clear all
-                    </button>
-                  )}
-                </div>
+                )}
+
+                {dateMode === "flexible" && (
+                  <div>
+                    {/* Day of week toggles */}
+                    <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2 block">
+                      Select Days
+                    </label>
+                    <div className="grid grid-cols-7 gap-1.5 mb-5">
+                      {DAY_LABELS.map((label, idx) => (
+                        <button
+                          key={label}
+                          onClick={() => toggleFlexibleDay(idx)}
+                          className={cn(
+                            "py-2.5 rounded-xl text-xs font-semibold transition-all",
+                            flexibleDays.includes(idx)
+                              ? "bg-koru-golden text-neutral-900 shadow-lg shadow-koru-golden/30"
+                              : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-koru-golden/10",
+                          )}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Duration: number + unit */}
+                    <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2 block">
+                      For How Long
+                    </label>
+                    <div className="flex gap-2 mb-4">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={365}
+                        value={flexibleAmount}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          handleFlexibleAmountChange(
+                            Number(e.target.value) || 1,
+                          )
+                        }
+                        className="w-24 text-center text-lg font-semibold"
+                      />
+                      <div className="flex gap-1 flex-1">
+                        {(["days", "weeks", "months"] as const).map((u) => (
+                          <button
+                            key={u}
+                            onClick={() => handleFlexibleUnitChange(u)}
+                            className={cn(
+                              "flex-1 py-2.5 rounded-xl text-sm font-medium transition-all capitalize",
+                              flexibleUnit === u
+                                ? "bg-koru-purple text-white shadow-lg shadow-koru-purple/30"
+                                : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-koru-purple/10",
+                            )}
+                          >
+                            {u}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Flexible description */}
+                    {flexibleDays.length > 0 && (
+                      <div className="p-3 rounded-xl bg-koru-purple/5 dark:bg-koru-purple/10 border border-koru-purple/20 mb-4">
+                        <div className="flex items-center gap-2 mb-1">
+                          <CalendarIcon className="w-4 h-4 text-koru-purple" />
+                          <span className="text-sm font-medium text-koru-purple">
+                            {flexibleDescription}
+                          </span>
+                        </div>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 ml-6">
+                          {configSelectedDates.length} day
+                          {configSelectedDates.length !== 1 ? "s" : ""} total
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    onClick={() => setConfigSubStep("price")}
+                    onClick={goToPrevSubStep}
                     className="flex-1"
                   >
                     Back
                   </Button>
                   <Button
-                    onClick={handleDatesNext}
-                    disabled={configSelectedDates.length === 0}
+                    onClick={goToNextSubStep}
+                    disabled={!canProceed}
                     className="flex-1 bg-koru-purple hover:bg-koru-purple/90"
                   >
                     Continue
@@ -1163,14 +1414,91 @@ export function AvailabilityModal({
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    onClick={() => setConfigSubStep("dates")}
+                    onClick={goToPrevSubStep}
+                    className="flex-1"
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    onClick={goToNextSubStep}
+                    disabled={!canProceed}
+                    className="flex-1 bg-koru-purple hover:bg-koru-purple/90"
+                  >
+                    Continue
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 6: Summary */}
+            {configSubStep === "summary" && (
+              <motion.div
+                key="summary"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+              >
+                <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-4 block">
+                  Review Your Slot
+                </label>
+
+                <div className="space-y-3 mb-6">
+                  {/* Name */}
+                  <SummaryRow
+                    label="Name"
+                    value={configName}
+                    onEdit={() => setConfigSubStep("name")}
+                  />
+
+                  {/* Duration */}
+                  <SummaryRow
+                    label="Duration"
+                    value={formatDuration(configDuration)}
+                    onEdit={() => setConfigSubStep("duration")}
+                  />
+
+                  {/* Price */}
+                  <SummaryRow
+                    label="Price"
+                    value={configPrice === 0 ? "Free" : `$${configPrice}`}
+                    onEdit={() => setConfigSubStep("price")}
+                  />
+
+                  {/* Dates */}
+                  <SummaryRow
+                    label="Dates"
+                    value={
+                      dateMode === "flexible" && flexibleDescription
+                        ? flexibleDescription
+                        : `${configSelectedDates.length} day${configSelectedDates.length !== 1 ? "s" : ""} selected`
+                    }
+                    onEdit={() => setConfigSubStep("dates")}
+                  />
+
+                  {/* Times */}
+                  <SummaryRow
+                    label="Time Slots"
+                    value={`${configTimes.length} time${configTimes.length !== 1 ? "s" : ""}`}
+                    detail={
+                      configTimes.slice(0, 4).join(", ") +
+                      (configTimes.length > 4
+                        ? ` +${configTimes.length - 4} more`
+                        : "")
+                    }
+                    onEdit={() => setConfigSubStep("times")}
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={goToPrevSubStep}
                     className="flex-1"
                   >
                     Back
                   </Button>
                   <Button
                     onClick={handleSaveSlot}
-                    disabled={configTimes.length === 0}
                     className="flex-1 bg-koru-lime hover:bg-koru-lime/90 text-neutral-900"
                   >
                     <CheckIcon className="w-4 h-4 mr-2" />
@@ -1191,11 +1519,11 @@ export function AvailabilityModal({
         <DialogContent
           className={cn(
             "p-0 gap-0 overflow-hidden transition-all duration-300",
-            step === "slots" ? "max-w-sm" : "max-w-md",
+            step === "slots" ? "max-w-lg" : "max-w-xl",
           )}
         >
           <DialogTitle className="sr-only">Set Your Availability</DialogTitle>
-          <div className="overflow-y-auto scrollbar-none max-h-[80dvh] overscroll-contain">
+          <div className="overflow-y-auto scrollbar-none max-h-[85dvh] overscroll-contain">
             {modalBody}
           </div>
         </DialogContent>
@@ -1208,12 +1536,50 @@ export function AvailabilityModal({
       <DrawerContent className="overflow-hidden">
         <DrawerTitle className="sr-only">Set Your Availability</DrawerTitle>
         <div
-          className="overflow-y-auto scrollbar-none max-h-[80dvh] overscroll-contain px-2 pb-4"
+          className="overflow-y-auto scrollbar-none max-h-[85dvh] overscroll-contain px-2 pb-4"
           data-vaul-no-drag
         >
           {modalBody}
         </div>
       </DrawerContent>
     </Drawer>
+  );
+}
+
+// ─── Summary Row Component ───────────────────────────────────────────────────
+
+function SummaryRow({
+  label,
+  value,
+  detail,
+  onEdit,
+}: {
+  label: string;
+  value: string;
+  detail?: string;
+  onEdit: () => void;
+}) {
+  return (
+    <div className="flex items-start justify-between p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-medium text-neutral-400 uppercase tracking-wider mb-0.5">
+          {label}
+        </p>
+        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
+          {value}
+        </p>
+        {detail && (
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 truncate">
+            {detail}
+          </p>
+        )}
+      </div>
+      <button
+        onClick={onEdit}
+        className="ml-3 px-2.5 py-1 rounded-lg text-xs font-medium text-koru-purple hover:bg-koru-purple/10 transition-colors flex-shrink-0"
+      >
+        Edit
+      </button>
+    </div>
   );
 }
