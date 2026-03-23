@@ -425,36 +425,64 @@ export function generateDatesFromPattern(
   return dates;
 }
 
-// Generate dates from flexible selection (days of week + duration + unit)
+// Generate dates from flexible selection (days of week + duration + unit + start date)
 function generateFlexibleDates(
   selectedDays: number[], // 0=Sun, 1=Mon, ... 6=Sat
   amount: number,
-  unit: "days" | "weeks" | "months",
+  unit: "days" | "weeks" | "months" | "times",
+  startFrom?: string, // ISO date string, defaults to tomorrow
 ): string[] {
   const dates: string[] = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const startDate = new Date(today);
-  startDate.setDate(startDate.getDate() + 1);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const endDate = new Date(today);
-  if (unit === "days") {
-    endDate.setDate(endDate.getDate() + amount);
-  } else if (unit === "weeks") {
-    endDate.setDate(endDate.getDate() + amount * 7);
+  let startDate: Date;
+  if (startFrom) {
+    const parsed = new Date(startFrom + "T00:00:00");
+    startDate = parsed >= tomorrow ? parsed : tomorrow;
   } else {
-    endDate.setMonth(endDate.getMonth() + amount);
+    startDate = tomorrow;
   }
 
-  const current = new Date(startDate);
-  while (current <= endDate) {
-    if (selectedDays.includes(current.getDay())) {
-      const year = current.getFullYear();
-      const month = String(current.getMonth() + 1).padStart(2, "0");
-      const day = String(current.getDate()).padStart(2, "0");
-      dates.push(`${year}-${month}-${day}`);
+  if (unit === "times") {
+    // "times" means repeat until we collect `amount` matching days
+    let collected = 0;
+    const current = new Date(startDate);
+    const safetyLimit = 365 * 5; // prevent infinite loop
+    let iterations = 0;
+    while (collected < amount && iterations < safetyLimit) {
+      if (selectedDays.includes(current.getDay())) {
+        const year = current.getFullYear();
+        const month = String(current.getMonth() + 1).padStart(2, "0");
+        const day = String(current.getDate()).padStart(2, "0");
+        dates.push(`${year}-${month}-${day}`);
+        collected++;
+      }
+      current.setDate(current.getDate() + 1);
+      iterations++;
     }
-    current.setDate(current.getDate() + 1);
+  } else {
+    const endDate = new Date(startDate);
+    if (unit === "days") {
+      endDate.setDate(endDate.getDate() + amount);
+    } else if (unit === "weeks") {
+      endDate.setDate(endDate.getDate() + amount * 7);
+    } else {
+      endDate.setMonth(endDate.getMonth() + amount);
+    }
+
+    const current = new Date(startDate);
+    while (current <= endDate) {
+      if (selectedDays.includes(current.getDay())) {
+        const year = current.getFullYear();
+        const month = String(current.getMonth() + 1).padStart(2, "0");
+        const day = String(current.getDate()).padStart(2, "0");
+        dates.push(`${year}-${month}-${day}`);
+      }
+      current.setDate(current.getDate() + 1);
+    }
   }
 
   return dates;
@@ -572,9 +600,10 @@ export function AvailabilityModal({
   const [dateMode, setDateMode] = useState<"calendar" | "flexible">("calendar");
   const [flexibleDays, setFlexibleDays] = useState<number[]>([]); // 0-6
   const [flexibleAmount, setFlexibleAmount] = useState(30);
-  const [flexibleUnit, setFlexibleUnit] = useState<"days" | "weeks" | "months">(
-    "days",
-  );
+  const [flexibleUnit, setFlexibleUnit] = useState<
+    "days" | "weeks" | "months" | "times"
+  >("days");
+  const [flexibleStartDate, setFlexibleStartDate] = useState<string>("");
 
   const configDuration = configDurationHours * 60 + configDurationMinutes;
 
@@ -630,6 +659,7 @@ export function AvailabilityModal({
       setFlexibleDays([]);
       setFlexibleAmount(30);
       setFlexibleUnit("days");
+      setFlexibleStartDate("");
       setConfigSubStep("name");
       setStep("configure");
     }
@@ -637,9 +667,14 @@ export function AvailabilityModal({
 
   // Flexible date generation
   const handleFlexibleUpdate = useCallback(
-    (days: number[], amount: number, unit: "days" | "weeks" | "months") => {
+    (
+      days: number[],
+      amount: number,
+      unit: "days" | "weeks" | "months" | "times",
+      startFrom?: string,
+    ) => {
       if (days.length > 0 && amount > 0) {
-        const dates = generateFlexibleDates(days, amount, unit);
+        const dates = generateFlexibleDates(days, amount, unit, startFrom);
         setConfigSelectedDates(dates);
       } else {
         setConfigSelectedDates([]);
@@ -653,18 +688,35 @@ export function AvailabilityModal({
       ? flexibleDays.filter((d) => d !== day)
       : [...flexibleDays, day];
     setFlexibleDays(newDays);
-    handleFlexibleUpdate(newDays, flexibleAmount, flexibleUnit);
+    handleFlexibleUpdate(
+      newDays,
+      flexibleAmount,
+      flexibleUnit,
+      flexibleStartDate,
+    );
   };
 
   const handleFlexibleAmountChange = (val: number) => {
     const clamped = Math.max(1, Math.min(365, val));
     setFlexibleAmount(clamped);
-    handleFlexibleUpdate(flexibleDays, clamped, flexibleUnit);
+    handleFlexibleUpdate(
+      flexibleDays,
+      clamped,
+      flexibleUnit,
+      flexibleStartDate,
+    );
   };
 
-  const handleFlexibleUnitChange = (unit: "days" | "weeks" | "months") => {
+  const handleFlexibleUnitChange = (
+    unit: "days" | "weeks" | "months" | "times",
+  ) => {
     setFlexibleUnit(unit);
-    handleFlexibleUpdate(flexibleDays, flexibleAmount, unit);
+    handleFlexibleUpdate(flexibleDays, flexibleAmount, unit, flexibleStartDate);
+  };
+
+  const handleFlexibleStartDateChange = (date: string) => {
+    setFlexibleStartDate(date);
+    handleFlexibleUpdate(flexibleDays, flexibleAmount, flexibleUnit, date);
   };
 
   const handleBackToSlots = () => {
@@ -723,6 +775,7 @@ export function AvailabilityModal({
     setFlexibleDays([]);
     setFlexibleAmount(30);
     setFlexibleUnit("days");
+    setFlexibleStartDate("");
   };
 
   const handleOpenChange = (isOpen: boolean) => {
@@ -802,8 +855,17 @@ export function AvailabilityModal({
           : `Every ${lastDay}`;
     }
 
-    return `${dayStr} for the next ${flexibleAmount} ${flexibleUnit}`;
-  }, [flexibleDays, flexibleAmount, flexibleUnit]);
+    const unitLabel =
+      flexibleUnit === "times"
+        ? `${flexibleAmount} time${flexibleAmount !== 1 ? "s" : ""}`
+        : `the next ${flexibleAmount} ${flexibleUnit}`;
+
+    const startLabel = flexibleStartDate
+      ? `, starting ${formatDateShort(flexibleStartDate)}`
+      : "";
+
+    return `${dayStr} for ${unitLabel}${startLabel}`;
+  }, [flexibleDays, flexibleAmount, flexibleUnit, flexibleStartDate]);
 
   const modalBody = (
     <AnimatePresence mode="wait" initial={false}>
@@ -1335,9 +1397,35 @@ export function AvailabilityModal({
                       ))}
                     </div>
 
-                    {/* Duration: number + unit */}
+                    {/* Starting Date */}
                     <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2 block">
-                      For How Long
+                      Starting From
+                    </label>
+                    <div className="mb-4">
+                      <Input
+                        type="date"
+                        value={flexibleStartDate}
+                        min={(() => {
+                          const d = new Date();
+                          d.setDate(d.getDate() + 1);
+                          return d.toISOString().split("T")[0];
+                        })()}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          handleFlexibleStartDateChange(e.target.value)
+                        }
+                        className="text-sm"
+                        placeholder="Tomorrow (default)"
+                      />
+                      {!flexibleStartDate && (
+                        <p className="text-xs text-neutral-400 mt-1">
+                          Defaults to tomorrow if not set
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Repeat: number + unit */}
+                    <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2 block">
+                      Repeat For
                     </label>
                     <div className="flex gap-2 mb-4">
                       <Input
@@ -1350,21 +1438,48 @@ export function AvailabilityModal({
                             Number(e.target.value) || 1,
                           )
                         }
-                        className="w-24 text-center text-lg font-semibold"
+                        className="w-20 text-center text-lg font-semibold"
                       />
                       <div className="flex gap-1 flex-1">
-                        {(["days", "weeks", "months"] as const).map((u) => (
+                        {(
+                          [
+                            {
+                              value: "days" as const,
+                              tooltip:
+                                "Selected days within this many calendar days",
+                            },
+                            {
+                              value: "weeks" as const,
+                              tooltip: "Selected days within this many weeks",
+                            },
+                            {
+                              value: "months" as const,
+                              tooltip: "Selected days within this many months",
+                            },
+                            {
+                              value: "times" as const,
+                              tooltip:
+                                "Repeat exactly this many occurrences of the selected days",
+                            },
+                          ] as const
+                        ).map(({ value, tooltip }) => (
                           <button
-                            key={u}
-                            onClick={() => handleFlexibleUnitChange(u)}
+                            key={value}
+                            onClick={() => handleFlexibleUnitChange(value)}
+                            title={tooltip}
                             className={cn(
-                              "flex-1 py-2.5 rounded-xl text-sm font-medium transition-all capitalize",
-                              flexibleUnit === u
+                              "relative flex-1 py-2.5 rounded-xl text-sm font-medium transition-all capitalize group",
+                              flexibleUnit === value
                                 ? "bg-koru-purple text-white shadow-lg shadow-koru-purple/30"
                                 : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-koru-purple/10",
                             )}
                           >
-                            {u}
+                            {value}
+                            {/* Tooltip */}
+                            <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 rounded-lg bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-[10px] leading-tight whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-20">
+                              {tooltip}
+                              <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-neutral-900 dark:border-t-neutral-100" />
+                            </span>
                           </button>
                         ))}
                       </div>
