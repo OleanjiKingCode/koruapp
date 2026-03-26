@@ -17,6 +17,7 @@ import { EscrowDetailsModal } from "@/components/escrow-details-modal";
 import { cn } from "@/lib/utils";
 import { API_ROUTES } from "@/lib/constants";
 import { useChatMessages } from "@/lib/hooks/use-chat-messages";
+import { useChatTimer } from "@/lib/hooks/use-chat-timer";
 import { useUnreadCount } from "@/lib/hooks/use-unread-count";
 
 interface ChatData {
@@ -26,6 +27,7 @@ interface ChatData {
   status: string;
   amount: number;
   slot_name: string | null;
+  slot_duration: number | null;
   deadline_at: string | null;
   booked_date: string | null;
   booked_time: string | null;
@@ -50,6 +52,8 @@ export default function ChatPage() {
 
   const chatId = params.id as string;
   const userId = session?.user?.dbId || null;
+  const [showExpiryWarning, setShowExpiryWarning] = useState(false);
+  const [warningNotified, setWarningNotified] = useState(false);
 
   // Fetch chat data
   const fetcher = async (url: string) => {
@@ -143,6 +147,21 @@ export default function ChatPage() {
     enabled: !!chat && !!userId,
   });
 
+  // Session timer
+  const {
+    formattedTime: sessionTimeLeft,
+    isExpired: isSessionExpired,
+    isWarning: isSessionWarning,
+    warningTriggered,
+    sessionEndTime,
+  } = useChatTimer({
+    bookedDate: chat?.booked_date ?? null,
+    bookedTime: chat?.booked_time ?? null,
+    slotDuration: chat?.slot_duration ?? null,
+    chatStatus: chat?.status ?? "",
+    enabled: !!chat,
+  });
+
   // Unread count management
   const { markChatAsSeen } = useUnreadCount();
 
@@ -173,6 +192,18 @@ export default function ChatPage() {
       }
     );
   }, [chat, userId]);
+
+  // Show 30-min warning modal and send notification
+  useEffect(() => {
+    if (warningTriggered && !warningNotified && chat && otherParty) {
+      setShowExpiryWarning(true);
+      setWarningNotified(true);
+      // Fire notification to both parties via API
+      fetch(`/api/chat/${chatId}/expiry-warning`, {
+        method: "POST",
+      }).catch(() => {});
+    }
+  }, [warningTriggered, warningNotified, chat, otherParty, chatId]);
 
   // Booking info from localStorage
   const bookingInfo = useMemo(() => {
@@ -300,7 +331,9 @@ export default function ChatPage() {
             ? "Refunded"
             : "Active";
 
-  const canSendMessages = chat.status === "active" || chat.status === "pending";
+  const canSendMessages =
+    (chat.status === "active" || chat.status === "pending") &&
+    !isSessionExpired;
 
   return (
     <AuthGuard>
@@ -325,6 +358,53 @@ export default function ChatPage() {
         isOpen={showEscrowModal}
         onClose={() => setShowEscrowModal(false)}
       />
+
+      {/* Session Expiry Warning Modal */}
+      <AnimatePresence>
+        {showExpiryWarning && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowExpiryWarning(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-neutral-900 rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-neutral-200 dark:border-neutral-800"
+            >
+              <div className="flex flex-col items-center text-center">
+                <div className="w-14 h-14 rounded-2xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-4">
+                  <ClockIcon className="w-7 h-7 text-orange-500" />
+                </div>
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
+                  Session Ending Soon
+                </h3>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                  Your chat with{" "}
+                  <span className="font-medium text-neutral-700 dark:text-neutral-300">
+                    {otherParty?.name}
+                  </span>{" "}
+                  ends in 30 minutes.
+                </p>
+                <p className="text-xs text-neutral-400 dark:text-neutral-500 mb-6">
+                  The chat will be locked once the session time expires. Make
+                  sure to wrap up your conversation.
+                </p>
+                <Button
+                  onClick={() => setShowExpiryWarning(false)}
+                  className="w-full bg-koru-purple hover:bg-koru-purple/90 text-white"
+                >
+                  Got it
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="min-h-screen flex flex-col bg-neutral-50 dark:bg-neutral-950">
         {/* Header */}
@@ -373,8 +453,45 @@ export default function ChatPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              <StatusPill status={displayStatus} />
-              {chat.status === "pending" && (
+              <StatusPill
+                status={isSessionExpired ? "Completed" : displayStatus}
+              />
+              {sessionTimeLeft && !isSessionExpired && (
+                <div
+                  className={cn(
+                    "hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full",
+                    isSessionWarning
+                      ? "bg-orange-100 dark:bg-orange-900/30"
+                      : "bg-neutral-100 dark:bg-neutral-800",
+                  )}
+                >
+                  <ClockIcon
+                    className={cn(
+                      "w-4 h-4",
+                      isSessionWarning ? "text-orange-500" : "text-neutral-500",
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      "text-sm font-medium",
+                      isSessionWarning
+                        ? "text-orange-600 dark:text-orange-400"
+                        : "text-neutral-600 dark:text-neutral-400",
+                    )}
+                  >
+                    {sessionTimeLeft}
+                  </span>
+                </div>
+              )}
+              {isSessionExpired && (
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-100 dark:bg-red-900/30">
+                  <LockIcon className="w-4 h-4 text-red-500" />
+                  <span className="text-sm font-medium text-red-600 dark:text-red-400">
+                    Session ended
+                  </span>
+                </div>
+              )}
+              {!sessionEndTime && chat.status === "pending" && (
                 <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800">
                   <ClockIcon className="w-4 h-4 text-neutral-500" />
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">
@@ -546,9 +663,20 @@ export default function ChatPage() {
                 </form>
               ) : (
                 <div className="text-center py-2">
-                  <p className="text-sm text-neutral-500">
-                    This chat is {chat.status}. You cannot send new messages.
-                  </p>
+                  {isSessionExpired ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                        <LockIcon className="w-4 h-4 text-red-500" />
+                        <p className="text-sm font-medium text-red-600 dark:text-red-400">
+                          Session time has ended. Chat is locked.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-neutral-500">
+                      This chat is {chat.status}. You cannot send new messages.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -597,15 +725,60 @@ export default function ChatPage() {
                 </div>
               )}
 
-              {chat.amount > 0 && chat.status === "active" && (
-                <div className="bg-koru-lime/10 rounded-2xl p-5 mb-4 border border-koru-lime/20">
+              {chat.amount > 0 &&
+                chat.status === "active" &&
+                !isSessionExpired && (
+                  <div className="bg-koru-lime/10 rounded-2xl p-5 mb-4 border border-koru-lime/20">
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
+                      Status
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <CheckIcon className="w-5 h-5 text-koru-lime" />
+                      <p className="text-lg font-semibold text-koru-lime">
+                        Accepted
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+              {sessionEndTime && (
+                <div
+                  className={cn(
+                    "rounded-2xl p-5 mb-4 border",
+                    isSessionExpired
+                      ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+                      : isSessionWarning
+                        ? "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800"
+                        : "bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700",
+                  )}
+                >
                   <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
-                    Status
+                    {isSessionExpired ? "Session Ended" : "Session Time Left"}
                   </p>
                   <div className="flex items-center gap-2">
-                    <CheckIcon className="w-5 h-5 text-koru-lime" />
-                    <p className="text-lg font-semibold text-koru-lime">
-                      Accepted
+                    {isSessionExpired ? (
+                      <LockIcon className="w-5 h-5 text-red-500" />
+                    ) : (
+                      <ClockIcon
+                        className={cn(
+                          "w-5 h-5",
+                          isSessionWarning
+                            ? "text-orange-500"
+                            : "text-koru-purple",
+                        )}
+                      />
+                    )}
+                    <p
+                      className={cn(
+                        "text-lg font-semibold",
+                        isSessionExpired
+                          ? "text-red-500"
+                          : isSessionWarning
+                            ? "text-orange-500"
+                            : "text-neutral-900 dark:text-neutral-100",
+                      )}
+                    >
+                      {isSessionExpired ? "Locked" : sessionTimeLeft}
                     </p>
                   </div>
                 </div>
@@ -820,6 +993,23 @@ function DoubleCheckIcon({ className }: { className?: string }) {
     >
       <path d="M18 6 7 17l-5-5" />
       <path d="m22 10-7.5 7.5L13 16" />
+    </svg>
+  );
+}
+
+function LockIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
     </svg>
   );
 }

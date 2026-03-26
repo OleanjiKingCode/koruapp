@@ -116,6 +116,23 @@ function SparklesIcon({ className }: { className?: string }) {
   );
 }
 
+function ClockIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  );
+}
+
 function LoaderIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -138,6 +155,7 @@ interface Notification {
     | "payment"
     | "request"
     | "completed"
+    | "session_expiring"
     | "summon_backed"
     | "summon_created";
   title: string;
@@ -173,6 +191,12 @@ function NotificationIcon({ type }: { type: Notification["type"] }) {
       return (
         <div className="w-8 h-8 rounded-full bg-koru-lime/10 flex items-center justify-center">
           <CheckIcon className="w-4 h-4 text-koru-lime" />
+        </div>
+      );
+    case "session_expiring":
+      return (
+        <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center">
+          <ClockIcon className="w-4 h-4 text-orange-500" />
         </div>
       );
     case "summon_backed":

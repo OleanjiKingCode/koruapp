@@ -95,6 +95,35 @@ export async function POST(
       );
     }
 
+    // Check if the booked session time has expired
+    if (chat.booked_date && chat.booked_time) {
+      const parts = chat.booked_time.split("-");
+      if (parts.length === 2) {
+        const endTimePart = parts[1].trim();
+        const [endHours, endMinutes] = endTimePart.split(":").map(Number);
+        if (!isNaN(endHours) && !isNaN(endMinutes)) {
+          const sessionEnd = new Date(`${chat.booked_date}T00:00:00`);
+          sessionEnd.setHours(endHours, endMinutes, 0, 0);
+          if (Date.now() > sessionEnd.getTime()) {
+            // Auto-complete the chat if it's still active
+            await supabase
+              .from("chats")
+              .update({
+                status: "completed",
+                completed_at: new Date().toISOString(),
+              })
+              .eq("id", chatId)
+              .in("status", ["active", "pending"]);
+
+            return NextResponse.json(
+              { error: "Session time has ended. This chat is now locked." },
+              { status: 403 },
+            );
+          }
+        }
+      }
+    }
+
     // Send the message
     const message = await sendMessage(chatId, userId, content);
 

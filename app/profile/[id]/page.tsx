@@ -2,7 +2,12 @@
 
 import { useState, useMemo, useEffect } from "react";
 import useSWR from "swr";
-import { useParams, useRouter, notFound } from "next/navigation";
+import {
+  useParams,
+  useRouter,
+  useSearchParams,
+  notFound,
+} from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "@/lib/toast";
@@ -361,10 +366,21 @@ function CloseIcon({ className }: { className?: string }) {
 export default function ViewProfilePage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { data: session } = useSession();
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [summonModalOpen, setSummonModalOpen] = useState(false);
 
   const handle = params.id as string;
+
+  // Show toast if user returned from a cancelled Stripe checkout
+  useEffect(() => {
+    if (searchParams.get("booking_cancelled") === "true") {
+      toast.info("Booking cancelled. You can try again anytime.");
+      // Clean up the URL without a full navigation
+      window.history.replaceState({}, "", `/${handle}`);
+    }
+  }, [searchParams, handle]);
 
   // Fetcher function for useSWR
   const fetcher = async (url: string) => {
@@ -395,6 +411,31 @@ export default function ViewProfilePage() {
     dedupingInterval: 5000, // Reduced from 60s to 5s to allow more frequent updates
     errorRetryCount: 2,
   });
+
+  // Fetch summon data for this profile's handle
+  const { data: summonData } = useSWR(
+    handle ? `/api/summons?search=${handle}` : null,
+    async (url: string) => {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const data = await res.json();
+      // Find the exact summon for this handle
+      const summon = data.summons?.find(
+        (s: any) => s.targetHandle?.toLowerCase() === handle.toLowerCase(),
+      );
+      return summon || null;
+    },
+    { revalidateOnFocus: false },
+  );
+
+  // Find current user's pledge amount from backers data
+  const userPledge = useMemo(() => {
+    if (!summonData?.backersData || !session?.user) return null;
+    return summonData.backersData.find(
+      (b: any) =>
+        b.id === session.user.dbId || b.username === session.user.username,
+    );
+  }, [summonData, session?.user]);
 
   // Format follower count to string like "1.2M" or "500K"
   const formatFollowers = (count: number): string => {
@@ -1053,19 +1094,59 @@ export default function ViewProfilePage() {
               </div>
               <div className="text-center">
                 <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-1">
-                  Bring {profile.name.split(" ")[0]} to Koru
+                  {summonData
+                    ? `Summon for ${profile.name.split(" ")[0]}`
+                    : `Bring ${profile.name.split(" ")[0]} to Koru`}
                 </h3>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                  {profile.name.split(" ")[0]} isn't on Koru yet. Create a
-                  Summon to invite them!
-                </p>
+                {summonData ? (
+                  <div className="space-y-2">
+                    {/* User's own pledge amount */}
+                    {userPledge ? (
+                      <div>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                          Your pledge
+                        </p>
+                        <p className="text-2xl font-bold text-koru-purple">
+                          ${userPledge.amount}
+                        </p>
+                      </div>
+                    ) : null}
+                    {/* Total pledged and backer count */}
+                    <div className="flex items-center justify-center gap-3 text-sm text-neutral-500 dark:text-neutral-400">
+                      <span className="flex items-center gap-1">
+                        <DollarIcon className="w-3.5 h-3.5" />
+                        <span className="font-medium text-neutral-700 dark:text-neutral-300">
+                          ${summonData.totalPledged}
+                        </span>{" "}
+                        total
+                      </span>
+                      <span>·</span>
+                      <span className="flex items-center gap-1">
+                        <UsersIcon className="w-3.5 h-3.5" />
+                        <span className="font-medium text-neutral-700 dark:text-neutral-300">
+                          {summonData.backers}
+                        </span>{" "}
+                        {summonData.backers === 1 ? "backer" : "backers"}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    {profile.name.split(" ")[0]} isn't on Koru yet. Create a
+                    Summon to invite them!
+                  </p>
+                )}
               </div>
               <Button
                 onClick={() => setSummonModalOpen(true)}
                 className="mt-2 bg-koru-purple hover:bg-koru-purple/90"
               >
                 <MegaphoneIcon className="w-4 h-4 mr-2" />
-                Create Summon
+                {summonData && userPledge
+                  ? "Back Again"
+                  : summonData
+                    ? "Back this Summon"
+                    : "Create Summon"}
               </Button>
             </div>
           </motion.div>

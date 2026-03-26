@@ -53,6 +53,7 @@ export type NotificationType =
   | "payment"
   | "request"
   | "completed"
+  | "session_expiring"
   | "summon_backed"
   | "summon_created";
 
@@ -320,6 +321,28 @@ export function sendBookingSeekerEmail(
       });
       sendEmail({ to: email, subject, html });
     }
+  });
+}
+
+/**
+ * Notify both users that their chat session is expiring in 30 minutes
+ */
+export async function notifySessionExpiring(
+  userId: string,
+  otherUserName: string,
+  otherUserUsername: string,
+  otherUserImage: string | null,
+  chatId: string,
+) {
+  return createNotification({
+    userId,
+    type: "session_expiring",
+    title: "Session ending soon",
+    description: `Your chat with @${otherUserUsername} ends in 30 minutes`,
+    link: `/chat/${chatId}`,
+    relatedUserUsername: otherUserUsername,
+    relatedUserImage: otherUserImage || undefined,
+    metadata: { chatId },
   });
 }
 
