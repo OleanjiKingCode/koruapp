@@ -45,7 +45,8 @@ const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
 export interface WaitlistEntry {
   id: string;
   name: string;
-  twitter_handle: string;
+  twitter_handle: string | null;
+  whatsapp_number: string | null;
   email: string;
   dream_conversation: string | null;
   heard_from: string;
@@ -55,13 +56,17 @@ export interface WaitlistEntry {
 
 export async function joinWaitlist(entry: {
   name: string;
-  twitter_handle: string;
+  twitter_handle?: string | null;
+  whatsapp_number?: string | null;
   email: string;
   dream_conversation?: string | null;
   heard_from: string;
   notes?: string | null;
 }): Promise<{ data: WaitlistEntry | null; duplicate: boolean }> {
-  const handle = entry.twitter_handle.toLowerCase().replace(/^@/, "");
+  const handle = entry.twitter_handle
+    ? entry.twitter_handle.toLowerCase().replace(/^@/, "")
+    : null;
+  const whatsapp = entry.whatsapp_number?.trim() || null;
   const email = entry.email.toLowerCase().trim();
 
   // Check for existing entry by email
@@ -80,15 +85,17 @@ export async function joinWaitlist(entry: {
     return { data: null, duplicate: true };
   }
 
-  // Check for existing entry by twitter handle
-  const { data: byHandle } = await supabase
-    .from("waitlist")
-    .select("id")
-    .ilike("twitter_handle", handle)
-    .limit(1);
+  // Check for existing entry by twitter handle (only if one was provided)
+  if (handle) {
+    const { data: byHandle } = await supabase
+      .from("waitlist")
+      .select("id")
+      .ilike("twitter_handle", handle)
+      .limit(1);
 
-  if (byHandle && byHandle.length > 0) {
-    return { data: null, duplicate: true };
+    if (byHandle && byHandle.length > 0) {
+      return { data: null, duplicate: true };
+    }
   }
 
   const { data, error } = await supabase
@@ -96,6 +103,7 @@ export async function joinWaitlist(entry: {
     .insert({
       name: entry.name.trim(),
       twitter_handle: handle,
+      whatsapp_number: whatsapp,
       email,
       dream_conversation: entry.dream_conversation?.trim() || null,
       heard_from: entry.heard_from,

@@ -33,6 +33,7 @@ export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
   const [form, setForm] = useState({
     name: "",
     twitter_handle: "",
+    whatsapp_number: "",
     email: "",
     dream_conversation: "",
     heard_from: "",
@@ -44,6 +45,7 @@ export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
       setForm({
         name: "",
         twitter_handle: "",
+        whatsapp_number: "",
         email: "",
         dream_conversation: "",
         heard_from: "",
@@ -54,12 +56,7 @@ export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
   };
 
   const handleSubmit = async () => {
-    if (
-      !form.name.trim() ||
-      !form.twitter_handle.trim() ||
-      !form.email.trim() ||
-      !form.heard_from
-    ) {
+    if (!form.name.trim() || !form.email.trim() || !form.heard_from) {
       toast.error("Please fill in all required fields.");
       return;
     }
@@ -71,7 +68,8 @@ export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: form.name.trim(),
-          twitter_handle: form.twitter_handle.trim(),
+          twitter_handle: form.twitter_handle.trim() || null,
+          whatsapp_number: form.whatsapp_number.trim() || null,
           email: form.email.trim(),
           dream_conversation: form.dream_conversation.trim() || null,
           heard_from: form.heard_from,
@@ -182,7 +180,12 @@ export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
                 isDark ? "text-neutral-400" : "text-neutral-600",
               )}
             >
-              X / Twitter Handle <span className="text-red-400">*</span>
+              X / Twitter Handle{" "}
+              <span
+                className={isDark ? "text-neutral-600" : "text-neutral-400"}
+              >
+                (optional)
+              </span>
             </label>
             <div className="relative">
               <span
@@ -210,6 +213,35 @@ export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
                 )}
               />
             </div>
+          </div>
+
+          {/* WhatsApp Number */}
+          <div>
+            <label
+              className={cn(
+                "text-xs font-medium mb-1 block",
+                isDark ? "text-neutral-400" : "text-neutral-600",
+              )}
+            >
+              WhatsApp Number{" "}
+              <span
+                className={isDark ? "text-neutral-600" : "text-neutral-400"}
+              >
+                (optional)
+              </span>
+            </label>
+            <Input
+              type="tel"
+              placeholder="+1 555 123 4567"
+              value={form.whatsapp_number}
+              onChange={(e) => updateField("whatsapp_number", e.target.value)}
+              className={cn(
+                "h-9 sm:h-10 rounded-lg text-sm",
+                isDark
+                  ? "bg-neutral-800 border-neutral-700 text-white placeholder:text-neutral-500"
+                  : "bg-white border-neutral-200",
+              )}
+            />
           </div>
 
           {/* Email */}

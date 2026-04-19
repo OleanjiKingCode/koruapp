@@ -15,6 +15,10 @@ export async function POST(request: Request) {
       typeof body.twitter_handle === "string"
         ? body.twitter_handle.trim()
         : "";
+    const whatsappNumber =
+      typeof body.whatsapp_number === "string"
+        ? body.whatsapp_number.trim()
+        : "";
     const email = typeof body.email === "string" ? body.email.trim() : "";
     const heardFrom =
       typeof body.heard_from === "string" ? body.heard_from.trim() : "";
@@ -25,7 +29,7 @@ export async function POST(request: Request) {
     const notes = typeof body.notes === "string" ? body.notes.trim() : "";
 
     // Validate required fields
-    if (!name || !twitterHandle || !email || !heardFrom) {
+    if (!name || !email || !heardFrom) {
       return NextResponse.json(
         { error: "All required fields must be filled out" },
         { status: 400 },
@@ -48,18 +52,34 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate twitter handle (alphanumeric + underscores, 1-15 chars)
-    const cleanHandle = twitterHandle.replace(/^@/, "");
-    if (!/^[a-zA-Z0-9_]{1,15}$/.test(cleanHandle)) {
-      return NextResponse.json(
-        { error: "Please enter a valid X/Twitter handle" },
-        { status: 400 },
-      );
+    // Validate twitter handle if provided (alphanumeric + underscores, 1-15 chars)
+    let cleanHandle: string | null = null;
+    if (twitterHandle) {
+      cleanHandle = twitterHandle.replace(/^@/, "");
+      if (!/^[a-zA-Z0-9_]{1,15}$/.test(cleanHandle)) {
+        return NextResponse.json(
+          { error: "Please enter a valid X/Twitter handle" },
+          { status: 400 },
+        );
+      }
+    }
+
+    // Validate whatsapp number if provided (digits, +, spaces, dashes, parens; 7-20 chars)
+    let cleanWhatsapp: string | null = null;
+    if (whatsappNumber) {
+      cleanWhatsapp = whatsappNumber.replace(/[\s\-()]/g, "");
+      if (!/^\+?[0-9]{7,20}$/.test(cleanWhatsapp)) {
+        return NextResponse.json(
+          { error: "Please enter a valid WhatsApp number" },
+          { status: 400 },
+        );
+      }
     }
 
     const result = await joinWaitlist({
       name,
       twitter_handle: cleanHandle,
+      whatsapp_number: cleanWhatsapp,
       email,
       dream_conversation: dreamConversation || null,
       heard_from: heardFrom,
