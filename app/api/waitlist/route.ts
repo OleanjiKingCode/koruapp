@@ -55,25 +55,27 @@ export async function POST(request: Request) {
     // Validate twitter handle if provided (alphanumeric + underscores, 1-15 chars)
     let cleanHandle: string | null = null;
     if (twitterHandle) {
-      cleanHandle = twitterHandle.replace(/^@/, "");
-      if (!/^[a-zA-Z0-9_]{1,15}$/.test(cleanHandle)) {
+      const handle = twitterHandle.replace(/^@/, "");
+      if (!/^[a-zA-Z0-9_]{1,15}$/.test(handle)) {
         return NextResponse.json(
           { error: "Please enter a valid X/Twitter handle" },
           { status: 400 },
         );
       }
+      cleanHandle = handle;
     }
 
     // Validate whatsapp number if provided (digits, +, spaces, dashes, parens; 7-20 chars)
     let cleanWhatsapp: string | null = null;
     if (whatsappNumber) {
-      cleanWhatsapp = whatsappNumber.replace(/[\s\-()]/g, "");
-      if (!/^\+?[0-9]{7,20}$/.test(cleanWhatsapp)) {
+      const stripped = whatsappNumber.replace(/[\s\-()]/g, "");
+      if (!/^\+?[0-9]{7,20}$/.test(stripped)) {
         return NextResponse.json(
           { error: "Please enter a valid WhatsApp number" },
           { status: 400 },
         );
       }
+      cleanWhatsapp = stripped;
     }
 
     const result = await joinWaitlist({
