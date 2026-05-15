@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { captureApiError } from "@/lib/sentry";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { parsePagination } from "@/lib/validation";
+import { getDemoNotifications } from "@/lib/demo-data";
 
 // Lazy initialization to avoid build-time errors
 let supabaseInstance: SupabaseClient | null = null;
@@ -62,76 +63,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Use the database user ID (UUID), not the Twitter ID
-    const userId = session.user.dbId;
-    if (!userId) {
-      // Return empty notifications if user doesn't have a database record yet
-      return NextResponse.json({
-        notifications: [],
-        unreadCount: 0,
-      });
-    }
-
-    const supabase = getSupabase();
-    if (!supabase) {
-      return NextResponse.json({
-        notifications: [],
-        unreadCount: 0,
-      });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const { limit } = parsePagination(null, searchParams.get("limit"));
-    const unreadOnly = searchParams.get("unread") === "true";
-
-    let query = supabase
-      .from("notifications")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(limit);
-
-    if (unreadOnly) {
-      query = query.eq("read", false);
-    }
-
-    const { data: notifications, error } = await query;
-
-    if (error) {
-      captureApiError(error, "GET /api/notifications:fetch");
-      // Return empty instead of 500 if table doesn't exist or other DB issues
-      return NextResponse.json({
-        notifications: [],
-        unreadCount: 0,
-      });
-    }
-
-    // Transform to response format
-    const transformed: NotificationResponse[] = (notifications || []).map(
-      (n) => ({
-        id: n.id,
-        type: n.type,
-        title: n.title,
-        description: n.description,
-        read: n.read,
-        link: n.link,
-        relatedUserUsername: n.related_user_username,
-        relatedUserImage: n.related_user_image,
-        createdAt: n.created_at,
-        timeAgo: formatTimeAgo(new Date(n.created_at)),
-      }),
-    );
-
-    // Get unread count
-    const { count: unreadCount } = await supabase
-      .from("notifications")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .eq("read", false);
-
+    // Demo-only override on feat/social-stats-dummy:
+    // Return dummy notifications so the bell looks active.
+    void request;
+    const notifications = getDemoNotifications();
     return NextResponse.json({
-      notifications: transformed,
-      unreadCount: unreadCount || 0,
+      notifications,
+      unreadCount: notifications.filter((n) => !n.read).length,
     });
   } catch (error) {
     captureApiError(error, "GET /api/notifications");
