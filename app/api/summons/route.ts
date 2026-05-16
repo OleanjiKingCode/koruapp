@@ -4,6 +4,7 @@ import { supabase, getActiveSummons, addSummonIdToUser } from "@/lib/supabase";
 import { captureApiError } from "@/lib/sentry";
 import { notifySummonCreated, notifySummonBacked } from "@/lib/notifications";
 import { parseAmount, parsePagination } from "@/lib/validation";
+import { getDemoSummons } from "@/lib/demo-data";
 
 interface BackerInfo {
   user_id: string;
@@ -22,106 +23,21 @@ export async function GET(request: NextRequest) {
     const searchQuery = searchParams.get("search");
     const { limit } = parsePagination(null, searchParams.get("limit"));
 
-    // Get all active summons (now includes backers array)
-    let summons = await getActiveSummons(limit);
-
-    // Filter by category if provided
-    if (category && category !== "All") {
-      // Note: summons table doesn't have category field, so we'll skip this for now
-    }
-
-    // Filter by search query if provided
+    // Demo-only override on feat/social-stats-dummy:
+    // Return rich dummy summons so the page looks populated for social media.
+    let demoSummons = getDemoSummons();
     if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      summons = summons.filter(
-        (summon) =>
-          summon.target_username?.toLowerCase().includes(query) ||
-          summon.target_name?.toLowerCase().includes(query) ||
-          summon.message?.toLowerCase().includes(query),
+      const q = searchQuery.toLowerCase();
+      demoSummons = demoSummons.filter(
+        (s) =>
+          s.targetHandle.toLowerCase().includes(q) ||
+          s.targetName.toLowerCase().includes(q) ||
+          s.request.toLowerCase().includes(q),
       );
     }
-
-    // Fetch creator info for summons
-    const creatorIds = [
-      ...new Set(summons.map((s: any) => s.creator_id).filter(Boolean)),
-    ];
-    let creatorsMap: Record<string, any> = {};
-
-    if (creatorIds.length > 0) {
-      const { data: creators } = await supabase
-        .from("users")
-        .select("id, name, username, profile_image_url")
-        .in("id", creatorIds);
-
-      if (creators) {
-        creatorsMap = creators.reduce((acc: Record<string, any>, c: any) => {
-          acc[c.id] = c;
-          return acc;
-        }, {});
-      }
-    }
-
-    // Transform to match the frontend Summon type
-    const transformedSummons = summons.map((summon: any) => {
-      const creator = creatorsMap[summon.creator_id];
-
-      // Use the backers array directly from the summon
-      const backersFromArray: BackerInfo[] = summon.backers || [];
-
-      // Transform backers to frontend format
-      let backersData = backersFromArray.map((b: BackerInfo) => ({
-        id: b.user_id,
-        name: b.name,
-        username: b.username,
-        profileImageUrl: b.profile_image_url,
-        amount: Number(b.amount),
-        backedAt: b.backed_at,
-        reason: b.reason,
-      }));
-
-      // If no backers in array but we have a creator and backers_count > 0,
-      // add creator as first backer (for backwards compatibility with old summons)
-      if (backersData.length === 0 && creator && summon.backers_count > 0) {
-        backersData = [
-          {
-            id: creator.id,
-            name: creator.name,
-            username: creator.username,
-            profileImageUrl: creator.profile_image_url,
-            amount: Number(summon.pledged_amount || summon.amount || 0),
-            backedAt: summon.created_at,
-            reason: undefined,
-          },
-        ];
-      }
-
-      return {
-        id: summon.id,
-        targetHandle:
-          summon.target_username ||
-          summon.target_handle ||
-          summon.target_twitter_id,
-        targetName: summon.target_name || summon.target_username || "Unknown",
-        targetProfileImage:
-          summon.target_profile_image || summon.target_image || null,
-        totalPledged: Number(
-          summon.total_backed || summon.pledged_amount || summon.amount || 0,
-        ),
-        backers: summon.backers_count || backersData.length || 0,
-        backersData,
-        category: "All",
-        trend: "up" as const,
-        trendValue: 0,
-        request: summon.message || summon.request || "",
-        tags: summon.tags || {}, // Include tag counts
-        createdAt: summon.created_at,
-        creatorUsername: creator?.username || null,
-        creatorName: creator?.name || null,
-        creatorProfileImage: creator?.profile_image_url || null,
-      };
-    });
-
-    return NextResponse.json({ summons: transformedSummons });
+    // category filter intentionally not applied — demo summons don't carry per-category data
+    void category;
+    return NextResponse.json({ summons: demoSummons.slice(0, limit) });
   } catch (error) {
     captureApiError(error, "GET /api/summons");
     return NextResponse.json(

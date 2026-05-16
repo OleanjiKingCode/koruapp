@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { captureApiError } from "@/lib/sentry";
-import { getFeaturedCategories } from "@/lib/supabase";
+import { DEMO_CATEGORIES } from "@/lib/demo-data";
 
+// Demo-only override on feat/social-stats-dummy.
 export async function GET() {
   try {
-    const categories = await getFeaturedCategories();
-    return NextResponse.json({ categories });
+    return NextResponse.json({ categories: DEMO_CATEGORIES });
   } catch (error) {
     captureApiError(error, "GET /api/discover/categories");
     return NextResponse.json(

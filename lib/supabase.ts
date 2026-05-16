@@ -413,6 +413,8 @@ export interface Chat {
   slot_name: string | null;
   slot_duration: number | null;
   deadline_at: string | null;
+  booked_date: string | null;
+  booked_time: string | null;
   completed_at: string | null;
   refunded_at: string | null;
   created_at: string;
